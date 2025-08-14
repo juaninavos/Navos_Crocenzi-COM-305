@@ -1,12 +1,24 @@
 import { defineConfig } from '@mikro-orm/mysql';
+import { Usuario } from './entities/Usuario';
 import { Camiseta } from './entities/Camiseta';
+import { Subasta } from './entities/Subasta';
+import { Oferta } from './entities/Oferta';
+import { Compra } from './entities/Compra';
+import { MetodoPago } from './entities/MetodoPago';
+import { Pago } from './entities/Pago';
+import { Categoria } from './entities/Categoria';
+import { Descuento } from './entities/Descuento';
 
 export default defineConfig({
-  dbName: 'tienda_retro',
-  user: 'root',
-  password: 'root',
-  host: 'localhost',
-  port: 3306,
-  entities: [Camiseta],
+  dbName: process.env.DB_NAME || 'tienda_retro',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '3306'),
+  entities: [Usuario, Camiseta, Subasta, Oferta, Compra, MetodoPago, Pago, Categoria, Descuento],
   debug: true,
+  migrations: {
+    path: './dist/migrations',
+    pathTs: './src/migrations',
+  },
 });
