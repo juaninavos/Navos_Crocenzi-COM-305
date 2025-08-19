@@ -1,6 +1,7 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection } from '@mikro-orm/core';
 import { Camiseta } from './Camiseta';
 import { Usuario } from './Usuario';
+import { Oferta } from './Oferta';
 
 @Entity()
 export class Subasta {
@@ -13,7 +14,7 @@ export class Subasta {
   @Property()
   fechaFin!: Date;
 
-  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  @Property({ type: 'decimal', precision: 8, scale: 2 })
   precioActual!: number;
 
   @Property()
@@ -27,7 +28,7 @@ export class Subasta {
   ganador?: Usuario;
 
   @OneToMany('Oferta', 'subasta')
-  ofertas = new Collection<any>(this);
+  ofertas = new Collection<Oferta>(this);
 
   constructor(camiseta: Camiseta, fechaInicio: Date, fechaFin: Date, precioActual?: number) {
     this.camiseta = camiseta;
