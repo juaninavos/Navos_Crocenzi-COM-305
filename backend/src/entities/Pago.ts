@@ -1,6 +1,5 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Enum } from '@mikro-orm/core';
 import { Compra } from './Compra';
-import { MetodoPago } from './MetodoPago';
 
 export enum EstadoPago {
   PENDIENTE = 'pendiente',
@@ -9,14 +8,25 @@ export enum EstadoPago {
   REEMBOLSADO = 'reembolsado'
 }
 
+export enum MetodoPago {
+  TARJETA_CREDITO = 'tarjeta_credito',
+  TARJETA_DEBITO = 'tarjeta_debito',
+  PAYPAL = 'paypal',
+  TRANSFERENCIA_BANCARIA = 'transferencia_bancaria',
+  EFECTIVO = 'efectivo'
+}
+
 @Entity()
 export class Pago {
   @PrimaryKey()
   id!: number;
 
-  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  @Property({ type: 'decimal', precision: 8, scale: 2 })
   monto!: number;
 
+  @Enum (() => MetodoPago)
+  metodoPago: MetodoPago
+ 
   @Enum(() => EstadoPago)
   estado: EstadoPago = EstadoPago.PENDIENTE;
 
@@ -32,9 +42,6 @@ export class Pago {
   // Relaciones
   @ManyToOne(() => Compra)
   compra!: Compra;
-
-  @ManyToOne(() => MetodoPago)
-  metodoPago!: MetodoPago;
 
   constructor(compra: Compra, metodoPago: MetodoPago, monto: number) {
     this.compra = compra;

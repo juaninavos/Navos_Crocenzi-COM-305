@@ -1,4 +1,7 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection, Enum } from '@mikro-orm/core';
+import { Camiseta } from './Camiseta';
+import { Compra } from './Compra';
+import { Oferta } from './Oferta';
 
 export enum UsuarioRol {
   USUARIO = 'usuario',
@@ -39,13 +42,13 @@ export class Usuario {
 
   // Relaciones
   @OneToMany('Oferta', 'usuario')
-  ofertas = new Collection<any>(this);
+  ofertas = new Collection<Oferta>(this);
 
   @OneToMany('Compra', 'comprador')
-  compras = new Collection<any>(this);
+  compras = new Collection<Compra>(this);
 
   @OneToMany('Camiseta', 'vendedor')
-  camisetasVendidas = new Collection<any>(this);
+  camisetasVendidas = new Collection<Camiseta>(this);
 
   constructor(nombre: string, apellido: string, email: string, contrasena: string, direccion: string, telefono: string, rol: UsuarioRol = UsuarioRol.USUARIO) {
     this.nombre = nombre;

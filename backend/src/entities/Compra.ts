@@ -1,6 +1,7 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
 import { Camiseta } from './Camiseta';
 import { Usuario } from './Usuario';
+import { Pago } from './Pago';
 
 export enum EstadoCompra {
   PENDIENTE = 'pendiente',
@@ -15,7 +16,7 @@ export class Compra {
   @PrimaryKey()
   id!: number;
 
-  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  @Property({ type: 'decimal', precision: 8, scale: 2 })
   precioFinal!: number;
 
   @Property()
@@ -24,8 +25,8 @@ export class Compra {
   @Enum(() => EstadoCompra)
   estado: EstadoCompra = EstadoCompra.PENDIENTE;
 
-  @Property()
-  fechaCompra: Date = new Date();
+  @Property({ defaultRaw: 'CURRENT_TIMESTAMP' })
+  fechaCompra!: Date;
 
   @Property({ nullable: true })
   fechaEnvio?: Date;
@@ -43,8 +44,8 @@ export class Compra {
   @ManyToOne(() => Usuario)
   comprador!: Usuario;
 
-  @OneToMany('Pago', 'compra')
-  pagos = new Collection<any>(this);
+  @OneToMany('pago', 'compra')
+  pagos = new Collection<Pago>(this);
 
   constructor(camiseta: Camiseta, comprador: Usuario, precioFinal: number, cantidad: number = 1) {
     this.camiseta = camiseta;

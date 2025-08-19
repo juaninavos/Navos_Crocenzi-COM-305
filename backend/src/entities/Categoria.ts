@@ -1,5 +1,5 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core';
-
+import { Camiseta } from './Camiseta';
 @Entity()
 export class Categoria {
   @PrimaryKey()
@@ -16,7 +16,7 @@ export class Categoria {
 
   // Relaciones
   @OneToMany('Camiseta', 'categoria')
-  camisetas = new Collection<any>(this);
+  camisetas = new Collection<Camiseta>(this);
 
   constructor(nombre: string, descripcion?: string) {
     this.nombre = nombre;

@@ -22,7 +22,7 @@ export class Descuento {
   @Enum(() => TipoDescuento)
   tipo!: TipoDescuento;
 
-  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  @Property({ type: 'decimal', precision: 8, scale: 2 })
   valor!: number; // Si es porcentaje: valor entre 0-100, si es monto fijo: valor absoluto
 
   @Property()
@@ -37,7 +37,7 @@ export class Descuento {
   @Property()
   usosActuales: number = 0;
 
-  @Property({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Property({ type: 'decimal', precision: 8, scale: 2, nullable: true })
   montoMinimo?: number; // Monto mínimo de compra para aplicar el descuento
 
   @Property()
