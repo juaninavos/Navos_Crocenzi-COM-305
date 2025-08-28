@@ -1,13 +1,14 @@
 {
   "name": "tienda_retro_backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Backend para tienda de camisetas retro",
+  "main": "dist/app.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "ts-node src/app.ts",
+    "init-db": "ts-node scripts/init-db.ts",
+    "seed-db": "ts-node scripts/seed-db.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/node": "^24.2.1",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.9.5"
   },

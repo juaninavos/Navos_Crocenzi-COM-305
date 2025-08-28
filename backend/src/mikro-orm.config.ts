@@ -10,15 +10,24 @@ import { Categoria } from './entities/Categoria';
 import { Descuento } from './entities/Descuento';
 
 export default defineConfig({
-  dbName: process.env.DB_NAME || 'tienda_retro',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
-  entities: [Usuario, Camiseta, Subasta, Oferta, Compra, MetodoPago, Pago, Categoria, Descuento],
-  debug: true,
-  migrations: {
-    path: './dist/migrations',
-    pathTs: './src/migrations',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  dbName: process.env.DB_NAME || 'tienda_retro',
+  entities: [
+    Usuario,
+    Camiseta,
+    Subasta,
+    Oferta,
+    Compra,
+    MetodoPago,
+    Pago,
+    Categoria,
+    Descuento
+  ],
+  discovery: {
+    warnWhenNoEntities: false,
   },
+  debug: process.env.NODE_ENV !== 'production',
 });

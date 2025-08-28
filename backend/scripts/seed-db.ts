@@ -6,8 +6,8 @@ import config from '../src/mikro-orm.config';
 import { Usuario, UsuarioRol } from '../src/entities/Usuario';
 import { Categoria } from '../src/entities/Categoria';
 import { MetodoPago } from '../src/entities/MetodoPago';
-import { Camiseta, CondicionCamiseta, EstadoCamiseta } from '../src/entities/Camiseta';
-import { Descuento, TipoDescuento } from '../src/entities/Descuento';
+import { Descuento } from '../src/entities/Descuento';
+import { Camiseta, Talle, CondicionCamiseta } from '../src/entities/Camiseta';
 
 async function seedDatabase() {
   const orm = await MikroORM.init(config);
@@ -63,123 +63,110 @@ async function seedDatabase() {
 
     em.persist([efectivo, tarjeta, transferencia, mercadoPago]);
 
-    // 4. Crear descuentos
-    const descuentoVerano = new Descuento(
-      'Descuento de Verano',
-      'VERANO2025',
-      '15% de descuento en todas las camisetas',
-      TipoDescuento.PORCENTAJE,
-      15,
-      new Date('2025-01-01'),
-      new Date('2025-03-31'),
-      100
+    // 4. Crear descuentos (con todos los parámetros requeridos)
+    const descuento1 = new Descuento(
+      'RETRO10',
+      'Descuento del 10% en camisetas retro',
+      10,
+      new Date('2024-01-01'),
+      new Date('2024-12-31'),
+      true
     );
-    descuentoVerano.montoMinimo = 5000;
 
-    const descuentoPrimeraCompra = new Descuento(
-      'Primera Compra',
-      'PRIMERA2025',
-      '$2000 de descuento en tu primera compra',
-      TipoDescuento.MONTO_FIJO,
-      2000,
-      new Date('2025-01-01'),
-      new Date('2025-12-31'),
-      50
+    const descuento2 = new Descuento(
+      'VINTAGE20',
+      'Descuento del 20% en camisetas vintage',
+      20,
+      new Date('2024-06-01'),
+      new Date('2024-09-30'),
+      true
     );
-    descuentoPrimeraCompra.montoMinimo = 8000;
 
-    em.persist([descuentoVerano, descuentoPrimeraCompra]);
+    em.persist([descuento1, descuento2]);
 
-    // Guardar todo hasta aquí
+    // Guardar primero usuarios y categorías para obtener sus IDs
     await em.flush();
 
-    // 5. Crear camisetas
+    // 5. Crear camisetas usando los enums correctos
     const camiseta1 = new Camiseta(
-      'Camiseta Boca Juniors 1981 Retro',
-      'Camiseta histórica de Boca Juniors utilizada en la temporada 1981. Excelente estado de conservación.',
-      'Boca Juniors',
-      '1981',
-      'L',
-      CondicionCamiseta.EXCELENTE,
-      'https://example.com/boca1981.jpg',
+      'Camiseta Argentina Mundial 1986',
+      'Camiseta histórica de Argentina del Mundial de México 1986',
+      'Argentina',
+      '1986',
+      Talle.L,
+      CondicionCamiseta.VINTAGE,
+      'argentina_1986.jpg',
       25000,
-      adminUser
+      adminUser.id
     );
-    camiseta1.categoria = categoriaRetro;
+    camiseta1.categoria = categoriaSelecciones;
 
     const camiseta2 = new Camiseta(
-      'Camiseta Argentina Mundial 1986',
-      'Réplica de la camiseta utilizada por la selección argentina en el Mundial de México 1986.',
-      'Selección Argentina',
-      '1986',
-      'M',
-      CondicionCamiseta.MUY_BUENA,
-      'https://example.com/argentina1986.jpg',
-      35000,
-      adminUser
+      'Camiseta Boca Juniors 1981',
+      'Camiseta clásica de Boca Juniors de la década del 80',
+      'Boca Juniors',
+      '1981',
+      Talle.M,
+      CondicionCamiseta.USADA,
+      'boca_1981.jpg',
+      18000,
+      adminUser.id
     );
-    camiseta2.categoria = categoriaSelecciones;
+    camiseta2.categoria = categoriaClubs;
 
     const camiseta3 = new Camiseta(
-      'Camiseta Barcelona 1999-2000',
-      'Camiseta del FC Barcelona temporada 1999-2000, época de Rivaldo y Guardiola.',
+      'Camiseta Barcelona 1992',
+      'Camiseta del Dream Team del Barcelona',
       'FC Barcelona',
-      '1999-2000',
-      'XL',
-      CondicionCamiseta.BUENA,
-      'https://example.com/barcelona99.jpg',
-      18000,
-      user1,
-      true // Esta será para subasta
+      '1992',
+      Talle.XL,
+      CondicionCamiseta.VINTAGE,
+      'barcelona_1992.jpg',
+      30000,
+      adminUser.id
     );
     camiseta3.categoria = categoriaEuropa;
-    camiseta3.estado = EstadoCamiseta.EN_SUBASTA;
 
     const camiseta4 = new Camiseta(
-      'Camiseta River Plate 1996',
-      'Camiseta de River Plate de la temporada 1996, época del equipo de Ramón Díaz.',
+      'Camiseta River Plate 1986',
+      'Camiseta histórica de River Plate',
       'River Plate',
-      '1996',
-      'L',
-      CondicionCamiseta.EXCELENTE,
-      'https://example.com/river1996.jpg',
+      '1986',
+      Talle.L,
+      CondicionCamiseta.NUEVA,
+      'river_1986.jpg',
       22000,
-      user2
+      adminUser.id
     );
     camiseta4.categoria = categoriaClubs;
 
     const camiseta5 = new Camiseta(
-      'Camiseta Independiente 1984',
-      'Camiseta histórica de Independiente, campeón de la Copa Libertadores 1984.',
-      'Independiente',
-      '1984',
-      'M',
-      CondicionCamiseta.MUY_BUENA,
-      'https://example.com/independiente1984.jpg',
-      28000,
-      adminUser
+      'Camiseta Brasil 1970',
+      'Camiseta del tricampeón mundial Brasil 1970 - SUBASTA',
+      'Brasil',
+      '1970',
+      Talle.M,
+      CondicionCamiseta.VINTAGE,
+      'brasil_1970.jpg',
+      35000,
+      adminUser.id
     );
-    camiseta5.categoria = categoriaRetro;
+    camiseta5.esSubasta = true;
+    camiseta5.categoria = categoriaSelecciones;
 
     em.persist([camiseta1, camiseta2, camiseta3, camiseta4, camiseta5]);
 
-    // Guardar las camisetas
     await em.flush();
 
-    console.log('✅ Datos de ejemplo creados exitosamente:');
-    console.log('👥 3 usuarios (1 admin, 2 usuarios regulares)');
-    console.log('📂 4 categorías');
-    console.log('💳 4 métodos de pago');
-    console.log('🎯 2 descuentos activos');
-    console.log('👕 5 camisetas (1 configurada para subasta)');
-    console.log('');
-    console.log('🔐 Credenciales de prueba:');
-    console.log('Admin: admin@tiendaretro.com / admin123');
-    console.log('Usuario 1: maria@email.com / user123');
-    console.log('Usuario 2: carlos@email.com / user456');
+    console.log('✅ Datos sembrados correctamente:');
+    console.log('- 3 usuarios creados');
+    console.log('- 4 categorías creadas');
+    console.log('- 4 métodos de pago creados');
+    console.log('- 2 descuentos creados');
+    console.log('- 5 camisetas creadas');
 
   } catch (error) {
-    console.error('❌ Error al sembrar la base de datos:', error);
+    console.error('❌ Error al sembrar datos:', error);
   } finally {
     await orm.close();
   }
