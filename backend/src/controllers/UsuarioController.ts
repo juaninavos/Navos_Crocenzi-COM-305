@@ -22,7 +22,8 @@ export class UsuarioController {
       console.error('Error en getAll usuarios:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener usuarios'
+        message: 'Error al obtener usuarios',
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -66,6 +67,30 @@ export class UsuarioController {
         return res.status(400).json({
           success: false,
           message: 'Faltan campos obligatorios: nombre, apellido, email, contraseña'
+        });
+      }
+
+      // Validaciones adicionales
+      if (nombre.length < 2 || apellido.length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nombre y apellido deben tener al menos 2 caracteres'
+        });
+      }
+
+      // Validación básica de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'El formato del email no es válido'
+        });
+      }
+
+      if (contrasena.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message: 'La contraseña debe tener al menos 6 caracteres'
         });
       }
 

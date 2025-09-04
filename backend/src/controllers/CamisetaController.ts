@@ -238,4 +238,149 @@ export class CamisetaController {
       });
     }
   }
+
+  // CASO DE USO: Publicar camiseta para venta
+  // POST /api/camisetas/publicar
+  static async publicarParaVenta(req: Request, res: Response) {
+    try {
+      const { 
+        titulo, descripcion, equipo, temporada, talle, condicion, 
+        imagen, precioInicial, esSubasta, stock, categoriaId, vendedorId,
+        fechaFinSubasta // Solo si es subasta
+      } = req.body;
+      
+      // Validaciones específicas del caso de uso
+      if (!titulo || !equipo || !temporada || !talle || !condicion || !precioInicial || !vendedorId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Faltan campos obligatorios para publicar la camiseta',
+          camposRequeridos: ['titulo', 'equipo', 'temporada', 'talle', 'condicion', 'precioInicial', 'vendedorId']
+        });
+      }
+
+      // Validar que los enums sean correctos
+      const tallesValidos = Object.values(Talle);
+      const condicionesValidas = Object.values(CondicionCamiseta);
+
+      if (!tallesValidos.includes(talle)) {
+        return res.status(400).json({
+          success: false,
+          message: `Talle inválido. Valores permitidos: ${tallesValidos.join(', ')}`
+        });
+      }
+
+      if (!condicionesValidas.includes(condicion)) {
+        return res.status(400).json({
+          success: false,
+          message: `Condición inválida. Valores permitidos: ${condicionesValidas.join(', ')}`
+        });
+      }
+
+      // Validaciones específicas de negocio
+      if (precioInicial <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'El precio inicial debe ser mayor a 0'
+        });
+      }
+
+      if (stock < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'El stock debe ser al menos 1'
+        });
+      }
+
+      // Si es subasta, validar fecha fin
+      if (esSubasta && fechaFinSubasta) {
+        const fechaFin = new Date(fechaFinSubasta);
+        const ahora = new Date();
+        
+        if (fechaFin <= ahora) {
+          return res.status(400).json({
+            success: false,
+            message: 'La fecha de fin de subasta debe ser futura'
+          });
+        }
+      }
+      
+      const orm = req.app.locals.orm as MikroORM;
+      const em = orm.em.fork();
+      
+      // Verificar que el vendedor existe
+      const vendedor = await em.findOne('Usuario', { id: vendedorId, activo: true });
+      if (!vendedor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vendedor no encontrado o inactivo'
+        });
+      }
+
+      // Verificar que la categoría existe (si se proporciona)
+      if (categoriaId) {
+        const categoria = await em.findOne('Categoria', { id: categoriaId, activa: true });
+        if (!categoria) {
+          return res.status(404).json({
+            success: false,
+            message: 'Categoría no encontrada o inactiva'
+          });
+        }
+      }
+      
+      // Crear la camiseta
+      const nuevaCamiseta = new Camiseta(
+        titulo,
+        descripcion || `Camiseta ${equipo} temporada ${temporada}`,
+        equipo,
+        temporada,
+        talle as Talle,
+        condicion as CondicionCamiseta,
+        imagen || '',
+        precioInicial,
+        vendedorId
+      );
+      
+      nuevaCamiseta.esSubasta = esSubasta || false;
+      nuevaCamiseta.stock = stock || 1;
+      
+      // Establecer estado según tipo de venta
+      if (esSubasta) {
+        nuevaCamiseta.estado = EstadoCamiseta.EN_SUBASTA;
+      } else {
+        nuevaCamiseta.estado = EstadoCamiseta.DISPONIBLE;
+      }
+      
+      if (categoriaId) {
+        nuevaCamiseta.categoria = em.getReference('Categoria', categoriaId);
+      }
+
+      em.persist(nuevaCamiseta);
+      await em.flush();
+
+      // Obtener la camiseta completa para respuesta
+      const camisetaCompleta = await em.findOne(Camiseta, { id: nuevaCamiseta.id }, {
+        populate: ['categoria', 'vendedor']
+      });
+
+      res.status(201).json({
+        success: true,
+        data: camisetaCompleta,
+        message: `Camiseta ${esSubasta ? 'publicada en subasta' : 'publicada para venta directa'} correctamente`,
+        caso_uso: 'publicar_camiseta_para_venta',
+        detalles: {
+          tipo_venta: esSubasta ? 'subasta' : 'precio_fijo',
+          precio_inicial: precioInicial,
+          stock: nuevaCamiseta.stock,
+          estado: nuevaCamiseta.estado
+        }
+      });
+    } catch (error) {
+      console.error('Error en publicarParaVenta:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al publicar camiseta para venta',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
 }
