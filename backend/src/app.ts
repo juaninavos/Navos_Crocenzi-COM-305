@@ -10,6 +10,12 @@ import config from './mikro-orm.config';
 import usuarioRoutes from './routes/usuarioRoutes';
 import camisetaRoutes from './routes/camisetaRoutes';
 import categoriaRoutes from './routes/categoriaRoutes';
+import ofertaRoutes from './routes/ofertaRoutes.js';
+import subastaRoutes from './routes/subastaRoutes.js';
+import compraRoutes from './routes/compraRoutes.js';
+import pagoRoutes from './routes/pagoRoutes.js';
+import descuentoRoutes from './routes/descuentoRoutes.js';
+import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 async function main() {
@@ -30,8 +36,14 @@ async function main() {
 
   // 🎯 FASE 1: REGULARIDAD - Rutas básicas
   app.use('/api/usuarios', usuarioRoutes);
-  app.use('/api/camisetas', camisetaRoutes);
   app.use('/api/categorias', categoriaRoutes);
+  app.use('/api/camisetas', camisetaRoutes);
+  app.use('/api/ofertas', ofertaRoutes);
+  app.use('/api/subastas', subastaRoutes);
+  app.use('/api/compras', compraRoutes);
+  app.use('/api/pagos', pagoRoutes);
+  app.use('/api/descuentos', descuentoRoutes);
+  app.use('/api/metodos-pago', metodoPagoRoutes);  // ✅ AGREGAR ESTA LÍNEA
   
   // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
   // app.use('/api/subastas', subastaRoutes);

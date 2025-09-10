@@ -1,5 +1,5 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core';
-import { Pago } from './Pago';
+import { Pago } from './Pago.js';  // ✅ CORREGIDO: Agregar .js
 
 @Entity()
 export class MetodoPago {

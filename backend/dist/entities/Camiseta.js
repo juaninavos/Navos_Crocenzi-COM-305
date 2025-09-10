@@ -21,20 +21,20 @@ var Talle;
     Talle["L"] = "L";
     Talle["XL"] = "XL";
     Talle["XXL"] = "XXL";
-})(Talle = exports.Talle || (exports.Talle = {}));
+})(Talle || (exports.Talle = Talle = {}));
 var CondicionCamiseta;
 (function (CondicionCamiseta) {
     CondicionCamiseta["NUEVA"] = "Nueva";
     CondicionCamiseta["USADA"] = "Usada";
     CondicionCamiseta["VINTAGE"] = "Vintage";
-})(CondicionCamiseta = exports.CondicionCamiseta || (exports.CondicionCamiseta = {}));
+})(CondicionCamiseta || (exports.CondicionCamiseta = CondicionCamiseta = {}));
 var EstadoCamiseta;
 (function (EstadoCamiseta) {
     EstadoCamiseta["DISPONIBLE"] = "disponible";
     EstadoCamiseta["VENDIDA"] = "vendida";
     EstadoCamiseta["EN_SUBASTA"] = "en_subasta";
     EstadoCamiseta["INACTIVA"] = "inactiva";
-})(EstadoCamiseta = exports.EstadoCamiseta || (exports.EstadoCamiseta = {}));
+})(EstadoCamiseta || (exports.EstadoCamiseta = EstadoCamiseta = {}));
 let Camiseta = class Camiseta {
     constructor(titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, vendedorId) {
         this.esSubasta = false;
@@ -53,6 +53,7 @@ let Camiseta = class Camiseta {
         this.vendedor = vendedorId;
     }
 };
+exports.Camiseta = Camiseta;
 __decorate([
     (0, core_1.PrimaryKey)(),
     __metadata("design:type", Number)
@@ -117,9 +118,8 @@ __decorate([
     (0, core_1.Property)(),
     __metadata("design:type", Date)
 ], Camiseta.prototype, "fechaPublicacion", void 0);
-Camiseta = __decorate([
+exports.Camiseta = Camiseta = __decorate([
     (0, core_1.Entity)(),
     __metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, Number])
 ], Camiseta);
-exports.Camiseta = Camiseta;
 //# sourceMappingURL=Camiseta.js.map

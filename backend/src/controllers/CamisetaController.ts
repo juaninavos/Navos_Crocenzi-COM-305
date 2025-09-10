@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta';
+import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta.js';
+import { Usuario } from '../entities/Usuario.js';  // ✅ AGREGAR IMPORT
+import { Categoria } from '../entities/Categoria.js';  // ✅ AGREGAR IMPORT
 
 export class CamisetaController {
   
@@ -41,7 +43,7 @@ export class CamisetaController {
 
       console.log('🔍 Ejecutando query con filtros:', filtros);
 
-      const camisetas = await em.find('Camiseta', filtros, {
+      const camisetas = await em.find(Camiseta, filtros, {  // ✅ CORREGIDO: Usar clase Camiseta
         populate: ['categoria', 'vendedor']
       });
 
@@ -62,7 +64,7 @@ export class CamisetaController {
       res.status(500).json({
         success: false,
         message: 'Error al obtener camisetas',
-        error: error instanceof Error ? error.message : String(error)  // ← Corregir esta línea
+        error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
   }
@@ -75,7 +77,7 @@ export class CamisetaController {
       const em = orm.em.fork();
       
       const camiseta = await em.findOne(Camiseta, { id: parseInt(id) }, {
-        populate: ['categoria', 'vendedor']  // ← Quitar 'subastas' por ahora
+        populate: ['categoria', 'vendedor']
       });
       
       if (!camiseta || camiseta.estado === EstadoCamiseta.INACTIVA) {
@@ -106,15 +108,14 @@ export class CamisetaController {
         imagen, precioInicial, esSubasta, stock, categoriaId, vendedorId 
       } = req.body;
       
-      // Validaciones básicas
-      if (!titulo || !equipo || !temporada || !talle || !precioInicial || !vendedorId) {
+      if (!titulo || !descripcion || !equipo || !temporada || !talle || !condicion || !imagen || !precioInicial || !vendedorId) {
         return res.status(400).json({
           success: false,
-          message: 'Faltan campos obligatorios: titulo, equipo, temporada, talle, precioInicial, vendedorId'
+          message: 'Faltan campos obligatorios según el constructor de Camiseta',
+          camposRequeridos: ['titulo', 'descripcion', 'equipo', 'temporada', 'talle', 'condicion', 'imagen', 'precioInicial', 'vendedorId']
         });
       }
 
-      // Validar que los enums sean correctos
       const tallesValidos = Object.values(Talle);
       const condicionesValidas = Object.values(CondicionCamiseta);
 
@@ -135,6 +136,15 @@ export class CamisetaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
       
+      // ✅ CORREGIDO: Usar clase Usuario en lugar de string
+      const vendedor = await em.findOne(Usuario, { id: vendedorId });
+      if (!vendedor) {
+        return res.status(404).json({
+          success: false,
+          message: 'Vendedor no encontrado'
+        });
+      }
+      
       const nuevaCamiseta = new Camiseta(
         titulo,
         descripcion,
@@ -144,12 +154,19 @@ export class CamisetaController {
         condicion as CondicionCamiseta,
         imagen,
         precioInicial,
-        vendedorId
+        vendedor  // ✅ Ahora TypeScript reconoce el tipo correcto
       );
       
       nuevaCamiseta.esSubasta = esSubasta || false;
       nuevaCamiseta.stock = stock || 1;
-      if (categoriaId) nuevaCamiseta.categoria = em.getReference('Categoria', categoriaId);
+      
+      // ✅ CORREGIDO: Usar clase Categoria y verificar existencia
+      if (categoriaId) {
+        const categoria = await em.findOne(Categoria, { id: categoriaId });
+        if (categoria) {
+          nuevaCamiseta.categoria = categoria;
+        }
+      }
 
       em.persist(nuevaCamiseta);
       await em.flush();
@@ -307,8 +324,8 @@ export class CamisetaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
       
-      // Verificar que el vendedor existe
-      const vendedor = await em.findOne('Usuario', { id: vendedorId, activo: true });
+      // ✅ CORREGIDO: Usar clase Usuario en lugar de string
+      const vendedor = await em.findOne(Usuario, { id: vendedorId, activo: true });
       if (!vendedor) {
         return res.status(404).json({
           success: false,
@@ -318,7 +335,7 @@ export class CamisetaController {
 
       // Verificar que la categoría existe (si se proporciona)
       if (categoriaId) {
-        const categoria = await em.findOne('Categoria', { id: categoriaId, activa: true });
+        const categoria = await em.findOne(Categoria, { id: categoriaId, activa: true });
         if (!categoria) {
           return res.status(404).json({
             success: false,
@@ -327,7 +344,6 @@ export class CamisetaController {
         }
       }
       
-      // Crear la camiseta
       const nuevaCamiseta = new Camiseta(
         titulo,
         descripcion || `Camiseta ${equipo} temporada ${temporada}`,
@@ -337,7 +353,7 @@ export class CamisetaController {
         condicion as CondicionCamiseta,
         imagen || '',
         precioInicial,
-        vendedorId
+        vendedor  // ✅ Ahora TypeScript reconoce el tipo correcto
       );
       
       nuevaCamiseta.esSubasta = esSubasta || false;
@@ -350,8 +366,12 @@ export class CamisetaController {
         nuevaCamiseta.estado = EstadoCamiseta.DISPONIBLE;
       }
       
+      // ✅ CORREGIDO: Asignar categoría si existe
       if (categoriaId) {
-        nuevaCamiseta.categoria = em.getReference('Categoria', categoriaId);
+        const categoria = await em.findOne(Categoria, { id: categoriaId });
+        if (categoria) {
+          nuevaCamiseta.categoria = categoria;
+        }
       }
 
       em.persist(nuevaCamiseta);

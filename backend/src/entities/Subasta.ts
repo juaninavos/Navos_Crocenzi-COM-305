@@ -1,7 +1,6 @@
-import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection } from '@mikro-orm/core';
-import { Camiseta } from './Camiseta';
-import { Usuario } from './Usuario';
-import { Oferta } from './Oferta';
+import { Entity, PrimaryKey, Property, ManyToOne } from '@mikro-orm/core';
+import { Camiseta } from './Camiseta.js';  // ✅ AGREGAR .js
+import { Usuario } from './Usuario.js';    // ✅ AGREGAR .js
 
 @Entity()
 export class Subasta {
@@ -27,25 +26,17 @@ export class Subasta {
   @ManyToOne(() => Usuario, { nullable: true })
   ganador?: Usuario;
 
-  @OneToMany('Oferta', 'subasta')
-  ofertas = new Collection<Oferta>(this);
-
-  constructor(camiseta: Camiseta, fechaInicio: Date, fechaFin: Date, precioActual?: number) {
-    this.camiseta = camiseta;
+  // ✅ CORREGIDO: Constructor con parámetros obligatorios
+  constructor(fechaInicio: Date, fechaFin: Date, precioActual: number, camiseta: Camiseta) {
     this.fechaInicio = fechaInicio;
     this.fechaFin = fechaFin;
-    this.precioActual = precioActual || camiseta.precioInicial;
+    this.precioActual = precioActual;
+    this.camiseta = camiseta;
   }
 
-  // Método para verificar si la subasta está activa
+  // Método auxiliar
   estaActiva(): boolean {
     const ahora = new Date();
-    return this.activa && ahora >= this.fechaInicio && ahora <= this.fechaFin;
-  }
-
-  // Método para verificar si la subasta ha terminado
-  haTerminado(): boolean {
-    const ahora = new Date();
-    return !this.activa || ahora > this.fechaFin;
+    return this.activa && this.fechaFin > ahora;
   }
 }

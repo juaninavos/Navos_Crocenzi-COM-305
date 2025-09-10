@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property, ManyToOne, Enum } from '@mikro-orm/core';
-import { Compra } from './Compra';
-import { MetodoPago } from './MetodoPago';
+import { Compra } from './Compra.js';      // ✅ CORREGIDO: Agregar .js
+import { MetodoPago } from './MetodoPago.js'; // ✅ CORREGIDO: Agregar .js
 
 export enum EstadoPago {
   PENDIENTE = 'pendiente',

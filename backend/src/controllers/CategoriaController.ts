@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Categoria } from '../entities/Categoria';
+import { Categoria } from '../entities/Categoria.js';  // ✅ CORREGIDO: Agregar .js
+import { Camiseta } from '../entities/Camiseta.js';     // ✅ AGREGAR: Para el count
 
 export class CategoriaController {
   
@@ -90,6 +91,7 @@ export class CategoriaController {
         });
       }
       
+      // ✅ PERFECTO: Uso correcto del constructor
       const nuevaCategoria = new Categoria(nombre.trim(), descripcion?.trim());
       
       em.persist(nuevaCategoria);
@@ -188,8 +190,8 @@ export class CategoriaController {
         });
       }
 
-      // Verificar si hay camisetas asociadas a esta categoría
-      const camisetasAsociadas = await em.count('Camiseta', { categoria: categoria });
+      // ✅ PERFECTO: Verificar relaciones antes de eliminar
+      const camisetasAsociadas = await em.count(Camiseta, { categoria: categoria });
       if (camisetasAsociadas > 0) {
         return res.status(400).json({
           success: false,

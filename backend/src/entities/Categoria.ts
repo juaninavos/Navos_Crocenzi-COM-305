@@ -1,5 +1,6 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection } from '@mikro-orm/core';
-import { Camiseta } from './Camiseta';
+import { Camiseta } from './Camiseta.js';  // ✅ CORREGIDO: Agregar .js
+
 @Entity()
 export class Categoria {
   @PrimaryKey()

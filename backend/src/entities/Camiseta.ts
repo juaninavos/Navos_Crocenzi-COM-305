@@ -84,7 +84,7 @@ export class Camiseta {
     condicion: CondicionCamiseta,
     imagen: string,
     precioInicial: number,
-    vendedorId: number
+    vendedor: Usuario  // ✅ CORREGIDO: Recibir objeto Usuario completo
   ) {
     this.titulo = titulo;
     this.descripcion = descripcion;
@@ -94,7 +94,7 @@ export class Camiseta {
     this.condicion = condicion;
     this.imagen = imagen;
     this.precioInicial = precioInicial;
-    this.vendedor = vendedorId as any;
+    this.vendedor = vendedor;  // ✅ CORREGIDO: Asignar objeto completo
   }
 }
 

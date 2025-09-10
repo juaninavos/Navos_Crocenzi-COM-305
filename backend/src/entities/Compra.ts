@@ -1,8 +1,8 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
-import { Usuario } from './Usuario';
-import { Camiseta } from './Camiseta';
-import { MetodoPago } from './MetodoPago';
-import { Pago } from './Pago';  // ← Asegúrate de importar Pago
+import { Usuario } from './Usuario.js';       // ✅ AGREGAR .js
+import { Camiseta } from './Camiseta.js';     // ✅ AGREGAR .js
+import { MetodoPago } from './MetodoPago.js'; // ✅ AGREGAR .js
+import { Pago } from './Pago.js';             // ✅ AGREGAR .js
 
 export enum EstadoCompra {
   PENDIENTE = 'pendiente',
@@ -42,21 +42,20 @@ export class Compra {
   @ManyToOne('MetodoPago')
   metodoPago!: MetodoPago;
 
-  // Esta es la línea que está causando el problema
-  @OneToMany(() => Pago, pago => pago.compra)  // ← Cambiar la sintaxis
+  @OneToMany(() => Pago, pago => pago.compra)
   pagos = new Collection<Pago>(this);
 
   constructor(
-    total: number,
-    compradorId: number,
-    camisetaId: number,
-    metodoPagoId: number,
-    direccionEnvio?: string
-  ) {
-    this.total = total;
-    this.comprador = compradorId as any;
-    this.camiseta = camisetaId as any;
-    this.metodoPago = metodoPagoId as any;
-    this.direccionEnvio = direccionEnvio;
-  }
+  total: number,
+  comprador: Usuario,      // ✅ Objeto completo
+  camiseta: Camiseta,      // ✅ Objeto completo
+  metodoPago: MetodoPago,  // ✅ Objeto completo
+  direccionEnvio?: string
+) {
+  this.total = total;
+  this.comprador = comprador;
+  this.camiseta = camiseta;
+  this.metodoPago = metodoPago;
+  this.direccionEnvio = direccionEnvio;
+}
 }
