@@ -16,6 +16,7 @@ import compraRoutes from './routes/compraRoutes.js';
 import pagoRoutes from './routes/pagoRoutes.js';
 import descuentoRoutes from './routes/descuentoRoutes.js';
 import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 
 async function main() {
@@ -44,6 +45,7 @@ async function main() {
   app.use('/api/pagos', pagoRoutes);
   app.use('/api/descuentos', descuentoRoutes);
   app.use('/api/metodos-pago', metodoPagoRoutes);  // ✅ AGREGAR ESTA LÍNEA
+  app.use('/api/admin', adminRoutes);  // ✅ AGREGAR: Rutas del administrador
   
   // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
   // app.use('/api/subastas', subastaRoutes);

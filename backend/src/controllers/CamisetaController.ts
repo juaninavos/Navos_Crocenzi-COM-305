@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
 import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta.js';
-import { Usuario } from '../entities/Usuario.js';  // ✅ AGREGAR IMPORT
-import { Categoria } from '../entities/Categoria.js';  // ✅ AGREGAR IMPORT
+import { Usuario, UsuarioRol } from '../entities/Usuario.js';  // ✅ CORREGIDO: Import desde Usuario.js
+import { Categoria } from '../entities/Categoria.js';
+import '../types/auth.js'; // ✅ AGREGAR: Para tipado de req.user
 
 export class CamisetaController {
   
@@ -103,16 +104,24 @@ export class CamisetaController {
   // POST /api/camisetas
   static async create(req: Request, res: Response) {
     try {
-      const { 
-        titulo, descripcion, equipo, temporada, talle, condicion, 
-        imagen, precioInicial, esSubasta, stock, categoriaId, vendedorId 
-      } = req.body;
+      // ✅ AGREGAR: Solo usuarios pueden vender camisetas
+      if (req.user.rol !== UsuarioRol.USUARIO) {
+        return res.status(403).json({
+          success: false,
+          message: 'Solo usuarios pueden publicar camisetas para venta'
+        });
+      }
+
+      // ✅ CORREGIR: El vendedor es el usuario autenticado
+      const vendedorId = req.user.id;
+
+      const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, categoriaId } = req.body;
       
-      if (!titulo || !descripcion || !equipo || !temporada || !talle || !condicion || !imagen || !precioInicial || !vendedorId) {
+      if (!titulo || !descripcion || !equipo || !temporada || !talle || !condicion || !imagen || !precioInicial) {
         return res.status(400).json({
           success: false,
           message: 'Faltan campos obligatorios según el constructor de Camiseta',
-          camposRequeridos: ['titulo', 'descripcion', 'equipo', 'temporada', 'talle', 'condicion', 'imagen', 'precioInicial', 'vendedorId']
+          camposRequeridos: ['titulo', 'descripcion', 'equipo', 'temporada', 'talle', 'condicion', 'imagen', 'precioInicial']
         });
       }
 
@@ -156,9 +165,6 @@ export class CamisetaController {
         precioInicial,
         vendedor  // ✅ Ahora TypeScript reconoce el tipo correcto
       );
-      
-      nuevaCamiseta.esSubasta = esSubasta || false;
-      nuevaCamiseta.stock = stock || 1;
       
       // ✅ CORREGIDO: Usar clase Categoria y verificar existencia
       if (categoriaId) {

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Descuento } from '../entities/Descuento.js';
+import { UsuarioRol } from '../entities/Usuario.js';
 
 export class DescuentoController {
   // GET /api/descuentos
@@ -138,6 +139,14 @@ export class DescuentoController {
   // POST /api/descuentos
   static async create(req: Request, res: Response) {
     try {
+      // ✅ AGREGAR: Solo administradores pueden crear descuentos
+      if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
+        return res.status(403).json({
+          success: false,
+          message: 'Solo administradores pueden crear descuentos'
+        });
+      }
+
       const { codigo, descripcion, porcentaje, fechaInicio, fechaFin } = req.body;
       
       // Validaciones básicas
@@ -244,6 +253,14 @@ export class DescuentoController {
   // PUT /api/descuentos/:id
   static async update(req: Request, res: Response) {
     try {
+      // ✅ AGREGAR: Solo administradores pueden actualizar descuentos
+      if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
+        return res.status(403).json({
+          success: false,
+          message: 'Solo administradores pueden modificar descuentos'
+        });
+      }
+
       const { id } = req.params;
       const { descripcion, porcentaje, fechaInicio, fechaFin, activo } = req.body;
       

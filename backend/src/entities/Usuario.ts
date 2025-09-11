@@ -4,8 +4,8 @@ import { Compra } from './Compra.js';      // ✅ CORREGIDO: Agregar .js
 import { Oferta } from './Oferta.js';      // ✅ CORREGIDO: Agregar .js
 
 export enum UsuarioRol {
-  USUARIO = 'usuario',
-  ADMINISTRADOR = 'administrador'
+  USUARIO = 'usuario',           // Comprador/Vendedor en el marketplace
+  ADMINISTRADOR = 'administrador' // Gestiona la plataforma
 }
 
 @Entity()
@@ -58,5 +58,18 @@ export class Usuario {
     this.direccion = direccion;
     this.telefono = telefono;
     this.rol = rol;
+  }
+
+  // ✅ AGREGAR: Métodos auxiliares para roles
+  esAdmin(): boolean {
+    return this.rol === UsuarioRol.ADMINISTRADOR;
+  }
+  
+  puedeVender(): boolean {
+    return this.activo && this.rol === UsuarioRol.USUARIO;
+  }
+  
+  puedeComprar(): boolean {
+    return this.activo && this.rol === UsuarioRol.USUARIO;
   }
 }

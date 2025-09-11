@@ -1,7 +1,8 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
-import { Usuario } from './Usuario';
-import { Categoria } from './Categoria';
-import { Subasta } from './Subasta';
+import { Usuario } from './Usuario.js';  // ✅ AGREGAR .js
+import { Categoria } from './Categoria.js';  // ✅ AGREGAR .js
+import { Subasta } from './Subasta.js';  // ✅ AGREGAR .js
+import { Compra } from './Compra.js';  // ✅ AGREGAR: Import Compra
 
 export enum Talle {
   XS = 'XS',
@@ -63,6 +64,13 @@ export class Camiseta {
   @Enum(() => EstadoCamiseta)
   estado: EstadoCamiseta = EstadoCamiseta.DISPONIBLE;
 
+  @Property()
+  fechaCreacion: Date = new Date();  // ✅ AGREGAR: Para ordenamiento en AdminController
+
+  @Property()
+  fechaPublicacion: Date = new Date();
+
+  // Relaciones
   @ManyToOne('Usuario')
   vendedor!: Usuario;
 
@@ -72,8 +80,8 @@ export class Camiseta {
   @OneToMany('Subasta', 'camiseta')
   subastas = new Collection<Subasta>(this);
 
-  @Property()
-  fechaPublicacion: Date = new Date();
+  @OneToMany('Compra', 'camiseta')  // ✅ AGREGAR: Relación con compras
+  compras = new Collection<Compra>(this);
 
   constructor(
     titulo: string,
@@ -84,7 +92,7 @@ export class Camiseta {
     condicion: CondicionCamiseta,
     imagen: string,
     precioInicial: number,
-    vendedor: Usuario  // ✅ CORREGIDO: Recibir objeto Usuario completo
+    vendedor: Usuario
   ) {
     this.titulo = titulo;
     this.descripcion = descripcion;
@@ -94,7 +102,7 @@ export class Camiseta {
     this.condicion = condicion;
     this.imagen = imagen;
     this.precioInicial = precioInicial;
-    this.vendedor = vendedor;  // ✅ CORREGIDO: Asignar objeto completo
+    this.vendedor = vendedor;
   }
 }
 

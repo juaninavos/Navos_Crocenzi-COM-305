@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
 import { Categoria } from '../entities/Categoria.js';  // ✅ CORREGIDO: Agregar .js
 import { Camiseta } from '../entities/Camiseta.js';     // ✅ AGREGAR: Para el count
+import { UsuarioRol } from '../entities/Usuario.js';   // ✅ AGREGAR: Para el rol de usuario
 
 export class CategoriaController {
   
@@ -62,6 +63,14 @@ export class CategoriaController {
   // POST /api/categorias
   static async create(req: Request, res: Response) {
     try {
+      // ✅ AGREGAR: Solo administradores pueden crear categorías
+      if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
+        return res.status(403).json({
+          success: false,
+          message: 'Solo administradores pueden crear categorías'
+        });
+      }
+
       const { nombre, descripcion } = req.body;
       
       // Validaciones básicas
