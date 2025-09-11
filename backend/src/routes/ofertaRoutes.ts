@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { OfertaController } from '../controllers/OfertaController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/', OfertaController.getAll);
 router.get('/:id', OfertaController.getById);

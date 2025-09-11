@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { CompraController } from '../controllers/CompraController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/', CompraController.getAll);
 router.get('/:id', CompraController.getById);

@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { PagoController } from '../controllers/PagoController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/', PagoController.getAll);
 router.get('/:id', PagoController.getById);

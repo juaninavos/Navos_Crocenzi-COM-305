@@ -18,6 +18,9 @@ import descuentoRoutes from './routes/descuentoRoutes.js';
 import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import authRouter from './controllers/AuthController.js';
+import authMiddleware from './middleware/auth.js';
+import roleGuard from './middleware/roleGuard.js';
 
 async function main() {
   const orm = await MikroORM.init(config);
@@ -34,6 +37,9 @@ async function main() {
   
   // Hacer ORM disponible en todas las rutas
   app.locals.orm = orm;
+
+  // Auth routes
+  app.use('/api/auth', authRouter(orm));
 
   // 🎯 FASE 1: REGULARIDAD - Rutas básicas
   app.use('/api/usuarios', usuarioRoutes);
@@ -70,6 +76,11 @@ async function main() {
         'POST /api/categorias'
       ]
     });
+  });
+
+  // Ejemplo: ruta protegida por JWT y por role
+  app.get('/api/protegida/admin', authMiddleware(), roleGuard(['admin']), (req, res) => {
+    res.json({ message: 'Acceso concedido a administrador' });
   });
 
   // Middleware para rutas no encontradas (debe ir después de todas las rutas)

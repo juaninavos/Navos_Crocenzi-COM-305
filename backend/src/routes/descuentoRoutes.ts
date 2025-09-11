@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { DescuentoController } from '../controllers/DescuentoController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/', DescuentoController.getAll);
 router.get('/:id', DescuentoController.getById);

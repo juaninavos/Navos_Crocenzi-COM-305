@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { UsuarioController } from '../controllers/UsuarioController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // 🎯 CRUD básico para REGULARIDAD
 router.get('/', UsuarioController.getAll);        // GET /api/usuarios

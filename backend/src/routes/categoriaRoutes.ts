@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { CategoriaController } from '../controllers/CategoriaController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Rutas para categorías
 router.get('/', CategoriaController.getAll);

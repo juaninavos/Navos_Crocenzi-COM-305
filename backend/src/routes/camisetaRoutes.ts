@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { CamisetaController } from '../controllers/CamisetaController';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // 🎯 CRUD básico + filtros para REGULARIDAD
 router.get('/', CamisetaController.getAll);        // GET /api/camisetas?equipo=Argentina

@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { SubastaController } from '../controllers/SubastaController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 router.get('/', SubastaController.getAll);
 router.get('/:id', SubastaController.getById);

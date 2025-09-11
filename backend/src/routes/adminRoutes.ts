@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import express from 'express';
 import { AdminController } from '../controllers/AdminController.js';
 
-const router = Router();
+const router: express.Router = express.Router();
 
 // Todas las rutas requieren autenticación y rol de administrador
 router.get('/dashboard', AdminController.getDashboard);
