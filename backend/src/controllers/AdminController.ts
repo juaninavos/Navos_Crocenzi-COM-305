@@ -11,7 +11,7 @@ export class AdminController {
   static async getDashboard(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      
+
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -117,10 +117,11 @@ export class AdminController {
         nombre: usuario.nombre,
         apellido: usuario.apellido,
         email: usuario.email,
+        email_normalized: usuario.email_normalized,
         activo: usuario.activo,
         fechaRegistro: usuario.fechaRegistro,
         estadisticas: {
-          camisetasPublicadas: usuario.camisetasVendidas.length,
+          camisetasVendidas: usuario.camisetasVendidas.length,
           comprasRealizadas: usuario.compras.length,
           fechaUltimaActividad: usuario.fechaRegistro
         }

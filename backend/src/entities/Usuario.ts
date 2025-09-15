@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, OneToMany, Collection, Enum } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, OneToMany, Collection, Enum, Unique } from '@mikro-orm/core';
 import { Camiseta } from './Camiseta.js';  // ✅ CORREGIDO: Agregar .js
 import { Compra } from './Compra.js';      // ✅ CORREGIDO: Agregar .js
 import { Oferta } from './Oferta.js';      // ✅ CORREGIDO: Agregar .js
@@ -21,6 +21,10 @@ export class Usuario {
 
   @Property({ unique: true })
   email!: string;
+
+  @Property()
+  @Unique()
+  email_normalized!: string;
 
   @Property()
   contrasena!: string;

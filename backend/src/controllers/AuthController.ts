@@ -1,6 +1,6 @@
-import express, { Request, Response, Router } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload, TokenExpiredError, JsonWebTokenError, SignOptions } from 'jsonwebtoken';
 import { MikroORM, wrap } from '@mikro-orm/core';
 import { Usuario } from '../entities/Usuario';
 
@@ -43,7 +43,8 @@ function sanitizeString(v: any): string | undefined {
 }
 
 // --- Middleware exportable para proteger rutas ---
-export function authMiddleware(req: Request, res: Response, next: Function) {
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const header = (req.headers.authorization || '') as string;
   if (!header.startsWith('Bearer ')) return res.status(401).json({ error: 'token requerido' });
   const token = header.slice(7);
@@ -73,6 +74,7 @@ export default function authRouter(orm: MikroORM): Router {
 
       if (!emailRaw || !contrasenaRaw) return res.status(400).json({ error: 'email y contrasena requeridos' });
       const email = emailRaw.toLowerCase();
+      const email_normalized = email;
 
       if (!isValidEmail(email)) return res.status(400).json({ error: 'email invalido' });
       if (contrasenaRaw.length < 8) return res.status(400).json({ error: 'contrasena debe tener al menos 8 caracteres' });
@@ -81,12 +83,12 @@ export default function authRouter(orm: MikroORM): Router {
       if (rol && !ALLOWED_ROLES.includes(rol)) return res.status(400).json({ error: 'rol invalido' });
 
       // Evitar duplicados (check optimista). La defensa definitiva debe ser un UNIQUE en la BD.
-      const exist = await em.findOne(Usuario, { email });
+      const exist = await em.findOne(Usuario, { email_normalized });
       if (exist) return res.status(409).json({ error: 'usuario ya existe' });
 
       const hashed = await bcrypt.hash(contrasenaRaw, BCRYPT_SALT_ROUNDS);
 
-      const user = em.create(Usuario, {nombre,apellido,email,contrasena: hashed,direccion,telefono,rol,} as any);
+      const user = em.create(Usuario, {nombre,apellido,email,email_normalized,contrasena: hashed,direccion,telefono,rol,} as any);
 
       try {
         await em.persistAndFlush(user);
@@ -99,11 +101,16 @@ export default function authRouter(orm: MikroORM): Router {
         throw e;
       }
 
+      if (!(user as any).id || typeof (user as any).id !== 'number') {
+      return res.status(500).json({ error: 'error interno' });
+    }
       // Serializar el usuario de forma segura usando wrap().toObject()
       const safeUser = wrap(user).toObject();
       delete (safeUser as any).contrasena;
 
-      const token = createToken({ id: (user as any).id, rol: (user as any).rol }, String((user as any).id));
+      const token = createToken({ id: user.id, rol: user.rol }, String(user.id));
+      const decoded = jwt.decode(token) as JwtPayload;
+      const maxAge = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
 
       // Opcional: setear cookie HttpOnly si lo configuraste
       if (JWT_USE_COOKIE) {
@@ -119,9 +126,9 @@ export default function authRouter(orm: MikroORM): Router {
 
       return res.status(201).json({ user: safeUser, token });
     } catch (err) {
-      console.error('POST /auth/register error:', err);
-      return res.status(500).json({ error: (err instanceof Error) ? err.message : 'unknown' });
-    }
+        console.error('POST /auth/register error:', err);
+        return res.status(500).json({ error: 'error interno' });
+  }
   });
 
   // Login
