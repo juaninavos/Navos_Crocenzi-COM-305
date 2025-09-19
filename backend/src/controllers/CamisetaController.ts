@@ -5,51 +5,60 @@ import { Usuario, UsuarioRol } from '../entities/Usuario.js';  // ✅ CORREGIDO:
 import { Categoria } from '../entities/Categoria.js';
 import '../types/auth.js'; // ✅ AGREGAR: Para tipado de req.user
 
+
 export class CamisetaController {
   
   // GET /api/camisetas - Con filtros
   static async getAll(req: Request, res: Response) {
     try {
-      const { equipo, temporada, talle, condicion } = req.query;
-      
+      // Zod: Validación estricta de filtros
+  const { equipo, temporada, talle, condicion, esSubasta } = req.query;
+      const { z } = await import('zod');
+      const TalleEnum = z.enum(["XS", "S", "M", "L", "XL", "XXL"]);
+      const CondicionEnum = z.enum(["NUEVA", "USADA", "VINTAGE"]);
+      const filtrosSchema = z.object({
+        equipo: z.string().optional(),
+        temporada: z.string().optional(),
+        talle: TalleEnum.optional(),
+        condicion: CondicionEnum.optional(),
+        esSubasta: z.preprocess((val) => {
+          if (typeof val === 'string') {
+            if (val === 'true') return true;
+            if (val === 'false') return false;
+          }
+          return val;
+        }, z.boolean().optional())
+      });
+      const parseResult = filtrosSchema.safeParse({ equipo, temporada, talle, condicion, esSubasta });
+      if (!parseResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Filtros inválidos',
+          errors: parseResult.error.issues
+        });
+      }
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
-      
-      // Construir filtros dinámicamente
       const filtros: any = { estado: { $ne: EstadoCamiseta.INACTIVA } };
-      
-      console.log('🔍 Filtros recibidos:', { equipo, temporada, talle, condicion });
-      
-      // Filtro de equipo - SIMPLIFICADO
-      if (equipo) {
-        const equipoValue = decodeURIComponent(equipo as string);
-        console.log('🔍 Buscando equipo:', equipoValue);
-        
-        // Prueba con búsqueda exacta primero
+      if (parseResult.data.equipo) {
+        const equipoValue = decodeURIComponent(parseResult.data.equipo);
         filtros.equipo = equipoValue;
-        console.log('🔍 Filtros aplicados:', filtros);
       }
-      
-      if (temporada) {
-        filtros.temporada = temporada;
+      if (parseResult.data.temporada) {
+        filtros.temporada = parseResult.data.temporada;
       }
-      
-      if (talle) {
-        filtros.talle = talle;
+      if (parseResult.data.talle) {
+        filtros.talle = parseResult.data.talle;
       }
-      
-      if (condicion) {
-        filtros.condicion = condicion;
+      if (parseResult.data.condicion) {
+        filtros.condicion = parseResult.data.condicion;
       }
-
-      console.log('🔍 Ejecutando query con filtros:', filtros);
-
-      const camisetas = await em.find(Camiseta, filtros, {  // ✅ CORREGIDO: Usar clase Camiseta
+      if (typeof parseResult.data.esSubasta === 'boolean') {
+        filtros.esSubasta = parseResult.data.esSubasta;
+      }
+      const camisetas = await em.find(Camiseta, filtros, {
         populate: ['categoria', 'vendedor']
       });
-
-      console.log(`🔍 Resultados encontrados: ${camisetas.length}`);
-
       res.json({
         success: true,
         data: camisetas,
@@ -104,7 +113,7 @@ export class CamisetaController {
   // POST /api/camisetas
   static async create(req: Request, res: Response) {
     try {
-      // ✅ AGREGAR: Solo usuarios pueden vender camisetas
+      // Solo usuarios pueden vender camisetas
       if (req.user.rol !== UsuarioRol.USUARIO) {
         return res.status(403).json({
           success: false,
@@ -112,40 +121,46 @@ export class CamisetaController {
         });
       }
 
-      // ✅ CORREGIR: El vendedor es el usuario autenticado
+      // El vendedor es el usuario autenticado
       const vendedorId = req.user.id;
 
-      const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, categoriaId } = req.body;
-      
-      if (!titulo || !descripcion || !equipo || !temporada || !talle || !condicion || !imagen || !precioInicial) {
+      // Validación robusta con Zod
+      const { z } = await import('zod');
+      const TalleEnum = z.enum(["XS", "S", "M", "L", "XL", "XXL"]);
+      const CondicionEnum = z.enum(["NUEVA", "USADA", "REACONDICIONADA"]);
+      const createSchema = z.object({
+        titulo: z.string().min(2),
+        descripcion: z.string().min(5),
+        equipo: z.string().min(2),
+        temporada: z.string().min(2),
+        talle: TalleEnum,
+        condicion: CondicionEnum,
+        imagen: z.string().min(5),
+        precioInicial: z.number().positive(),
+        categoriaId: z.number().int().optional()
+      });
+      // Si viene como string (por JSON), convertir precioInicial y categoriaId
+      const body = {
+        ...req.body,
+        precioInicial: typeof req.body.precioInicial === 'string' ? Number(req.body.precioInicial) : req.body.precioInicial,
+        categoriaId: req.body.categoriaId !== undefined ? Number(req.body.categoriaId) : undefined
+      };
+      const parseResult = createSchema.safeParse(body);
+      if (!parseResult.success) {
         return res.status(400).json({
           success: false,
-          message: 'Faltan campos obligatorios según el constructor de Camiseta',
-          camposRequeridos: ['titulo', 'descripcion', 'equipo', 'temporada', 'talle', 'condicion', 'imagen', 'precioInicial']
+          message: 'Datos inválidos para crear camiseta',
+          errors: parseResult.error.issues
         });
       }
+      const {
+        titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, categoriaId
+      } = parseResult.data;
 
-      const tallesValidos = Object.values(Talle);
-      const condicionesValidas = Object.values(CondicionCamiseta);
-
-      if (!tallesValidos.includes(talle)) {
-        return res.status(400).json({
-          success: false,
-          message: `Talle inválido. Valores permitidos: ${tallesValidos.join(', ')}`
-        });
-      }
-
-      if (!condicionesValidas.includes(condicion)) {
-        return res.status(400).json({
-          success: false,
-          message: `Condición inválida. Valores permitidos: ${condicionesValidas.join(', ')}`
-        });
-      }
-      
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
-      
-      // ✅ CORREGIDO: Usar clase Usuario en lugar de string
+
+      // Usar clase Usuario en lugar de string
       const vendedor = await em.findOne(Usuario, { id: vendedorId });
       if (!vendedor) {
         return res.status(404).json({
@@ -153,7 +168,7 @@ export class CamisetaController {
           message: 'Vendedor no encontrado'
         });
       }
-      
+
       const nuevaCamiseta = new Camiseta(
         titulo,
         descripcion,
@@ -163,10 +178,10 @@ export class CamisetaController {
         condicion as CondicionCamiseta,
         imagen,
         precioInicial,
-        vendedor  // ✅ Ahora TypeScript reconoce el tipo correcto
+        vendedor
       );
-      
-      // ✅ CORREGIDO: Usar clase Categoria y verificar existencia
+
+      // Usar clase Categoria y verificar existencia
       if (categoriaId) {
         const categoria = await em.findOne(Categoria, { id: categoriaId });
         if (categoria) {
