@@ -1,0 +1,39 @@
+.App {
+  min-height: 100vh;
+}
+
+.card-camiseta {
+  transition: transform 0.2s;
+  border: 1px solid #dee2e6;
+}
+
+.card-camiseta:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.precio {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.navbar-brand {
+  font-weight: bold;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .precio {
+    font-size: 1.25rem;
+  }
+  
+  .card-camiseta {
+    margin-bottom: 1rem;
+  }
+}
