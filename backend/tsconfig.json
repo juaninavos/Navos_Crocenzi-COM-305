@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "ESNext",
+    "module": "CommonJS", // ✅ CAMBIAR: ESNext → CommonJS
     "moduleResolution": "Node",
     "rootDir": "./src",
     "outDir": "./dist",
@@ -15,7 +15,10 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"] // ✅ AGREGAR: Incluir tipos custom
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "ts-node": {
+    "esm": false // ✅ AGREGAR: Forzar CommonJS en ts-node
   },
   "include": [
     "src/**/*"

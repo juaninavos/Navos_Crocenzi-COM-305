@@ -1,5 +1,5 @@
 import express from 'express';
-import { PagoController } from '../controllers/PagoController.js';
+import { PagoController } from '../controllers/PagoController';
 
 const router: express.Router = express.Router();
 

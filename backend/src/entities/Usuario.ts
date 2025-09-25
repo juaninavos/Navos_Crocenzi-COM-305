@@ -1,7 +1,7 @@
 import { Entity, PrimaryKey, Property, OneToMany, Collection, Enum, Unique } from '@mikro-orm/core';
-import { Camiseta } from './Camiseta.js';  // ✅ CORREGIDO: Agregar .js
-import { Compra } from './Compra.js';      // ✅ CORREGIDO: Agregar .js
-import { Oferta } from './Oferta.js';      // ✅ CORREGIDO: Agregar .js
+import { Camiseta } from './Camiseta'; 
+import { Compra } from './Compra';      
+import { Oferta } from './Oferta';      
 
 export enum UsuarioRol {
   USUARIO = 'usuario',           // Comprador/Vendedor en el marketplace
@@ -58,6 +58,7 @@ export class Usuario {
     this.nombre = nombre;
     this.apellido = apellido;
     this.email = email;
+    this.email_normalized = email.toLowerCase().trim(); // ✅ AGREGAR ESTA LÍNEA
     this.contrasena = contrasena;
     this.direccion = direccion;
     this.telefono = telefono;

@@ -1,4 +1,4 @@
-import { UsuarioRol } from '../entities/Usuario.js';
+import { UsuarioRol } from '../entities/Usuario';
 
 export interface AuthUser {
   id: number;

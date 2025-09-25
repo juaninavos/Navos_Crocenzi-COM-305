@@ -1,8 +1,8 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
-import { Usuario } from './Usuario.js';       // ✅ AGREGAR .js
-import { Camiseta } from './Camiseta.js';     // ✅ AGREGAR .js
-import { MetodoPago } from './MetodoPago.js'; // ✅ AGREGAR .js
-import { Pago } from './Pago.js';             // ✅ AGREGAR .js
+import { Usuario } from './Usuario';      
+import { Camiseta } from './Camiseta';     
+import { MetodoPago } from './MetodoPago'; 
+import { Pago } from './Pago';    
 
 export enum EstadoCompra {
   PENDIENTE = 'pendiente',

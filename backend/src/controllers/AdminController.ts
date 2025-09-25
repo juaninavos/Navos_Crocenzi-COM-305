@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { Usuario, UsuarioRol } from '../entities/Usuario.js';
-import { Camiseta } from '../entities/Camiseta.js';
-import { Compra } from '../entities/Compra.js';
-import { Subasta } from '../entities/Subasta.js';
-import '../types/auth.js';
+import { Usuario, UsuarioRol } from '../entities/Usuario';
+import { Camiseta } from '../entities/Camiseta';
+import { Compra } from '../entities/Compra';
+import { Subasta } from '../entities/Subasta';
+import '../types/auth';
 
 export class AdminController {
   

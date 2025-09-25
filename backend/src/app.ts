@@ -2,7 +2,7 @@
 import 'reflect-metadata';
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
-// import cors from 'cors';  // Comentado temporalmente hasta instalar @types/cors
+import cors from 'cors';  // ✅ DESCOMMENTAR
 import { MikroORM } from '@mikro-orm/core';
 import config from './mikro-orm.config';
 
@@ -10,31 +10,40 @@ import config from './mikro-orm.config';
 import usuarioRoutes from './routes/usuarioRoutes';
 import camisetaRoutes from './routes/camisetaRoutes';
 import categoriaRoutes from './routes/categoriaRoutes';
-import ofertaRoutes from './routes/ofertaRoutes.js';
-import subastaRoutes from './routes/subastaRoutes.js';
-import compraRoutes from './routes/compraRoutes.js';
-import pagoRoutes from './routes/pagoRoutes.js';
-import descuentoRoutes from './routes/descuentoRoutes.js';
-import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
+import ofertaRoutes from './routes/ofertaRoutes';
+import subastaRoutes from './routes/subastaRoutes';
+import compraRoutes from './routes/compraRoutes';
+import pagoRoutes from './routes/pagoRoutes';
+import descuentoRoutes from './routes/descuentoRoutes';
+import metodoPagoRoutes from './routes/metodoPagoRoutes';
+import adminRoutes from './routes/adminRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import authRouter from './controllers/AuthController.js';
-import authMiddleware from './middleware/auth.js';
-import roleGuard from './middleware/roleGuard.js';
+import authRouter from './controllers/AuthController';
+import authMiddleware from './middleware/auth';
+import roleGuard from './middleware/roleGuard';
 
 async function main() {
   const orm = await MikroORM.init(config);
   const app = express();
 
+  // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
+  app.use(cors({
+    origin: 'http://localhost:5173', // ✅ Frontend URL
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
+
   // Middleware
   app.use(express.json());
-  
-  // CORS configurado (comentado temporalmente)
-  // app.use(cors({
-  //   origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
-  //   credentials: true
-  // }));
-  
+
+  app.use((req, res, next) => {
+    console.log(`🔍 ${req.method} ${req.url}`);
+    console.log('📦 Body:', req.body);
+    console.log('🌐 Origin:', req.get('origin'));
+    next();
+  });
+
   // Hacer ORM disponible en todas las rutas
   app.locals.orm = orm;
 
@@ -50,8 +59,8 @@ async function main() {
   app.use('/api/compras', compraRoutes);
   app.use('/api/pagos', pagoRoutes);
   app.use('/api/descuentos', descuentoRoutes);
-  app.use('/api/metodos-pago', metodoPagoRoutes);  // ✅ AGREGAR ESTA LÍNEA
-  app.use('/api/admin', adminRoutes);  // ✅ AGREGAR: Rutas del administrador
+  app.use('/api/metodos-pago', metodoPagoRoutes);  
+  app.use('/api/admin', adminRoutes);  
   
   // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
   // app.use('/api/subastas', subastaRoutes);
@@ -90,7 +99,7 @@ async function main() {
   app.use(errorHandler);
 
   // Puerto del servidor
-  const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3001; // ✅ CAMBIAR AQUÍ
   app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📋 Fase actual: REGULARIDAD`);

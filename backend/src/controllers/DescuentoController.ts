@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Descuento } from '../entities/Descuento.js';
-import { UsuarioRol } from '../entities/Usuario.js';
+import { Descuento } from '../entities/Descuento';
+import { UsuarioRol } from '../entities/Usuario';
 
 export class DescuentoController {
   // GET /api/descuentos

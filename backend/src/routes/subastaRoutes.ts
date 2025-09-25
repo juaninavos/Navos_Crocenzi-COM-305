@@ -1,5 +1,5 @@
 import express from 'express';
-import { SubastaController } from '../controllers/SubastaController.js';
+import { SubastaController } from '../controllers/SubastaController';
 
 const router: express.Router = express.Router();
 

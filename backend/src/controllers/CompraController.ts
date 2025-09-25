@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { Compra, EstadoCompra } from '../entities/Compra.js';         // ✅ AGREGAR EstadoCompra
-import { Usuario } from '../entities/Usuario.js';
-import { Camiseta, EstadoCamiseta } from '../entities/Camiseta.js';   // ✅ AGREGAR EstadoCamiseta
-import { Descuento } from '../entities/Descuento.js';
-import { MetodoPago } from '../entities/MetodoPago.js';
+import { Compra, EstadoCompra } from '../entities/Compra';         // ✅ AGREGAR EstadoCompra
+import { Usuario } from '../entities/Usuario';
+import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';   // ✅ AGREGAR EstadoCamiseta
+import { Descuento } from '../entities/Descuento';
+import { MetodoPago } from '../entities/MetodoPago';
 
 export class CompraController {
   // GET /api/compras

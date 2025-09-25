@@ -12,7 +12,7 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login } = useAuth();
+  const { login: authLogin } = useAuth(); // ✅ Usar AuthContext
   const navigate = useNavigate();
 
   // Manejar cambios en los inputs
@@ -30,24 +30,27 @@ export const Login = () => {
     setError('');
 
     try {
-      // Llamar al backend
-      const response = await authService.login(formData);
+      console.log('🔍 Intentando login...'); 
       
-      if (response.success) {
-        // Login exitoso
-        login(response.data.usuario, response.data.token);
+      const response = await authService.login(formData);
+      console.log('✅ Login exitoso:', response); 
+      
+      if (response.success && response.data) {
+        const { token, usuario } = response.data;
         
-        // Redirigir según el rol
-        if (response.data.usuario.rol === 'administrador') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        // ✅ USAR AUTHCONTEXT EN LUGAR DE LOCALSTORAGE DIRECTO
+        authLogin(usuario, token);
+        
+        console.log('✅ AuthContext actualizado, redirigiendo...'); 
+        navigate('/');
       } else {
-        setError(response.message || 'Error al hacer login');
+        console.error('❌ Estructura de respuesta inesperada:', response); 
+        setError('Error en la respuesta del servidor');
       }
+      
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Error de conexión');
+      console.error('❌ Error en login:', error); 
+      setError(error.message || 'Error de conexión');
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { Pago, EstadoPago } from '../entities/Pago.js';  // ✅ AGREGAR: EstadoPago
-import { Compra, EstadoCompra } from '../entities/Compra.js';  // ✅ AGREGAR: EstadoCompra
-import { MetodoPago } from '../entities/MetodoPago.js';
-import { EstadoCamiseta } from '../entities/Camiseta.js';  // ✅ AGREGAR: EstadoCamiseta
+import { Pago, EstadoPago } from '../entities/Pago';  // ✅ AGREGAR: EstadoPago
+import { Compra, EstadoCompra } from '../entities/Compra';  // ✅ AGREGAR: EstadoCompra
+import { MetodoPago } from '../entities/MetodoPago';
+import { EstadoCamiseta } from '../entities/Camiseta';  // ✅ AGREGAR: EstadoCamiseta
 
 export class PagoController {
   // GET /api/pagos

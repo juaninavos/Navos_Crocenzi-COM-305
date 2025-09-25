@@ -9,17 +9,17 @@ importers:
   .:
     dependencies:
       '@mikro-orm/cli':
-        specifier: ^6.3.8
+        specifier: 6.4.16
         version: 6.4.16(mysql2@3.14.1)
       '@mikro-orm/core':
-        specifier: ^6.3.8
+        specifier: 6.4.16
         version: 6.4.16
       '@mikro-orm/mysql':
-        specifier: ^6.3.8
+        specifier: 6.4.16
         version: 6.4.16(@mikro-orm/core@6.4.16)
       '@mikro-orm/reflection':
-        specifier: ^6.3.8
-        version: 6.5.2(@mikro-orm/core@6.4.16)
+        specifier: 6.4.16
+        version: 6.4.16(@mikro-orm/core@6.4.16)
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3
@@ -408,8 +408,8 @@ packages:
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
 
-  '@mikro-orm/reflection@6.5.2':
-    resolution: {integrity: sha512-tzKYFs5T2RKQ/zcomJIhAfGy+mScJB/+oSphPx9KrrTooAZtJgcHJddaR1TFW5oiq4je4tQ265+DDsYYOLsj7w==}
+  '@mikro-orm/reflection@6.4.16':
+    resolution: {integrity: sha512-waPaDZwOlwNUUuD00rj8HrByhs1y5hvTEFIc14LX0mgtP+OHkarM7+JTJ68RB2UaDVyZ/Bmof9uhH7TOH2awVw==}
     engines: {node: '>= 18.12.0'}
     peerDependencies:
       '@mikro-orm/core': ^6.0.0
@@ -2695,7 +2695,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@mikro-orm/reflection@6.5.2(@mikro-orm/core@6.4.16)':
+  '@mikro-orm/reflection@6.4.16(@mikro-orm/core@6.4.16)':
     dependencies:
       '@mikro-orm/core': 6.4.16
       globby: 11.1.0

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Usuario, UsuarioRol } from '../entities/Usuario.js';  // ✅ CORREGIDO: Agregar .js y UsuarioRol
+import { Usuario, UsuarioRol } from '../entities/Usuario';  // ✅ CORREGIDO: Agregar .js y UsuarioRol
 
 export class UsuarioController {
   

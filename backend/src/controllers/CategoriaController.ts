@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Categoria } from '../entities/Categoria.js';  // ✅ CORREGIDO: Agregar .js
-import { Camiseta } from '../entities/Camiseta.js';     // ✅ AGREGAR: Para el count
-import { UsuarioRol } from '../entities/Usuario.js';   // ✅ AGREGAR: Para el rol de usuario
+import { Categoria } from '../entities/Categoria';  // ✅ CORREGIDO: Agregar .js
+import { Camiseta } from '../entities/Camiseta';     // ✅ AGREGAR: Para el count
+import { UsuarioRol } from '../entities/Usuario';   // ✅ AGREGAR: Para el rol de usuario
 
 export class CategoriaController {
   

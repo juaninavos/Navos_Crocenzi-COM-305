@@ -10,7 +10,11 @@
 
 ## Tema
 ### Descripción
-Emprendimiento digital de venta de camisetas de futbol retro. El administrador del negocio podrá publicar articulos para la venta, gestionar stock y ofrecer descuentos y promociones a los usuarios. Las publicaciones podrán tener dos opciones de precios: fijos o subastados. En caso de ser subastado se gestionarán las ofertas que los usuarios realicen sobre un articulo y el precio final resultante. Además, el usuario podrá realizar busquedas del articulo deseado y filtrar según sus preferencias, añadir los articulos a un pedido y realizarlo. 
+Marketplace digital de venta de camisetas de fútbol retro donde usuarios actúan como compradores y vendedores. Los usuarios pueden publicar sus camisetas con precio fijo o subasta, comprar camisetas de otros usuarios y participar en ofertas. El administrador gestiona la plataforma, crea promociones y supervisa transacciones. El sistema incluye búsquedas avanzadas, filtros, sistema de ofertas competitivas y procesamiento de pagos.
+
+**Tipos de usuarios:**
+- **Usuario común:** Puede comprar y vender camisetas, participar en subastas, gestionar su perfil y historial de transacciones.
+- **Administrador:** Puede hacer todo lo anterior y además gestionar usuarios, ver estadísticas, crear descuentos y categorías, generar reportes y supervisar la plataforma completa.
 
 ### Modelo
 [![imagen del modelo]()]

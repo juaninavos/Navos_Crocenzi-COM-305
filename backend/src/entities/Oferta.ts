@@ -1,6 +1,6 @@
 import { Entity, PrimaryKey, Property, ManyToOne } from '@mikro-orm/core';
-import { Subasta } from './Subasta.js';  // ✅ CORREGIDO: Agregar .js
-import { Usuario } from './Usuario.js';  // ✅ CORREGIDO: Agregar .js
+import { Subasta } from './Subasta';  
+import { Usuario } from './Usuario';  
 
 @Entity()
 export class Oferta {

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Oferta } from '../entities/Oferta.js';
-import { Usuario } from '../entities/Usuario.js';
-import { Subasta } from '../entities/Subasta.js';
+import { Oferta } from '../entities/Oferta';
+import { Usuario } from '../entities/Usuario';
+import { Subasta } from '../entities/Subasta';
 
 export class OfertaController {
   // GET /api/ofertas

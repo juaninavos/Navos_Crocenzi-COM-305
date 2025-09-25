@@ -1,72 +1,76 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import type { Usuario } from '../types';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// ¿Qué información vamos a compartir?
-interface AuthContextType {
-  usuario: Usuario | null;        // El usuario logueado (o null)
-  token: string | null;           // El token JWT (o null)
-  login: (usuario: Usuario, token: string) => void;  // Función para hacer login
-  logout: () => void;             // Función para hacer logout
-  isAuthenticated: boolean;       // ¿Está logueado? true/false
+interface User {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: string;
 }
 
-// Crear el contexto
+interface AuthContextType {
+  user: User | null;
+  token: string | null;
+  login: (userData: User, token: string) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Proveedor del contexto (envuelve toda la app)
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Al cargar la app, revisar si hay token guardado
+  // ✅ CARGAR DATOS AL INICIAR
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('usuario');
+    const savedUser = localStorage.getItem('user');
+    
+    console.log('🔍 AuthContext - Cargando datos:', { savedToken: !!savedToken, savedUser: !!savedUser });
     
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUsuario(JSON.parse(savedUser));
+      try {
+        const userData = JSON.parse(savedUser);
+        setToken(savedToken);
+        setUser(userData);
+        console.log('✅ Usuario cargado:', userData);
+      } catch (error) {
+        console.error('❌ Error parsing user data:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
   }, []);
 
-  // Función para hacer login
-  const login = (usuario: Usuario, token: string) => {
-    setUsuario(usuario);
-    setToken(token);
-    localStorage.setItem('token', token);
-    localStorage.setItem('usuario', JSON.stringify(usuario));
+  const login = (userData: User, authToken: string) => {
+    console.log('🔍 AuthContext - Login:', userData);
+    setUser(userData);
+    setToken(authToken);
+    localStorage.setItem('token', authToken);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  // Función para hacer logout  
   const logout = () => {
-    setUsuario(null);
+    setUser(null);
     setToken(null);
     localStorage.removeItem('token');
-    localStorage.removeItem('usuario');
+    localStorage.removeItem('user');
   };
 
-  // ¿Está autenticado?
-  const isAuthenticated = !!token && !!usuario;
+  const isAuthenticated = !!user && !!token;
 
   return (
-    <AuthContext.Provider value={{
-      usuario,
-      token,
-      login,
-      logout,
-      isAuthenticated
-    }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Hook para usar el contexto fácilmente
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
+  if (context === undefined) {
+    throw new Error('useAuth debe ser usado dentro de AuthProvider');
   }
   return context;
 };

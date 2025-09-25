@@ -1,25 +1,30 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
 // src/app.ts
-require("reflect-metadata");
-require("dotenv/config");
-const express_1 = __importDefault(require("express"));
+import 'reflect-metadata';
+import 'dotenv/config';
+import express from 'express';
 // import cors from 'cors';  // Comentado temporalmente hasta instalar @types/cors
-const core_1 = require("@mikro-orm/core");
-const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
+import { MikroORM } from '@mikro-orm/core';
+import config from './mikro-orm.config';
 // Importar rutas
-const usuarioRoutes_1 = __importDefault(require("./routes/usuarioRoutes"));
-const camisetaRoutes_1 = __importDefault(require("./routes/camisetaRoutes"));
-const categoriaRoutes_1 = __importDefault(require("./routes/categoriaRoutes"));
-const errorHandler_1 = require("./middleware/errorHandler");
+import usuarioRoutes from './routes/usuarioRoutes';
+import camisetaRoutes from './routes/camisetaRoutes';
+import categoriaRoutes from './routes/categoriaRoutes';
+import ofertaRoutes from './routes/ofertaRoutes.js';
+import subastaRoutes from './routes/subastaRoutes.js';
+import compraRoutes from './routes/compraRoutes.js';
+import pagoRoutes from './routes/pagoRoutes.js';
+import descuentoRoutes from './routes/descuentoRoutes.js';
+import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import authRouter from './controllers/AuthController.js';
+import authMiddleware from './middleware/auth.js';
+import roleGuard from './middleware/roleGuard.js';
 async function main() {
-    const orm = await core_1.MikroORM.init(mikro_orm_config_1.default);
-    const app = (0, express_1.default)();
+    const orm = await MikroORM.init(config);
+    const app = express();
     // Middleware
-    app.use(express_1.default.json());
+    app.use(express.json());
     // CORS configurado (comentado temporalmente)
     // app.use(cors({
     //   origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
@@ -27,10 +32,19 @@ async function main() {
     // }));
     // Hacer ORM disponible en todas las rutas
     app.locals.orm = orm;
+    // Auth routes
+    app.use('/api/auth', authRouter(orm));
     // 🎯 FASE 1: REGULARIDAD - Rutas básicas
-    app.use('/api/usuarios', usuarioRoutes_1.default);
-    app.use('/api/camisetas', camisetaRoutes_1.default);
-    app.use('/api/categorias', categoriaRoutes_1.default);
+    app.use('/api/usuarios', usuarioRoutes);
+    app.use('/api/categorias', categoriaRoutes);
+    app.use('/api/camisetas', camisetaRoutes);
+    app.use('/api/ofertas', ofertaRoutes);
+    app.use('/api/subastas', subastaRoutes);
+    app.use('/api/compras', compraRoutes);
+    app.use('/api/pagos', pagoRoutes);
+    app.use('/api/descuentos', descuentoRoutes);
+    app.use('/api/metodos-pago', metodoPagoRoutes); // ✅ AGREGAR ESTA LÍNEA
+    app.use('/api/admin', adminRoutes); // ✅ AGREGAR: Rutas del administrador
     // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
     // app.use('/api/subastas', subastaRoutes);
     // app.use('/api/ofertas', ofertaRoutes);
@@ -54,10 +68,14 @@ async function main() {
             ]
         });
     });
+    // Ejemplo: ruta protegida por JWT y por role
+    app.get('/api/protegida/admin', authMiddleware(), roleGuard(['admin']), (req, res) => {
+        res.json({ message: 'Acceso concedido a administrador' });
+    });
     // Middleware para rutas no encontradas (debe ir después de todas las rutas)
-    app.use(errorHandler_1.notFoundHandler);
+    app.use(notFoundHandler);
     // Middleware global de manejo de errores (debe ir al final)
-    app.use(errorHandler_1.errorHandler);
+    app.use(errorHandler);
     // Puerto del servidor
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
@@ -67,4 +85,3 @@ async function main() {
     });
 }
 main().catch(console.error);
-//# sourceMappingURL=app.js.map

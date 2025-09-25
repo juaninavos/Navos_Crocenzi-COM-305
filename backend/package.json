@@ -6,16 +6,16 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/app.js",
-  "dev": "ts-node src/app.ts",
-  "test": "jest --runInBand --detectOpenHandles",
+    "dev": "ts-node src/app.ts",
+    "test": "jest --runInBand --detectOpenHandles",
     "init-db": "ts-node scripts/init-db.ts",
     "seed-db": "ts-node scripts/seed-db.ts"
   },
   "dependencies": {
-    "@mikro-orm/cli": "^6.3.8",
-    "@mikro-orm/core": "^6.3.8",
-    "@mikro-orm/mysql": "^6.3.8",
-    "@mikro-orm/reflection": "^6.3.8",
+    "@mikro-orm/cli": "6.4.16",
+    "@mikro-orm/core": "6.4.16",
+    "@mikro-orm/mysql": "6.4.16",
+    "@mikro-orm/reflection": "6.4.16",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "express": "^4.19.2",

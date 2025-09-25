@@ -1,5 +1,5 @@
 import express from 'express';
-import { OfertaController } from '../controllers/OfertaController.js';
+import { OfertaController } from '../controllers/OfertaController';
 
 const router: express.Router = express.Router();
 

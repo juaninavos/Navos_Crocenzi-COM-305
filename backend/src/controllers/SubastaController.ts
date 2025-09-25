@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Subasta } from '../entities/Subasta.js';
-import { Camiseta, EstadoCamiseta } from '../entities/Camiseta.js';  // ✅ AGREGAR EstadoCamiseta
+import { Subasta } from '../entities/Subasta';
+import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';  // ✅ AGREGAR EstadoCamiseta
 
 export class SubastaController {
   // GET /api/subastas - PERFECTO

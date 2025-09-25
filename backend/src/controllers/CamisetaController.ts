@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta.js';
-import { Usuario, UsuarioRol } from '../entities/Usuario.js';
-import { Categoria } from '../entities/Categoria.js';
-import '../types/auth.js'; // req.user tipado
+import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta';
+import { Usuario, UsuarioRol } from '../entities/Usuario';
+import { Categoria } from '../entities/Categoria';
+import '../types/auth'; // req.user tipado
 
 import { z } from 'zod';
 

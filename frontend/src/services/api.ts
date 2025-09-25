@@ -42,3 +42,15 @@ export const camisetaService = {
     return response.data.data;
   }
 };
+
+export const camisetaAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/camisetas`);
+    
+    if (!response.ok) {
+      throw new Error('Error al obtener camisetas');
+    }
+
+    return response.json();
+  }
+};

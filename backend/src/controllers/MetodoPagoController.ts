@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { MetodoPago } from '../entities/MetodoPago.js';
+import { MetodoPago } from '../entities/MetodoPago';
 
 export class MetodoPagoController {
   // GET /api/metodos-pago
