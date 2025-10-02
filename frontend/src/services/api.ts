@@ -36,9 +36,21 @@ export const authService = {
 
 // Funciones para camisetas
 export const camisetaService = {
-  // Traer todas las camisetas
-  getAll: async (): Promise<Camiseta[]> => {
-    const response = await api.get('/camisetas');
+  // Traer todas las camisetas con filtros opcionales
+  getAll: async (filtros: Partial<{
+    equipo: string;
+    temporada: string;
+    talle: string;
+    condicion: string;
+    esSubasta: boolean;
+  }> = {}): Promise<Camiseta[]> => {
+    const params = new URLSearchParams();
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    const response = await api.get(`/camisetas?${params.toString()}`);
     return response.data.data;
   }
 };

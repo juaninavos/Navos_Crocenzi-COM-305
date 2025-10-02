@@ -1,50 +1,63 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
 // src/app.ts
-import 'reflect-metadata';
-import 'dotenv/config';
-import express from 'express';
-// import cors from 'cors';  // Comentado temporalmente hasta instalar @types/cors
-import { MikroORM } from '@mikro-orm/core';
-import config from './mikro-orm.config';
+require("reflect-metadata");
+require("dotenv/config");
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors")); // ✅ DESCOMMENTAR
+const core_1 = require("@mikro-orm/core");
+const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
 // Importar rutas
-import usuarioRoutes from './routes/usuarioRoutes';
-import camisetaRoutes from './routes/camisetaRoutes';
-import categoriaRoutes from './routes/categoriaRoutes';
-import ofertaRoutes from './routes/ofertaRoutes.js';
-import subastaRoutes from './routes/subastaRoutes.js';
-import compraRoutes from './routes/compraRoutes.js';
-import pagoRoutes from './routes/pagoRoutes.js';
-import descuentoRoutes from './routes/descuentoRoutes.js';
-import metodoPagoRoutes from './routes/metodoPagoRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler';
-import authRouter from './controllers/AuthController.js';
-import authMiddleware from './middleware/auth.js';
-import roleGuard from './middleware/roleGuard.js';
+const usuarioRoutes_1 = __importDefault(require("./routes/usuarioRoutes"));
+const camisetaRoutes_1 = __importDefault(require("./routes/camisetaRoutes"));
+const categoriaRoutes_1 = __importDefault(require("./routes/categoriaRoutes"));
+const ofertaRoutes_1 = __importDefault(require("./routes/ofertaRoutes"));
+const subastaRoutes_1 = __importDefault(require("./routes/subastaRoutes"));
+const compraRoutes_1 = __importDefault(require("./routes/compraRoutes"));
+const pagoRoutes_1 = __importDefault(require("./routes/pagoRoutes"));
+const descuentoRoutes_1 = __importDefault(require("./routes/descuentoRoutes"));
+const metodoPagoRoutes_1 = __importDefault(require("./routes/metodoPagoRoutes"));
+const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
+const errorHandler_1 = require("./middleware/errorHandler");
+const AuthController_1 = __importDefault(require("./controllers/AuthController"));
+const auth_1 = __importDefault(require("./middleware/auth"));
+const roleGuard_1 = __importDefault(require("./middleware/roleGuard"));
 async function main() {
-    const orm = await MikroORM.init(config);
-    const app = express();
+    const orm = await core_1.MikroORM.init(mikro_orm_config_1.default);
+    const app = (0, express_1.default)();
+    // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
+    app.use((0, cors_1.default)({
+        origin: 'http://localhost:5173', // ✅ Frontend URL
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+    }));
     // Middleware
-    app.use(express.json());
-    // CORS configurado (comentado temporalmente)
-    // app.use(cors({
-    //   origin: process.env.CORS_ORIGIN || 'http://localhost:4200',
-    //   credentials: true
-    // }));
+    app.use(express_1.default.json());
+    app.use((req, res, next) => {
+        console.log(`🔍 ${req.method} ${req.url}`);
+        console.log('📦 Body:', req.body);
+        console.log('🌐 Origin:', req.get('origin'));
+        next();
+    });
     // Hacer ORM disponible en todas las rutas
     app.locals.orm = orm;
     // Auth routes
-    app.use('/api/auth', authRouter(orm));
+    app.use('/api/auth', (0, AuthController_1.default)(orm));
     // 🎯 FASE 1: REGULARIDAD - Rutas básicas
-    app.use('/api/usuarios', usuarioRoutes);
-    app.use('/api/categorias', categoriaRoutes);
-    app.use('/api/camisetas', camisetaRoutes);
-    app.use('/api/ofertas', ofertaRoutes);
-    app.use('/api/subastas', subastaRoutes);
-    app.use('/api/compras', compraRoutes);
-    app.use('/api/pagos', pagoRoutes);
-    app.use('/api/descuentos', descuentoRoutes);
-    app.use('/api/metodos-pago', metodoPagoRoutes); // ✅ AGREGAR ESTA LÍNEA
-    app.use('/api/admin', adminRoutes); // ✅ AGREGAR: Rutas del administrador
+    app.use('/api/usuarios', usuarioRoutes_1.default);
+    app.use('/api/categorias', categoriaRoutes_1.default);
+    app.use('/api/camisetas', camisetaRoutes_1.default);
+    app.use('/api/ofertas', ofertaRoutes_1.default);
+    app.use('/api/subastas', subastaRoutes_1.default);
+    app.use('/api/compras', compraRoutes_1.default);
+    app.use('/api/pagos', pagoRoutes_1.default);
+    app.use('/api/descuentos', descuentoRoutes_1.default);
+    app.use('/api/metodos-pago', metodoPagoRoutes_1.default);
+    app.use('/api/admin', adminRoutes_1.default);
     // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
     // app.use('/api/subastas', subastaRoutes);
     // app.use('/api/ofertas', ofertaRoutes);
@@ -69,15 +82,15 @@ async function main() {
         });
     });
     // Ejemplo: ruta protegida por JWT y por role
-    app.get('/api/protegida/admin', authMiddleware(), roleGuard(['admin']), (req, res) => {
+    app.get('/api/protegida/admin', (0, auth_1.default)(), (0, roleGuard_1.default)(['admin']), (req, res) => {
         res.json({ message: 'Acceso concedido a administrador' });
     });
     // Middleware para rutas no encontradas (debe ir después de todas las rutas)
-    app.use(notFoundHandler);
+    app.use(errorHandler_1.notFoundHandler);
     // Middleware global de manejo de errores (debe ir al final)
-    app.use(errorHandler);
+    app.use(errorHandler_1.errorHandler);
     // Puerto del servidor
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT || 3001; // ✅ CAMBIAR AQUÍ
     app.listen(PORT, () => {
         console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
         console.log(`📋 Fase actual: REGULARIDAD`);

@@ -1,29 +1,31 @@
-import { defineConfig } from '@mikro-orm/mysql';
-import { Usuario } from './entities/Usuario';
-import { Camiseta } from './entities/Camiseta';
-import { Subasta } from './entities/Subasta';
-import { Oferta } from './entities/Oferta';
-import { Compra } from './entities/Compra';
-import { MetodoPago } from './entities/MetodoPago';
-import { Pago } from './entities/Pago';
-import { Categoria } from './entities/Categoria';
-import { Descuento } from './entities/Descuento';
-export default defineConfig({
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const mysql_1 = require("@mikro-orm/mysql");
+const Usuario_1 = require("./entities/Usuario");
+const Camiseta_1 = require("./entities/Camiseta");
+const Subasta_1 = require("./entities/Subasta");
+const Oferta_1 = require("./entities/Oferta");
+const Compra_1 = require("./entities/Compra");
+const MetodoPago_1 = require("./entities/MetodoPago");
+const Pago_1 = require("./entities/Pago");
+const Categoria_1 = require("./entities/Categoria");
+const Descuento_1 = require("./entities/Descuento");
+exports.default = (0, mysql_1.defineConfig)({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     dbName: process.env.DB_NAME || 'tienda_retro',
     entities: [
-        Usuario,
-        Camiseta,
-        Subasta,
-        Oferta,
-        Compra,
-        MetodoPago,
-        Pago,
-        Categoria,
-        Descuento
+        Usuario_1.Usuario,
+        Camiseta_1.Camiseta,
+        Subasta_1.Subasta,
+        Oferta_1.Oferta,
+        Compra_1.Compra,
+        MetodoPago_1.MetodoPago,
+        Pago_1.Pago,
+        Categoria_1.Categoria,
+        Descuento_1.Descuento
     ],
     discovery: {
         warnWhenNoEntities: false,

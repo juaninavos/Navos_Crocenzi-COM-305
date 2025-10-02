@@ -1,3 +1,4 @@
+"use strict";
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -7,10 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
-import { Usuario } from './Usuario.js'; // ✅ AGREGAR .js
-import { Categoria } from './Categoria.js'; // ✅ AGREGAR .js
-export var Talle;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Camiseta = exports.EstadoCamiseta = exports.CondicionCamiseta = exports.Talle = void 0;
+const core_1 = require("@mikro-orm/core");
+const Usuario_1 = require("./Usuario");
+const Categoria_1 = require("./Categoria");
+var Talle;
 (function (Talle) {
     Talle["XS"] = "XS";
     Talle["S"] = "S";
@@ -18,20 +21,20 @@ export var Talle;
     Talle["L"] = "L";
     Talle["XL"] = "XL";
     Talle["XXL"] = "XXL";
-})(Talle || (Talle = {}));
-export var CondicionCamiseta;
+})(Talle || (exports.Talle = Talle = {}));
+var CondicionCamiseta;
 (function (CondicionCamiseta) {
     CondicionCamiseta["NUEVA"] = "Nueva";
     CondicionCamiseta["USADA"] = "Usada";
     CondicionCamiseta["VINTAGE"] = "Vintage";
-})(CondicionCamiseta || (CondicionCamiseta = {}));
-export var EstadoCamiseta;
+})(CondicionCamiseta || (exports.CondicionCamiseta = CondicionCamiseta = {}));
+var EstadoCamiseta;
 (function (EstadoCamiseta) {
     EstadoCamiseta["DISPONIBLE"] = "disponible";
     EstadoCamiseta["VENDIDA"] = "vendida";
     EstadoCamiseta["EN_SUBASTA"] = "en_subasta";
     EstadoCamiseta["INACTIVA"] = "inactiva";
-})(EstadoCamiseta || (EstadoCamiseta = {}));
+})(EstadoCamiseta || (exports.EstadoCamiseta = EstadoCamiseta = {}));
 let Camiseta = class Camiseta {
     constructor(titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, vendedor) {
         this.esSubasta = false;
@@ -39,8 +42,8 @@ let Camiseta = class Camiseta {
         this.estado = EstadoCamiseta.DISPONIBLE;
         this.fechaCreacion = new Date(); // ✅ AGREGAR: Para ordenamiento en AdminController
         this.fechaPublicacion = new Date();
-        this.subastas = new Collection(this);
-        this.compras = new Collection(this);
+        this.subastas = new core_1.Collection(this);
+        this.compras = new core_1.Collection(this);
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.equipo = equipo;
@@ -52,81 +55,81 @@ let Camiseta = class Camiseta {
         this.vendedor = vendedor;
     }
 };
+exports.Camiseta = Camiseta;
 __decorate([
-    PrimaryKey(),
+    (0, core_1.PrimaryKey)(),
     __metadata("design:type", Number)
 ], Camiseta.prototype, "id", void 0);
 __decorate([
-    Property(),
+    (0, core_1.Property)(),
     __metadata("design:type", String)
 ], Camiseta.prototype, "titulo", void 0);
 __decorate([
-    Property({ type: 'text', nullable: true }),
+    (0, core_1.Property)({ type: 'text', nullable: true }),
     __metadata("design:type", String)
 ], Camiseta.prototype, "descripcion", void 0);
 __decorate([
-    Property(),
+    (0, core_1.Property)(),
     __metadata("design:type", String)
 ], Camiseta.prototype, "equipo", void 0);
 __decorate([
-    Property(),
+    (0, core_1.Property)(),
     __metadata("design:type", String)
 ], Camiseta.prototype, "temporada", void 0);
 __decorate([
-    Enum(() => Talle),
+    (0, core_1.Enum)(() => Talle),
     __metadata("design:type", String)
 ], Camiseta.prototype, "talle", void 0);
 __decorate([
-    Enum(() => CondicionCamiseta),
+    (0, core_1.Enum)(() => CondicionCamiseta),
     __metadata("design:type", String)
 ], Camiseta.prototype, "condicion", void 0);
 __decorate([
-    Property({ nullable: true }),
+    (0, core_1.Property)({ nullable: true }),
     __metadata("design:type", String)
 ], Camiseta.prototype, "imagen", void 0);
 __decorate([
-    Property({ type: 'decimal', precision: 10, scale: 2 }),
+    (0, core_1.Property)({ type: 'decimal', precision: 10, scale: 2 }),
     __metadata("design:type", Number)
 ], Camiseta.prototype, "precioInicial", void 0);
 __decorate([
-    Property({ default: false }),
+    (0, core_1.Property)({ default: false }),
     __metadata("design:type", Boolean)
 ], Camiseta.prototype, "esSubasta", void 0);
 __decorate([
-    Property({ default: 1 }),
+    (0, core_1.Property)({ default: 1 }),
     __metadata("design:type", Number)
 ], Camiseta.prototype, "stock", void 0);
 __decorate([
-    Enum(() => EstadoCamiseta),
+    (0, core_1.Enum)(() => EstadoCamiseta),
     __metadata("design:type", String)
 ], Camiseta.prototype, "estado", void 0);
 __decorate([
-    Property(),
+    (0, core_1.Property)(),
     __metadata("design:type", Date)
 ], Camiseta.prototype, "fechaCreacion", void 0);
 __decorate([
-    Property(),
+    (0, core_1.Property)(),
     __metadata("design:type", Date)
 ], Camiseta.prototype, "fechaPublicacion", void 0);
 __decorate([
-    ManyToOne('Usuario'),
-    __metadata("design:type", Usuario)
+    (0, core_1.ManyToOne)('Usuario'),
+    __metadata("design:type", Usuario_1.Usuario)
 ], Camiseta.prototype, "vendedor", void 0);
 __decorate([
-    ManyToOne('Categoria', { nullable: true }),
-    __metadata("design:type", Categoria)
+    (0, core_1.ManyToOne)('Categoria', { nullable: true }),
+    __metadata("design:type", Categoria_1.Categoria)
 ], Camiseta.prototype, "categoria", void 0);
 __decorate([
-    OneToMany('Subasta', 'camiseta'),
+    (0, core_1.OneToMany)('Subasta', 'camiseta'),
     __metadata("design:type", Object)
 ], Camiseta.prototype, "subastas", void 0);
 __decorate([
-    OneToMany('Compra', 'camiseta') // ✅ AGREGAR: Relación con compras
+    (0, core_1.OneToMany)('Compra', 'camiseta') // ✅ AGREGAR: Relación con compras
     ,
     __metadata("design:type", Object)
 ], Camiseta.prototype, "compras", void 0);
-Camiseta = __decorate([
-    Entity(),
-    __metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, Usuario])
+exports.Camiseta = Camiseta = __decorate([
+    (0, core_1.Entity)(),
+    __metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, Usuario_1.Usuario])
 ], Camiseta);
-export { Camiseta };

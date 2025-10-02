@@ -35,6 +35,9 @@ importers:
       mysql2:
         specifier: ^3.11.0
         version: 3.14.1
+      reflect-metadata:
+        specifier: ^0.2.2
+        version: 0.2.2
     devDependencies:
       '@types/bcryptjs':
         specifier: ^2.4.6
