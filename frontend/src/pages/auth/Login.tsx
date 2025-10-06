@@ -66,10 +66,15 @@ export const Login = () => {
         setTimeout(() => setError(''), 5000);
       }
       
-    } catch (error: any) {
-      console.error('❌ Error en login:', error); 
-      setError(error.message || 'Error de conexión');
-      setTimeout(() => setError(''), 5000);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('❌ Error en login:', error);
+        setError(error.message || 'Error de conexión');
+        setTimeout(() => setError(''), 5000);
+      } else {
+        setError('Error de conexión');
+        setTimeout(() => setError(''), 5000);
+      }
     } finally {
       setLoading(false);
     }

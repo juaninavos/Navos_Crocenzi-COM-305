@@ -44,8 +44,16 @@ export const Register = () => {
       } else {
         setError(response.message || 'Error al registrarse');
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Error de conexión');
+    } catch (error: unknown) {
+      // Si es un error de Axios (tiene response y data)
+      if (typeof error === 'object' && error !== null &&'response' in error && typeof (error as { response?: { data?: { message?: string } } }).response?.data?.message === 'string'
+      ) {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message || 'Error de conexión');
+      } else {
+        setError('Error de conexión');
+      }
     } finally {
       setLoading(false);
     }
