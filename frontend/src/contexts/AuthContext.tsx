@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface User {
+interface Usuario {
   id: number;
   nombre: string;
   apellido: string;
@@ -9,9 +9,9 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  usuario: Usuario | null;
   token: string | null;
-  login: (userData: User, token: string) => void;
+  login: (userData: Usuario, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -19,21 +19,21 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
   // ✅ CARGAR DATOS AL INICIAR
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    
-    console.log('🔍 AuthContext - Cargando datos:', { savedToken: !!savedToken, savedUser: !!savedUser });
-    
-    if (savedToken && savedUser) {
+    const savedUsuario = localStorage.getItem('usuario');
+
+    console.log('🔍 AuthContext - Cargando datos:', { savedToken: !!savedToken, savedUsuario: !!savedUsuario });
+
+    if (savedToken && savedUsuario) {
       try {
-        const userData = JSON.parse(savedUser);
+        const userData = JSON.parse(savedUsuario);
         setToken(savedToken);
-        setUser(userData);
+        setUsuario(userData);
         console.log('✅ Usuario cargado:', userData);
       } catch (error) {
         console.error('❌ Error parsing user data:', error);
@@ -43,25 +43,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = (userData: User, authToken: string) => {
+  const login = (userData: Usuario, authToken: string) => {
     console.log('🔍 AuthContext - Login:', userData);
-    setUser(userData);
+    setUsuario(userData);
     setToken(authToken);
     localStorage.setItem('token', authToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('usuario', JSON.stringify(userData));
   };
 
   const logout = () => {
-    setUser(null);
+    setUsuario(null);
     setToken(null);
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('usuario');
   };
 
-  const isAuthenticated = !!user && !!token;
+  const isAuthenticated = !!usuario && !!token;
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ usuario, token, login, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

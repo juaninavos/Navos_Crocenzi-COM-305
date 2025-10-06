@@ -23,11 +23,28 @@ export const Login = () => {
     });
   };
 
+  const validateForm = () => {
+    if (!formData.email.includes('@')) {
+      setError('Ingrese un email válido');
+      return false;
+    }
+    if (formData.contrasena.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return false;
+    }
+
+    return true;
+  };
+
   // Manejar envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    setError('');
+    setError(''); 
 
     try {
       console.log('🔍 Intentando login...'); 
@@ -46,11 +63,13 @@ export const Login = () => {
       } else {
         console.error('❌ Estructura de respuesta inesperada:', response); 
         setError('Error en la respuesta del servidor');
+        setTimeout(() => setError(''), 5000);
       }
       
     } catch (error: any) {
       console.error('❌ Error en login:', error); 
       setError(error.message || 'Error de conexión');
+      setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
     }
@@ -101,12 +120,25 @@ export const Login = () => {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
+                <div className="mb-3">
+                  <label htmlFor="contrasena" className="form-label">Contraseña</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="contrasena"
+                    name="contrasena"
+                    value={formData.contrasena}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
                   className="btn btn-primary w-100"
                   disabled={loading}
                 >
-                  {loading ? 'Ingresando...' : 'Ingresar'}
+                  {loading ? (<span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'>Ingresando...</span>) : 'Ingresar'}
                 </button>
               </form>
 
