@@ -2,15 +2,8 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-import type { LoginData, RegisterData, Camiseta, Usuario } from '../types';
+import type { LoginData, RegisterData, Camiseta, ApiResponse, AuthResponse, CamisetaFiltro } from '../types';
 
-// =========================
-// 🔹 Tipos auxiliares
-// =========================
-type ApiResponse<T> = {
-  data: T;
-  message?: string;
-};
 
 // Tipo de error personalizado para manejar expiración de sesión, etc.
 export class ApiAuthError extends Error {
@@ -66,10 +59,11 @@ api.interceptors.response.use(
 // 🧍 Servicios de autenticación
 // =========================
 export const authService = {
-  login: async (data: LoginData): Promise<{ token: string; user: Usuario }> => {
-    const response = await api.post<ApiResponse<{ token: string; user: Usuario }>>('/auth/login', data);
-    return response.data.data;
-  },
+  login: async (data: LoginData): Promise<AuthResponse> => {
+  const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
+  return response.data.data;
+},
+
 
   register: async (data: RegisterData): Promise<{ message: string }> => {
     const response = await api.post<ApiResponse<{ message: string }>>('/auth/register', data);
@@ -81,13 +75,7 @@ export const authService = {
 // 👕 Servicios de camisetas
 // =========================
 export const camisetaService = {
-  getAll: async (filtros: Partial<{
-    equipo: string;
-    temporada: string;
-    talle: string;
-    condicion: string;
-    esSubasta: boolean;
-  }> = {}): Promise<Camiseta[]> => {
+  getAll: async (filtros: CamisetaFiltro = {}): Promise<Camiseta[]> => {
     const params = Object.fromEntries(
       Object.entries(filtros).filter(([, v]) => v !== '' && v !== undefined && v !== null)
     );

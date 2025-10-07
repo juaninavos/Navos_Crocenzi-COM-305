@@ -8,22 +8,30 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   // Estado de filtros
-  const filtrosIniciales = {
-    equipo: '',
-    talle: '',
-    condicion: '',
-    temporada: '',
+  const filtrosIniciales: {
+    equipo: string | null;
+    talle: string | null;
+    condicion: string | null;
+    temporada: string | null;
+    esSubasta: boolean;
+    precioMin: string | null;
+    precioMax: string | null;
+  } = {
+    equipo: null,
+    talle: null,
+    condicion: null,
+    temporada: null,
     esSubasta: false,
-    precioMin: '',
-    precioMax: '',
+    precioMin: null,
+    precioMax: null,
   };
-  const [filtros, setFiltros] = useState(filtrosIniciales);
+  const [filtros, setFiltros] = useState<typeof filtrosIniciales>(filtrosIniciales);
 
   // Calcula la cantidad de filtros activos (excluyendo los valores iniciales)
   const filtrosActivosCount = Object.entries(filtros)
     .filter(([key, value]) => {
       if (key === 'esSubasta') return value !== false;
-      return value !== '';
+      return value !== null;
     }).length;
 
   // Cargar camisetas al montar el componente o cambiar filtros
@@ -37,7 +45,7 @@ export const Home = () => {
       setLoading(true);
       // Solo enviar filtros con valor
       const filtrosActivos = Object.fromEntries(
-        Object.entries(filtros).filter(([, v]) => v !== '' && v !== undefined)
+        Object.entries(filtros).filter(([, v]) => v !== null && v !== undefined)
       );
       const data = await camisetaService.getAll(filtrosActivos);
       setCamisetas(data);
@@ -109,8 +117,8 @@ export const Home = () => {
             <div className="col-md-3 mb-2 mb-md-0">
               <select
                 className="form-select"
-                value={filtros.equipo}
-                onChange={e => setFiltros(f => ({ ...f, equipo: e.target.value }))}
+                value={filtros.equipo ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, equipo: e.target.value || null }))}
               >
                 <option value="">Todos los equipos</option>
                 {[...new Set(camisetas.map(c => c.equipo))].map(equipo => (
@@ -121,8 +129,8 @@ export const Home = () => {
             <div className="col-md-3 mb-2 mb-md-0">
               <select
                 className="form-select"
-                value={filtros.talle}
-                onChange={e => setFiltros(f => ({ ...f, talle: e.target.value }))}
+                value={filtros.talle ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, talle: e.target.value || null }))}
               >
                 <option value="">Todos los talles</option>
                 {[...new Set(camisetas.map(c => c.talle))].map(talle => (
@@ -133,8 +141,8 @@ export const Home = () => {
             <div className="col-md-3 mb-2 mb-md-0">
               <select
                 className="form-select"
-                value={filtros.temporada}
-                onChange={e => setFiltros(f => ({ ...f, temporada: e.target.value }))}
+                value={filtros.temporada ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, temporada: e.target.value || null }))}
               >
                 <option value="">Todas las temporadas</option>
                 {[...new Set(camisetas.map(c => c.temporada))].map(temporada => (
@@ -145,8 +153,8 @@ export const Home = () => {
             <div className="col-md-3 mb-2 mb-md-0">
               <select
                 className="form-select"
-                value={filtros.condicion}
-                onChange={e => setFiltros(f => ({ ...f, condicion: e.target.value }))}
+                value={filtros.condicion ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, condicion: e.target.value || null }))}
               >
                 <option value="">Todas las condiciones</option>
                 {[...new Set(camisetas.map(c => c.condicion))].map(condicion => (
@@ -162,8 +170,8 @@ export const Home = () => {
                 className="form-control"
                 placeholder="Precio mínimo"
                 min={0}
-                value={filtros.precioMin}
-                onChange={e => setFiltros(f => ({ ...f, precioMin: e.target.value }))}
+                value={filtros.precioMin ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, precioMin: e.target.value || null }))}
               />
             </div>
             <div className="col-md-6">
@@ -172,8 +180,8 @@ export const Home = () => {
                 className="form-control"
                 placeholder="Precio máximo"
                 min={0}
-                value={filtros.precioMax}
-                onChange={e => setFiltros(f => ({ ...f, precioMax: e.target.value }))}
+                value={filtros.precioMax ?? ''}
+                onChange={e => setFiltros(f => ({ ...f, precioMax: e.target.value || null }))}
               />
             </div>
           </div>
