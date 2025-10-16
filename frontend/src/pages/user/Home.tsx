@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { camisetaService } from '../../services/api';
-import type { Camiseta } from '../../types';
+import type { Camiseta, CamisetaFiltro, TalleType, CondicionCamisetaType } from '../../types';
 import { EstadoCamiseta } from '../../types';
 
 export const Home = () => {
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
   // Estado de filtros
   const filtrosIniciales: {
@@ -26,6 +28,16 @@ export const Home = () => {
     precioMax: null,
   };
   const [filtros, setFiltros] = useState<typeof filtrosIniciales>(filtrosIniciales);
+  const [sort, setSort] = useState<'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc'>('fechaDesc');
+  const [page, setPage] = useState<number>(1);
+  // Debounced filters: appliedFiltros updates 300ms after user stops typing/changing filters
+  const [appliedFiltros, setAppliedFiltros] = useState<typeof filtros>(filtros);
+
+  // Helper to update filtros and reset page immediately to avoid race/flicker
+  const updateFiltro = (patch: Partial<typeof filtros>) => {
+    setFiltros(f => ({ ...f, ...patch }));
+    setPage(1);
+  };
 
   // Calcula la cantidad de filtros activos (excluyendo los valores iniciales)
   const filtrosActivosCount = Object.entries(filtros)
@@ -35,25 +47,61 @@ export const Home = () => {
     }).length;
 
   // Cargar camisetas al montar el componente o cambiar filtros
+  // Debounce filters changes
   useEffect(() => {
+    const t = setTimeout(() => {
+      setAppliedFiltros(filtros);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [filtros]);
+
+  // Load camisetas when appliedFiltros, page or sort change
+  useEffect(() => {
+    // Si rango de precio inválido, no recargar y mostrar error
+    const min = appliedFiltros.precioMin !== null && appliedFiltros.precioMin !== '' ? Number(appliedFiltros.precioMin) : null;
+    const max = appliedFiltros.precioMax !== null && appliedFiltros.precioMax !== '' ? Number(appliedFiltros.precioMax) : null;
+    if (min !== null && max !== null && !Number.isNaN(min) && !Number.isNaN(max) && min > max) {
+      // no llamar a loadCamisetas hasta que el usuario corrija el rango
+      return;
+    }
     loadCamisetas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtros]);
+  }, [appliedFiltros, page, sort]);
+
+  const isApplying = JSON.stringify(appliedFiltros) !== JSON.stringify(filtros);
 
   const loadCamisetas = async () => {
     try {
-      setLoading(true);
+      // Show full-page loading only if there are no items yet (initial load)
+      if (camisetas.length === 0) setLoading(true);
+      else setFetching(true);
       // Solo enviar filtros con valor
       const filtrosActivos = Object.fromEntries(
-        Object.entries(filtros).filter(([, v]) => v !== null && v !== undefined)
+        Object.entries(appliedFiltros).filter(([, v]) => v !== null && v !== undefined)
       );
-      const data = await camisetaService.getAll(filtrosActivos);
-      setCamisetas(data);
+      const params: CamisetaFiltro = {
+        page,
+        limit: 9,
+        sort,
+      };
+      if ('equipo' in filtrosActivos) params.equipo = filtrosActivos.equipo as string;
+      if ('temporada' in filtrosActivos) params.temporada = filtrosActivos.temporada as string;
+      if ('talle' in filtrosActivos && typeof filtrosActivos.talle === 'string') params.talle = filtrosActivos.talle as TalleType;
+      if ('condicion' in filtrosActivos && typeof filtrosActivos.condicion === 'string') params.condicion = filtrosActivos.condicion as CondicionCamisetaType;
+      if ('esSubasta' in filtrosActivos) params.esSubasta = filtrosActivos.esSubasta as boolean;
+      if ('precioMin' in filtrosActivos && filtrosActivos.precioMin != null) params.precioMin = filtrosActivos.precioMin as string | number;
+      if ('precioMax' in filtrosActivos && filtrosActivos.precioMax != null) params.precioMax = filtrosActivos.precioMax as string | number;
+
+      const result = await camisetaService.getAll(params);
+      // Update data only after fetch completes — no intermediate clearing
+      setCamisetas(result.data);
+      setTotalCount(result.count);
     } catch (error) {
       setError('Error al cargar las camisetas');
       console.error(error);
     } finally {
       setLoading(false);
+      setFetching(false);
     }
   };
 
@@ -91,7 +139,13 @@ export const Home = () => {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1>🏆 Camisetas Disponibles</h1>
-        <p className="text-muted mb-0">{camisetas.length} camisetas encontradas</p>
+        <div className="text-end">
+          <p className="text-muted mb-0">
+            Mostrando {camisetas.length} de {totalCount} camisetas
+            {fetching && <span className="spinner-border spinner-border-sm text-primary ms-2" role="status" aria-hidden="true" />}
+          </p>
+          <small className="text-muted">Página {page} / {Math.max(1, Math.ceil(totalCount / 9))}</small>
+        </div>
       </div>
 
       {/* Filtros básicos */}
@@ -113,12 +167,22 @@ export const Home = () => {
               </button>
             </div>
           </div>
+          <div className="mb-2 d-flex align-items-center gap-2">
+            <label className="mb-0">Ordenar por:</label>
+            <select className="form-select form-select-sm w-auto" value={sort} onChange={e => setSort(e.target.value as 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc')}>
+              <option value="fechaDesc">Más nuevos</option>
+              <option value="fechaAsc">Más antiguos</option>
+              <option value="precioAsc">Precio: menor a mayor</option>
+              <option value="precioDesc">Precio: mayor a menor</option>
+            </select>
+          </div>
           <div className="row">
             <div className="col-md-3 mb-2 mb-md-0">
               <select
                 className="form-select"
                 value={filtros.equipo ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, equipo: e.target.value || null }))}
+                onChange={e => updateFiltro({ equipo: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todos los equipos</option>
                 {[...new Set(camisetas.map(c => c.equipo))].map(equipo => (
@@ -130,7 +194,8 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.talle ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, talle: e.target.value || null }))}
+                onChange={e => updateFiltro({ talle: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todos los talles</option>
                 {[...new Set(camisetas.map(c => c.talle))].map(talle => (
@@ -142,7 +207,8 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.temporada ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, temporada: e.target.value || null }))}
+                onChange={e => updateFiltro({ temporada: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todas las temporadas</option>
                 {[...new Set(camisetas.map(c => c.temporada))].map(temporada => (
@@ -154,7 +220,8 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.condicion ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, condicion: e.target.value || null }))}
+                onChange={e => updateFiltro({ condicion: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todas las condiciones</option>
                 {[...new Set(camisetas.map(c => c.condicion))].map(condicion => (
@@ -171,7 +238,8 @@ export const Home = () => {
                 placeholder="Precio mínimo"
                 min={0}
                 value={filtros.precioMin ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, precioMin: e.target.value || null }))}
+                onChange={e => updateFiltro({ precioMin: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               />
             </div>
             <div className="col-md-6">
@@ -181,17 +249,24 @@ export const Home = () => {
                 placeholder="Precio máximo"
                 min={0}
                 value={filtros.precioMax ?? ''}
-                onChange={e => setFiltros(f => ({ ...f, precioMax: e.target.value || null }))}
+                onChange={e => updateFiltro({ precioMax: e.target.value || null })}
+                onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               />
             </div>
           </div>
+          {/* Mensaje si el rango de precio es inválido */}
+          {filtros.precioMin !== null && filtros.precioMax !== null &&
+            filtros.precioMin !== '' && filtros.precioMax !== '' &&
+            Number(filtros.precioMin) > Number(filtros.precioMax) && (
+              <div className="alert alert-warning mt-2">Precio mínimo no puede ser mayor que precio máximo.</div>
+          )}
           <div className="form-check mt-3">
             <input
               className="form-check-input"
               type="checkbox"
               id="esSubastaCheck"
               checked={filtros.esSubasta}
-              onChange={e => setFiltros(f => ({ ...f, esSubasta: e.target.checked }))}
+              onChange={e => updateFiltro({ esSubasta: e.target.checked })}
             />
             <label className="form-check-label" htmlFor="esSubastaCheck">
               Solo subastas
@@ -208,6 +283,7 @@ export const Home = () => {
             <>
               <p className="text-muted">No se encontraron resultados con los filtros seleccionados.</p>
               <button
+                type="button"
                 className="btn btn-outline-secondary mt-2"
                 onClick={() => setFiltros(filtrosIniciales)}
               >
@@ -287,19 +363,19 @@ export const Home = () => {
 
                     {/* Botón de acción mejorado UX */}
                     {camiseta.estado === EstadoCamiseta.VENDIDA ? (
-                      <button className="btn btn-secondary w-100" disabled title="Esta camiseta ya fue vendida">
+                      <button type="button" className="btn btn-secondary w-100" disabled title="Esta camiseta ya fue vendida">
                         Vendida
                       </button>
                     ) : camiseta.esSubasta ? (
-                      <button className="btn btn-warning w-100" title="Participa en la subasta">
+                      <button type="button" className="btn btn-warning w-100" title="Participa en la subasta">
                         Ver Subasta
                       </button>
                     ) : camiseta.estado !== EstadoCamiseta.DISPONIBLE ? (
-                      <button className="btn btn-secondary w-100" disabled title="No disponible para comprar">
+                      <button type="button" className="btn btn-secondary w-100" disabled title="No disponible para comprar">
                         No disponible
                       </button>
                     ) : (
-                      <button className="btn btn-primary w-100">
+                      <button type="button" className="btn btn-primary w-100">
                         Comprar
                       </button>
                     )}
@@ -310,6 +386,13 @@ export const Home = () => {
           ))}
         </div>
       )}
+
+      {/* Paginación simple */}
+      <div className="d-flex justify-content-between align-items-center mt-4">
+        <button type="button" className="btn btn-outline-primary" disabled={page <= 1 || isApplying || fetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</button>
+        <div>Página {page} de {Math.max(1, Math.ceil(totalCount / 9))}</div>
+        <button type="button" className="btn btn-outline-primary" disabled={page >= Math.max(1, Math.ceil(totalCount / 9)) || isApplying || fetching} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+      </div>
     </div>
   );
 };

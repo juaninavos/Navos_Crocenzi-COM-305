@@ -75,13 +75,27 @@ export const authService = {
 // 👕 Servicios de camisetas
 // =========================
 export const camisetaService = {
-  getAll: async (filtros: CamisetaFiltro = {}): Promise<Camiseta[]> => {
+  getAll: async (filtros: CamisetaFiltro = {}): Promise<{ data: Camiseta[]; count: number; page?: number; limit?: number }> => {
+    // Normalizar y validar filtros de precio (inputs vienen como strings desde el formulario)
+  const normalized: Record<string, unknown> = { ...filtros };
+    if (typeof filtros.precioMin === 'string' && filtros.precioMin.trim() !== '') {
+      const n = Number(filtros.precioMin);
+  if (!Number.isNaN(n) && n >= 0) (normalized as Record<string, unknown>).precioMin = n;
+  else delete (normalized as Record<string, unknown>).precioMin;
+    }
+    if (typeof filtros.precioMax === 'string' && filtros.precioMax.trim() !== '') {
+      const n = Number(filtros.precioMax);
+  if (!Number.isNaN(n) && n >= 0) (normalized as Record<string, unknown>).precioMax = n;
+  else delete (normalized as Record<string, unknown>).precioMax;
+    }
+
     const params = Object.fromEntries(
-      Object.entries(filtros).filter(([, v]) => v !== '' && v !== undefined && v !== null)
+      Object.entries(normalized).filter(([, v]) => v !== '' && v !== undefined && v !== null)
     );
 
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
-    return response.data.data;
+    const typedParams = params as Record<string, unknown>;
+    return { data: response.data.data, count: response.data.count ?? response.data.data.length, page: typeof typedParams.page === 'number' ? (typedParams.page as number) : undefined, limit: typeof typedParams.limit === 'number' ? (typedParams.limit as number) : undefined };
   },
 
   getById: async (id: number): Promise<Camiseta> => {

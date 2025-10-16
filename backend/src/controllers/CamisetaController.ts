@@ -27,6 +27,27 @@ export class CamisetaController {
           if (val === 'false') return false;
           return val;
         }, z.boolean().optional())
+        ,
+        precioMin: z.preprocess((val) => {
+          if (val === '' || val == null) return undefined;
+          const n = Number(val);
+          return Number.isNaN(n) ? undefined : n;
+        }, z.number().min(0).optional()),
+        precioMax: z.preprocess((val) => {
+          if (val === '' || val == null) return undefined;
+          const n = Number(val);
+          return Number.isNaN(n) ? undefined : n;
+        }, z.number().min(0).optional())
+        ,
+        page: z.preprocess((v) => {
+          const n = Number(v);
+          return Number.isNaN(n) ? undefined : Math.max(1, Math.trunc(n));
+        }, z.number().min(1).optional()),
+        limit: z.preprocess((v) => {
+          const n = Number(v);
+          return Number.isNaN(n) ? undefined : Math.max(1, Math.trunc(n));
+        }, z.number().min(1).optional()),
+        sort: z.string().optional()
       });
 
       const parseResult = filtrosSchema.safeParse(req.query);
@@ -38,11 +59,49 @@ export class CamisetaController {
       const em = orm.em.fork();
 
   type FiltrosCamiseta = z.infer<typeof filtrosSchema> & { estado: { $ne: EstadoCamiseta } };
-  const filtros: FiltrosCamiseta = { estado: { $ne: EstadoCamiseta.INACTIVA }, ...parseResult.data };
+  const parsed = parseResult.data;
 
-  const camisetas = await em.find(Camiseta, filtros, { populate: ['categoria', 'vendedor'] });
+  // Construir where dinámico para incluir rango de precio si está presente
+  const where: any = { estado: { $ne: EstadoCamiseta.INACTIVA } };
+  if (parsed.equipo) where.equipo = parsed.equipo;
+  if (parsed.temporada) where.temporada = parsed.temporada;
+  if (parsed.talle) where.talle = parsed.talle;
+  if (parsed.condicion) where.condicion = parsed.condicion;
+  if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
 
-  res.json({ success: true, data: camisetas, count: camisetas.length });
+  // Rango de precio
+  const priceCond: any = {};
+  if (typeof parsed.precioMin === 'number') priceCond.$gte = parsed.precioMin;
+  if (typeof parsed.precioMax === 'number') priceCond.$lte = parsed.precioMax;
+  if (Object.keys(priceCond).length > 0) where.precioInicial = priceCond;
+
+  // Paginación y ordenamiento
+  const page = parsed.page ?? 1;
+  const limit = parsed.limit ?? 9;
+  const offset = (page - 1) * limit;
+
+  let orderBy: any = { fechaPublicacion: 'DESC' };
+  switch (parsed.sort) {
+    case 'precioAsc':
+      orderBy = { precioInicial: 'ASC' };
+      break;
+    case 'precioDesc':
+      orderBy = { precioInicial: 'DESC' };
+      break;
+    case 'fechaAsc':
+      orderBy = { fechaPublicacion: 'ASC' };
+      break;
+    case 'fechaDesc':
+    default:
+      orderBy = { fechaPublicacion: 'DESC' };
+  }
+
+  const [camisetasList, total] = await Promise.all([
+    em.find(Camiseta, where, { populate: ['categoria', 'vendedor'], limit, offset, orderBy }),
+    em.count(Camiseta, where)
+  ]);
+
+  res.json({ success: true, data: camisetasList, count: total, page, limit });
     } catch (error) {
       console.error('Error en getAll camisetas:', error);
       res.status(500).json({ success: false, message: 'Error al obtener camisetas' });

@@ -102,3 +102,18 @@ export interface RegisterData {
   direccion: string;
   telefono: string;
 }
+
+// Filtros que acepta el endpoint de camisetas
+export interface CamisetaFiltro {
+  equipo?: string;
+  temporada?: string;
+  talle?: TalleType;
+  condicion?: CondicionCamisetaType;
+  esSubasta?: boolean;
+  precioMin?: number | string;
+  precioMax?: number | string;
+  // Paginación y ordenamiento
+  page?: number;
+  limit?: number;
+  sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc' | string;
+}
