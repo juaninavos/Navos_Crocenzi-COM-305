@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { camisetaService } from '../../services/api';
-import type { Camiseta, CamisetaFiltro, TalleType, CondicionCamisetaType } from '../../types';
-import { EstadoCamiseta } from '../../types';
+// ✅ SEPARAR: Enums (valores) e interfaces (tipos)
+import { 
+  EstadoCamiseta,     // ✅ Sin 'type' - es un enum (valor)
+  Talle,             // ✅ Sin 'type' - es un enum (valor)  
+  CondicionCamiseta  // ✅ Sin 'type' - es un enum (valor)
+} from '../../types';
+import type { 
+  Camiseta,          // ✅ Con 'type' - es una interface
+  CamisetaFiltro     // ✅ Con 'type' - es una interface
+} from '../../types';
 
 export const Home = () => {
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
@@ -9,11 +17,12 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
-  // Estado de filtros
+  
+  // ✅ CORREGIR: Usar tipo union en lugar de enum directamente
   const filtrosIniciales: {
     equipo: string | null;
-    talle: string | null;
-    condicion: string | null;
+    talle: Talle | null;
+    condicion: CondicionCamiseta | null;
     temporada: string | null;
     esSubasta: boolean;
     precioMin: string | null;
@@ -27,10 +36,10 @@ export const Home = () => {
     precioMin: null,
     precioMax: null,
   };
+
   const [filtros, setFiltros] = useState<typeof filtrosIniciales>(filtrosIniciales);
   const [sort, setSort] = useState<'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc'>('fechaDesc');
   const [page, setPage] = useState<number>(1);
-  // Debounced filters: appliedFiltros updates 300ms after user stops typing/changing filters
   const [appliedFiltros, setAppliedFiltros] = useState<typeof filtros>(filtros);
 
   // Helper to update filtros and reset page immediately to avoid race/flicker
@@ -46,7 +55,6 @@ export const Home = () => {
       return value !== null;
     }).length;
 
-  // Cargar camisetas al montar el componente o cambiar filtros
   // Debounce filters changes
   useEffect(() => {
     const t = setTimeout(() => {
@@ -86,8 +94,14 @@ export const Home = () => {
       };
       if ('equipo' in filtrosActivos) params.equipo = filtrosActivos.equipo as string;
       if ('temporada' in filtrosActivos) params.temporada = filtrosActivos.temporada as string;
-      if ('talle' in filtrosActivos && typeof filtrosActivos.talle === 'string') params.talle = filtrosActivos.talle as TalleType;
-      if ('condicion' in filtrosActivos && typeof filtrosActivos.condicion === 'string') params.condicion = filtrosActivos.condicion as CondicionCamisetaType;
+      if ('talle' in filtrosActivos && typeof filtrosActivos.talle === 'string') {
+        // ✅ CORREGIR: Validar que sea un valor válido del enum
+        params.talle = filtrosActivos.talle as Talle;
+      }
+      if ('condicion' in filtrosActivos && typeof filtrosActivos.condicion === 'string') {
+        // ✅ CORREGIR: Validar que sea un valor válido del enum
+        params.condicion = filtrosActivos.condicion as CondicionCamiseta;
+      }
       if ('esSubasta' in filtrosActivos) params.esSubasta = filtrosActivos.esSubasta as boolean;
       if ('precioMin' in filtrosActivos && filtrosActivos.precioMin != null) params.precioMin = filtrosActivos.precioMin as string | number;
       if ('precioMax' in filtrosActivos && filtrosActivos.precioMax != null) params.precioMax = filtrosActivos.precioMax as string | number;
@@ -181,6 +195,7 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.equipo ?? ''}
+                // ✅ CORREGIR: Cast correcto
                 onChange={e => updateFiltro({ equipo: e.target.value || null })}
                 onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
@@ -194,11 +209,12 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.talle ?? ''}
-                onChange={e => updateFiltro({ talle: e.target.value || null })}
+                // ✅ CORREGIR: Cast correcto a Talle
+                onChange={e => updateFiltro({ talle: (e.target.value || null) as Talle | null })}
                 onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todos los talles</option>
-                {[...new Set(camisetas.map(c => c.talle))].map(talle => (
+                {Object.values(Talle).map(talle => (
                   <option key={talle} value={talle}>{talle}</option>
                 ))}
               </select>
@@ -220,11 +236,12 @@ export const Home = () => {
               <select
                 className="form-select"
                 value={filtros.condicion ?? ''}
-                onChange={e => updateFiltro({ condicion: e.target.value || null })}
+                // ✅ CORREGIR: Cast correcto a CondicionCamiseta
+                onChange={e => updateFiltro({ condicion: (e.target.value || null) as CondicionCamiseta | null })}
                 onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               >
                 <option value="">Todas las condiciones</option>
-                {[...new Set(camisetas.map(c => c.condicion))].map(condicion => (
+                {Object.values(CondicionCamiseta).map(condicion => (
                   <option key={condicion} value={condicion}>{condicion}</option>
                 ))}
               </select>
@@ -324,6 +341,7 @@ export const Home = () => {
                     <span className="badge bg-primary me-1">{camiseta.equipo}</span>
                     <span className="badge bg-secondary me-1">{camiseta.talle}</span>
                     <span className="badge bg-info me-1">{camiseta.condicion}</span>
+                    {/* ✅ CORREGIR: Usar enum correctamente */}
                     <span className={`badge ${
                       camiseta.estado === EstadoCamiseta.DISPONIBLE ? 'bg-success' :
                       camiseta.estado === EstadoCamiseta.VENDIDA ? 'bg-danger' :
@@ -362,6 +380,7 @@ export const Home = () => {
                     </div>
 
                     {/* Botón de acción mejorado UX */}
+                    {/* ✅ CORREGIR: Usar enum correctamente */}
                     {camiseta.estado === EstadoCamiseta.VENDIDA ? (
                       <button type="button" className="btn btn-secondary w-100" disabled title="Esta camiseta ya fue vendida">
                         Vendida

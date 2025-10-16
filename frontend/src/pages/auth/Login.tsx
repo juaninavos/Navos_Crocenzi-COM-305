@@ -1,21 +1,41 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import type { LoginData } from '../../types'; // Cambiado a "import type"
+import type { LoginData } from '../../types';
 
 export const Login = () => {
   const [formData, setFormData] = useState<LoginData>({
     email: '',
     contrasena: ''
   });
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const { login: authLogin } = useAuth(); // ✅ Usar AuthContext
+  
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  // Manejar cambios en los inputs
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      // ✅ CAMBIAR: authService.login devuelve directamente { usuario, token }
+      const authResponse = await authService.login(formData);
+      
+      // ✅ CAMBIAR: Ya no hay .success o .data, es directo
+      login(authResponse.usuario, authResponse.token);
+      
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error en login:', error);
+      setError(error.message || 'Error de conexión');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -23,136 +43,64 @@ export const Login = () => {
     });
   };
 
-  const validateForm = () => {
-    if (!formData.email.includes('@')) {
-      setError('Ingrese un email válido');
-      return false;
-    }
-    if (formData.contrasena.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      return false;
-    }
-
-    return true;
-  };
-
-  // Manejar envío del formulario
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(''); 
-
-    try {
-      console.log('🔍 Intentando login...'); 
-      
-      const response = await authService.login(formData);
-      console.log('✅ Login exitoso:', response); 
-      
-      if (response.success && response.data) {
-        const { token, usuario } = response.data;
-        
-        // ✅ USAR AUTHCONTEXT EN LUGAR DE LOCALSTORAGE DIRECTO
-        authLogin(usuario, token);
-        
-        console.log('✅ AuthContext actualizado, redirigiendo...'); 
-        navigate('/');
-      } else {
-        console.error('❌ Estructura de respuesta inesperada:', response); 
-        setError('Error en la respuesta del servidor');
-        setTimeout(() => setError(''), 5000);
-      }
-      
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('❌ Error en login:', error);
-        setError(error.message || 'Error de conexión');
-        setTimeout(() => setError(''), 5000);
-      } else {
-        setError('Error de conexión');
-        setTimeout(() => setError(''), 5000);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="text-center">🔐 Login</h3>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Iniciar Sesión
+          </h2>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {error}
             </div>
-            <div className="card-body">
-              
-              {/* Mostrar error si existe */}
-              {error && (
-                <div className="alert alert-danger" role="alert">
-                  {error}
-                </div>
-              )}
-
-              {/* Formulario */}
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">Email</label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="contrasena" className="form-label">Contraseña</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="contrasena"
-                    name="contrasena"
-                    value={formData.contrasena}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <label htmlFor="contrasena" className="form-label">Contraseña</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="contrasena"
-                    name="contrasena"
-                    value={formData.contrasena}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="btn btn-primary w-100"
-                  disabled={loading}
-                >
-                  {loading ? (<span className='spinner-border spinner-border-sm me-2' role='status' aria-hidden='true'>Ingresando...</span>) : 'Ingresar'}
-                </button>
-              </form>
-
-              <div className="text-center mt-3">
-                <p>¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link></p>
-              </div>
+          )}
+          
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <input
+                id="contrasena"
+                name="contrasena"
+                type="password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="Contraseña"
+                value={formData.contrasena}
+                onChange={handleChange}
+              />
             </div>
           </div>
-        </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </button>
+          </div>
+
+          <div className="text-center">
+            <Link to="/register" className="text-indigo-600 hover:text-indigo-500">
+              ¿No tienes cuenta? Regístrate
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );

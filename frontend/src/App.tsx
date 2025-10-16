@@ -1,44 +1,34 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Navigation } from './components/common/Navigation';
 import { AuthProvider } from './contexts/AuthContext';
+
+// Pages
+import { Home } from './pages/user/Home';
+import { Catalog } from './pages/user/Catalog';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
-import { Home } from './pages/user/Home'; // Nueva importación
+import { AdminDashboard } from './pages/admin/Dashboard';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="App">
-          {/* Header */}
-          <nav className="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div className="container">
-              <Link className="navbar-brand" to="/">
-                🏆 Camisetas Retro
-              </Link>
-              <div className="navbar-nav ms-auto">
-                <Link className="nav-link" to="/login">Login</Link>
-                <Link className="nav-link" to="/register">Register</Link>
-              </div>
-            </div>
-          </nav>
-
-          {/* Rutas */}
-          <main className="container my-4">
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Navigation />
+          <main>
             <Routes>
-              <Route path="/" element={<Home />} /> {/* Actualizado */}
+              <Route path="/" element={<Home />} />
+              <Route path="/catalog" element={<Catalog />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </main>
-
-          {/* Footer */}
-          <footer className="bg-light text-center py-3 mt-5">
-            <p>&copy; 2024 Camisetas Retro Marketplace</p>
-          </footer>
         </div>
-      </BrowserRouter>
+      </Router>
     </AuthProvider>
   );
 }

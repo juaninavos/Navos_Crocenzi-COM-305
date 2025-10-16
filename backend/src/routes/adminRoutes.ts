@@ -1,12 +1,16 @@
-import express from 'express';
+import { Router } from 'express';
 import { AdminController } from '../controllers/AdminController';
+import authMiddleware from '../middleware/auth';
+import roleGuard from '../middleware/roleGuard';
 
-const router: express.Router = express.Router();
+const router = Router();
 
-// Todas las rutas requieren autenticación y rol de administrador
-router.get('/dashboard', AdminController.getDashboard);
-router.get('/usuarios', AdminController.gestionarUsuarios);
-router.put('/usuarios/:id/toggle-estado', AdminController.toggleEstadoUsuario);
-router.get('/reportes/ventas', AdminController.reporteVentas);
+// ✅ CONECTAR MÉTODOS ESTÁTICOS CON MIDDLEWARE DE ADMIN
+const adminAuth = [authMiddleware(), roleGuard(['administrador'])];
+
+router.get('/dashboard', ...adminAuth, AdminController.getDashboard);
+router.get('/usuarios', ...adminAuth, AdminController.gestionarUsuarios);
+router.put('/usuarios/:id/toggle-estado', ...adminAuth, AdminController.toggleEstadoUsuario);
+router.get('/reportes/ventas', ...adminAuth, AdminController.reporteVentas);
 
 export default router;

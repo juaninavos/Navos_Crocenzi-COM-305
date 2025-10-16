@@ -1,9 +1,18 @@
 // src/services/api.ts
+
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-import type { LoginData, RegisterData, Camiseta, ApiResponse, AuthResponse, CamisetaFiltro } from '../types';
-
+// ✅ CAMBIAR: Todos los tipos con 'type'
+import type { 
+  LoginData, 
+  RegisterData, 
+  Camiseta, 
+  ApiResponse, 
+  AuthResponse, 
+  CamisetaFiltro, 
+  DashboardData 
+} from '../types';
 
 // Tipo de error personalizado para manejar expiración de sesión, etc.
 export class ApiAuthError extends Error {
@@ -43,6 +52,7 @@ api.interceptors.response.use(
     // 401 → token expirado o inválido
     if (status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       return Promise.reject(new ApiAuthError());
     }
 
@@ -60,13 +70,12 @@ api.interceptors.response.use(
 // =========================
 export const authService = {
   login: async (data: LoginData): Promise<AuthResponse> => {
-  const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
-  return response.data.data;
-},
+    const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
+    return response.data.data;
+  },
 
-
-  register: async (data: RegisterData): Promise<{ message: string }> => {
-    const response = await api.post<ApiResponse<{ message: string }>>('/auth/register', data);
+  register: async (data: RegisterData): Promise<AuthResponse> => {
+    const response = await api.post<ApiResponse<AuthResponse>>('/auth/register', data);
     return response.data.data;
   },
 };
@@ -76,17 +85,25 @@ export const authService = {
 // =========================
 export const camisetaService = {
   getAll: async (filtros: CamisetaFiltro = {}): Promise<{ data: Camiseta[]; count: number; page?: number; limit?: number }> => {
-    // Normalizar y validar filtros de precio (inputs vienen como strings desde el formulario)
-  const normalized: Record<string, unknown> = { ...filtros };
+    // Normalizar y validar filtros de precio
+    const normalized: Record<string, unknown> = { ...filtros };
+    
     if (typeof filtros.precioMin === 'string' && filtros.precioMin.trim() !== '') {
       const n = Number(filtros.precioMin);
-  if (!Number.isNaN(n) && n >= 0) (normalized as Record<string, unknown>).precioMin = n;
-  else delete (normalized as Record<string, unknown>).precioMin;
+      if (!Number.isNaN(n) && n >= 0) {
+        normalized.precioMin = n;
+      } else {
+        delete normalized.precioMin;
+      }
     }
+    
     if (typeof filtros.precioMax === 'string' && filtros.precioMax.trim() !== '') {
       const n = Number(filtros.precioMax);
-  if (!Number.isNaN(n) && n >= 0) (normalized as Record<string, unknown>).precioMax = n;
-  else delete (normalized as Record<string, unknown>).precioMax;
+      if (!Number.isNaN(n) && n >= 0) {
+        normalized.precioMax = n;
+      } else {
+        delete normalized.precioMax;
+      }
     }
 
     const params = Object.fromEntries(
@@ -94,8 +111,13 @@ export const camisetaService = {
     );
 
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
-    const typedParams = params as Record<string, unknown>;
-    return { data: response.data.data, count: response.data.count ?? response.data.data.length, page: typeof typedParams.page === 'number' ? (typedParams.page as number) : undefined, limit: typeof typedParams.limit === 'number' ? (typedParams.limit as number) : undefined };
+    
+    return { 
+      data: response.data.data, 
+      count: response.data.count ?? response.data.data.length, 
+      page: typeof params.page === 'number' ? params.page : undefined, 
+      limit: typeof params.limit === 'number' ? params.limit : undefined 
+    };
   },
 
   getById: async (id: number): Promise<Camiseta> => {
@@ -120,11 +142,32 @@ export const camisetaService = {
 };
 
 // =========================
-// 🧠 Exportación agrupada (opcional)
+// 👑 Servicios de administración
+// =========================
+export const adminService = {
+  getDashboard: async (): Promise<DashboardData> => {
+    const response = await api.get<ApiResponse<DashboardData>>('/admin/dashboard');
+    return response.data.data;
+  },
+
+  getUsuarios: async (): Promise<any[]> => {
+    const response = await api.get<ApiResponse<any[]>>('/admin/usuarios');
+    return response.data.data;
+  },
+
+  toggleEstadoUsuario: async (id: number): Promise<{ message: string }> => {
+    const response = await api.put<ApiResponse<{ message: string }>>(`/admin/usuarios/${id}/toggle-estado`);
+    return response.data.data;
+  },
+};
+
+// =========================
+// 🧠 Exportación agrupada
 // =========================
 export const services = {
   auth: authService,
   camiseta: camisetaService,
+  admin: adminService,
 };
 
 export default api;

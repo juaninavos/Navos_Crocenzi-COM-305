@@ -62,10 +62,6 @@ async function main() {
   app.use('/api/metodos-pago', metodoPagoRoutes);  
   app.use('/api/admin', adminRoutes);  
   
-  // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
-  // app.use('/api/subastas', subastaRoutes);
-  // app.use('/api/ofertas', ofertaRoutes);
-  // app.use('/api/compras', compraRoutes);
 
   // Ruta de salud para verificar que funciona
   app.get('/api/health', (req: Request, res: Response) => {

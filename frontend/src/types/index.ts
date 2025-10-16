@@ -1,51 +1,69 @@
-// ✅ TIPOS 100% COHERENTES CON EL BACKEND (Compatible con verbatimModuleSyntax)
+// src/types/index.ts - ALINEADO 100% CON EL BACKEND
 
-// Const assertions (reemplazan a los enums)
-export const UsuarioRol = {
-  USUARIO: 'usuario',
-  ADMINISTRADOR: 'administrador'
-} as const;
+// =========================
+// 🎯 ENUMS EXACTOS DEL BACKEND
+// =========================
 
-export const Talle = {
-  XS: 'XS',
-  S: 'S', 
-  M: 'M',
-  L: 'L',
-  XL: 'XL',
-  XXL: 'XXL'
-} as const;
+export enum UsuarioRol {
+  USUARIO = 'usuario',
+  ADMINISTRADOR = 'administrador'
+}
 
-export const CondicionCamiseta = {
-  NUEVA: 'Nueva',
-  USADA: 'Usada',
-  VINTAGE: 'Vintage'
-} as const;
+export enum Talle {
+  XS = 'XS',
+  S = 'S',
+  M = 'M',
+  L = 'L',
+  XL = 'XL',
+  XXL = 'XXL'
+}
 
-export const EstadoCamiseta = {
-  DISPONIBLE: 'disponible',
-  VENDIDA: 'vendida',
-  EN_SUBASTA: 'en_subasta',
-  INACTIVA: 'inactiva'
-} as const;
+export enum CondicionCamiseta {
+  NUEVA = 'Nueva',
+  USADA = 'Usada',
+  VINTAGE = 'Vintage'
+}
 
-// Tipos derivados de las const assertions
-export type UsuarioRolType = typeof UsuarioRol[keyof typeof UsuarioRol];
-export type TalleType = typeof Talle[keyof typeof Talle];
-export type CondicionCamisetaType = typeof CondicionCamiseta[keyof typeof CondicionCamiseta];
-export type EstadoCamisetaType = typeof EstadoCamiseta[keyof typeof EstadoCamiseta];
+export enum EstadoCamiseta {
+  DISPONIBLE = 'disponible',
+  VENDIDA = 'vendida',
+  EN_SUBASTA = 'en_subasta',
+  INACTIVA = 'inactiva'  // ✅ CORREGIR: era 'pausada' pero backend usa 'inactiva'
+}
 
-// Interfaces EXACTAS del backend
+export enum EstadoCompra {
+  PENDIENTE = 'pendiente',
+  CONFIRMADA = 'confirmada',
+  PAGADA = 'pagada',
+  ENVIADA = 'enviada',
+  ENTREGADA = 'entregada',
+  CANCELADA = 'cancelada'
+}
+
+export enum EstadoPago {
+  PENDIENTE = 'pendiente',
+  PROCESANDO = 'procesando',
+  COMPLETADO = 'completado',
+  FALLIDO = 'fallido',
+  CANCELADO = 'cancelado'
+}
+
+// =========================
+// 🏗️ INTERFACES EXACTAS DEL BACKEND
+// =========================
+
 export interface Usuario {
   id: number;
   nombre: string;
   apellido: string;
   email: string;
   email_normalized: string;
+  contrasena?: string;  // Solo para backend, nunca se envía al frontend
   direccion: string;
   telefono: string;
-  rol: UsuarioRolType;         // ✅ USANDO TYPE
+  rol: UsuarioRol;
   activo: boolean;
-  fechaRegistro: string;
+  fechaRegistro: Date;
 }
 
 export interface Categoria {
@@ -58,37 +76,115 @@ export interface Categoria {
 export interface Camiseta {
   id: number;
   titulo: string;
-  descripcion?: string;
+  descripcion?: string;  // ✅ CORREGIR: es opcional en backend
   equipo: string;
   temporada: string;
-  talle: TalleType;                    // ✅ USANDO TYPE
-  condicion: CondicionCamisetaType;    // ✅ USANDO TYPE
-  imagen?: string;
+  talle: Talle;         // ✅ CORREGIR: usar enum, no string
+  condicion: CondicionCamiseta;  // ✅ CORREGIR: usar enum, no string
+  imagen?: string;      // ✅ CORREGIR: es opcional en backend
   precioInicial: number;
   esSubasta: boolean;
   stock: number;
-  estado: EstadoCamisetaType;          // ✅ USANDO TYPE
-  fechaCreacion: string;
-  fechaPublicacion: string;
-  // Relaciones
-  vendedor: Usuario;
-  categoria?: Categoria;
+  estado: EstadoCamiseta;
+  fechaCreacion: Date;
+  fechaPublicacion: Date;
+  // Relaciones populadas
+  vendedor: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    email?: string;
+    rol?: UsuarioRol;
+  };
+  categoria?: {
+    id: number;
+    nombre: string;
+    descripcion?: string;
+    activa?: boolean;
+  };
 }
 
-// Respuestas de API
-export interface AuthResponse {
-  token: string;
+export interface Subasta {
+  id: number;
+  fechaInicio: Date;
+  fechaFin: Date;
+  precioActual: number;
+  activa: boolean;
+  camiseta: Camiseta;
+  ganador?: Usuario;
+}
+
+export interface Oferta {
+  id: number;
+  monto: number;
+  fechaOferta: Date;
+  activa: boolean;
+  subasta: Subasta;
   usuario: Usuario;
 }
+
+export interface Compra {
+  id: number;
+  total: number;
+  estado: EstadoCompra;
+  fechaCompra: Date;
+  direccionEnvio?: string;
+  notas?: string;
+  comprador: Usuario;
+  camiseta: Camiseta;
+  metodoPago: MetodoPago;
+}
+
+export interface MetodoPago {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  activo: boolean;
+}
+
+export interface Pago {
+  id: number;
+  monto: number;
+  estado: EstadoPago;
+  fechaPago: Date;
+  numeroTransaccion?: string;
+  notas?: string;
+  compra: Compra;
+  metodoPago: MetodoPago;
+}
+
+export interface Descuento {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  porcentaje: number;
+  fechaInicio: Date;
+  fechaFin: Date;
+  activo: boolean;
+  fechaCreacion: Date;
+}
+
+// =========================
+// 📡 RESPUESTAS DE API
+// =========================
 
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
-  message: string;
   count?: number;
+  message?: string;
+  error?: string;
 }
 
-// DTOs para formularios
+export interface AuthResponse {
+  usuario: Usuario;  // ✅ Usar interface Usuario completa
+  token: string;
+}
+
+// =========================
+// 📝 DTOs PARA FORMULARIOS
+// =========================
+
 export interface LoginData {
   email: string;
   contrasena: string;
@@ -101,19 +197,95 @@ export interface RegisterData {
   contrasena: string;
   direccion: string;
   telefono: string;
+  rol?: UsuarioRol;
 }
 
-// Filtros que acepta el endpoint de camisetas
+export interface CreateCamisetaData {
+  titulo: string;
+  descripcion: string;
+  equipo: string;
+  temporada: string;
+  talle: Talle;
+  condicion: CondicionCamiseta;
+  imagen: string;
+  precioInicial: number;
+  esSubasta?: boolean;
+  categoriaId?: number;
+}
+
+export interface UpdateCamisetaData extends Partial<CreateCamisetaData> {
+  id: number;
+  estado?: EstadoCamiseta;
+  stock?: number;
+}
+
+// =========================
+// 🔍 FILTROS Y BÚSQUEDAS
+// =========================
+
 export interface CamisetaFiltro {
   equipo?: string;
   temporada?: string;
-  talle?: TalleType;
-  condicion?: CondicionCamisetaType;
+  talle?: Talle;
+  condicion?: CondicionCamiseta;
+  estado?: EstadoCamiseta;
+  precioMin?: string | number;
+  precioMax?: string | number;
   esSubasta?: boolean;
-  precioMin?: number | string;
-  precioMax?: number | string;
-  // Paginación y ordenamiento
+  search?: string;
   page?: number;
   limit?: number;
-  sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc' | string;
+  sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
 }
+
+// =========================
+// 📊 DASHBOARD Y ESTADÍSTICAS
+// =========================
+
+export interface DashboardData {
+  totalUsuarios: number;
+  totalCamisetas: number;
+  totalVentas: number;
+  ventasMes: number;
+  camisetasPorEstado?: {
+    disponible: number;
+    vendida: number;
+    en_subasta: number;
+    inactiva: number;
+  };
+  ventasPorMes?: Array<{
+    mes: string;
+    cantidad: number;
+    total: number;
+  }>;
+}
+
+// =========================
+// 🛒 CARRITO DE COMPRAS
+// =========================
+
+export interface CartItem {
+  id: number;
+  camiseta: Camiseta;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface Cart {
+  items: CartItem[];
+  total: number;
+  count: number;
+}
+
+// =========================
+// 🎯 TYPES AUXILIARES
+// =========================
+
+// ✅ QUITAR tipos duplicados y usar los enums directamente
+export type TalleType = Talle;
+export type CondicionCamisetaType = CondicionCamiseta;
+export type EstadoCamisetaType = EstadoCamiseta;
+export type UsuarioRolType = UsuarioRol;
+
+// ✅ AGREGAR User para compatibilidad (alias de Usuario)
+export interface User extends Usuario {}
