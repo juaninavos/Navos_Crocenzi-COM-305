@@ -83,7 +83,7 @@ export const Login = () => {
   return (
     <div className="container mt-5">
       <div className="row justify-content-center">
-        <div className="col-md-6">
+        <div className="col-12 col-md-6 col-lg-4">
           <div className="card">
             <div className="card-header">
               <h3 className="text-center">🔐 Login</h3>
@@ -112,18 +112,7 @@ export const Login = () => {
                   />
                 </div>
 
-                <div className="mb-3">
-                  <label htmlFor="contrasena" className="form-label">Contraseña</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="contrasena"
-                    name="contrasena"
-                    value={formData.contrasena}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+                {/* removed duplicate password input */}
 
                 <div className="mb-3">
                   <label htmlFor="contrasena" className="form-label">Contraseña</label>

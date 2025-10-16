@@ -1,3 +1,4 @@
+
 // src/app.ts
 import 'reflect-metadata';
 import 'dotenv/config';
@@ -27,8 +28,14 @@ async function main() {
   const app = express();
 
   // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
+  // Permitir los orígenes de desarrollo comunes (Vite puede arrancar en 5173 o 5174)
+  const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
   app.use(cors({
-    origin: 'http://localhost:5173', // ✅ Frontend URL
+    origin: (origin, cb) => {
+      // permitir llamadas sin origin (ej: curl, servidores internos) o los orígenes listados
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error('CORS origin not allowed'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -87,6 +94,12 @@ async function main() {
     });
   });
 
+  // DEBUG: endpoint temporal para inspeccionar query params que llegan al backend
+  app.get('/api/debug/echo', (req: Request, res: Response) => {
+    // Devolver exactamente lo que vino en req.query para pruebas rápidas
+    res.json({ success: true, query: req.query });
+  });
+
   // Ejemplo: ruta protegida por JWT y por role
   app.get('/api/protegida/admin', authMiddleware(), roleGuard(['admin']), (req, res) => {
     res.json({ message: 'Acceso concedido a administrador' });
@@ -99,11 +112,13 @@ async function main() {
   app.use(errorHandler);
 
   // Puerto del servidor
-  const PORT = process.env.PORT || 3001; // ✅ CAMBIAR AQUÍ
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  const PORT = Number(process.env.PORT) || 3001; // ✅ CAMBIAR AQUÍ
+  const HOST = process.env.HOST || '0.0.0.0';
+  app.listen(PORT, HOST, () => {
+    console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
     console.log(`📋 Fase actual: REGULARIDAD`);
-    console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
+    console.log(`🌐 Escuchando en interfaces: ${HOST}`);
   });
 }
 

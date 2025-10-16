@@ -9,6 +9,8 @@ export const Home = () => {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState('');
+  const [minPrecioVisible, setMinPrecioVisible] = useState<number | null>(null);
+  const [maxPrecioVisible, setMaxPrecioVisible] = useState<number | null>(null);
   // Estado de filtros
   const filtrosIniciales: {
     equipo: string | null;
@@ -30,6 +32,7 @@ export const Home = () => {
   const [filtros, setFiltros] = useState<typeof filtrosIniciales>(filtrosIniciales);
   const [sort, setSort] = useState<'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc'>('fechaDesc');
   const [page, setPage] = useState<number>(1);
+  const PAGE_SIZE = 9;
   // Debounced filters: appliedFiltros updates 300ms after user stops typing/changing filters
   const [appliedFiltros, setAppliedFiltros] = useState<typeof filtros>(filtros);
 
@@ -81,7 +84,7 @@ export const Home = () => {
       );
       const params: CamisetaFiltro = {
         page,
-        limit: 9,
+        limit: PAGE_SIZE,
         sort,
       };
       if ('equipo' in filtrosActivos) params.equipo = filtrosActivos.equipo as string;
@@ -96,6 +99,21 @@ export const Home = () => {
       // Update data only after fetch completes — no intermediate clearing
       setCamisetas(result.data);
       setTotalCount(result.count);
+      // Calcular min/max a partir de los resultados recibidos (mejora UX rápida)
+      if (result.data && result.data.length > 0) {
+        const precios = result.data.map(d => Number(d.precioInicial)).filter(n => !Number.isNaN(n));
+        if (precios.length > 0) {
+          setMinPrecioVisible(Math.min(...precios));
+          setMaxPrecioVisible(Math.max(...precios));
+        } else {
+          setMinPrecioVisible(null);
+          setMaxPrecioVisible(null);
+        }
+      } else {
+        // Si no hay resultados en esta página mantenemos los valores previos o los limpiamos
+        setMinPrecioVisible(null);
+        setMaxPrecioVisible(null);
+      }
     } catch (error) {
       setError('Error al cargar las camisetas');
       console.error(error);
@@ -105,13 +123,41 @@ export const Home = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-5">
-        <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
-          <span className="visually-hidden">Cargando...</span>
+  // Skeleton placeholder component (keeps same dimensions as card)
+  const SkeletonCard = () => (
+    <div className="col-md-6 col-lg-4 mb-4">
+      <div className="card card-camiseta h-100">
+        <div className="card-img-top bg-light d-flex align-items-center justify-content-center skeleton-img" style={{ height: '200px' }} />
+        <div className="card-body d-flex flex-column">
+          <div className="skeleton-line mb-2 w-75" />
+          <div className="skeleton-line mb-2 w-50" />
+          <div className="mt-auto">
+            <div className="skeleton-line mb-2 w-100" />
+            <div className="skeleton-line w-50" />
+          </div>
         </div>
-        <p className="mt-2">Cargando camisetas...</p>
+      </div>
+    </div>
+  );
+
+  // Show skeletons during initial load or when fetching but no items yet
+  if (loading || (fetching && camisetas.length === 0)) {
+    const placeholders = Array.from({ length: 6 });
+    return (
+      <div className="container-fluid py-4">
+        <div className="container">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1>🏆 Camisetas Disponibles</h1>
+            <div className="text-end">
+              <p className="text-muted mb-0">Cargando...</p>
+            </div>
+          </div>
+          <div className="row">
+            {placeholders.map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -136,15 +182,21 @@ export const Home = () => {
   }
 
   return (
-    <div>
+    <div className="container-fluid py-4">
+      <div className="container">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>🏆 Camisetas Disponibles</h1>
+        <div>
+          <h1>🏆 Camisetas Disponibles</h1>
+          {minPrecioVisible !== null && maxPrecioVisible !== null && (
+            <small className="text-muted">Precios aproximados: ${minPrecioVisible.toLocaleString()} — ${maxPrecioVisible.toLocaleString()}</small>
+          )}
+        </div>
         <div className="text-end">
           <p className="text-muted mb-0">
             Mostrando {camisetas.length} de {totalCount} camisetas
             {fetching && <span className="spinner-border spinner-border-sm text-primary ms-2" role="status" aria-hidden="true" />}
           </p>
-          <small className="text-muted">Página {page} / {Math.max(1, Math.ceil(totalCount / 9))}</small>
+          <small className="text-muted">Página {page} / {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}</small>
         </div>
       </div>
 
@@ -235,7 +287,7 @@ export const Home = () => {
               <input
                 type="number"
                 className="form-control"
-                placeholder="Precio mínimo"
+                placeholder="Precio mínimo (ARS)"
                 min={0}
                 value={filtros.precioMin ?? ''}
                 onChange={e => updateFiltro({ precioMin: e.target.value || null })}
@@ -246,13 +298,19 @@ export const Home = () => {
               <input
                 type="number"
                 className="form-control"
-                placeholder="Precio máximo"
+                placeholder="Precio máximo (ARS)"
                 min={0}
                 value={filtros.precioMax ?? ''}
                 onChange={e => updateFiltro({ precioMax: e.target.value || null })}
                 onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
               />
             </div>
+          </div>
+          {/* Presets de rango rápidos */}
+          <div className="mt-2 d-flex gap-2">
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateFiltro({ precioMin: '0', precioMax: '20000' })}>Menos de $20.000</button>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateFiltro({ precioMin: '20000', precioMax: '30000' })}>$20.000–$30.000</button>
+            <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => updateFiltro({ precioMin: '30000', precioMax: null })}>Más de $30.000</button>
           </div>
           {/* Mensaje si el rango de precio es inválido */}
           {filtros.precioMin !== null && filtros.precioMax !== null &&
@@ -390,8 +448,53 @@ export const Home = () => {
       {/* Paginación simple */}
       <div className="d-flex justify-content-between align-items-center mt-4">
         <button type="button" className="btn btn-outline-primary" disabled={page <= 1 || isApplying || fetching} onClick={() => setPage(p => Math.max(1, p - 1))}>Anterior</button>
-        <div>Página {page} de {Math.max(1, Math.ceil(totalCount / 9))}</div>
-        <button type="button" className="btn btn-outline-primary" disabled={page >= Math.max(1, Math.ceil(totalCount / 9)) || isApplying || fetching} onClick={() => setPage(p => p + 1)}>Siguiente</button>
+        <div>
+          Página {page} de {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+        </div>
+        <div>
+          {/* Numeric pagination: window of pages */}
+          {(() => {
+            const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+            const windowSize = 5;
+            let start = Math.max(1, page - Math.floor(windowSize / 2));
+            const end = Math.min(totalPages, start + windowSize - 1);
+            if (end - start + 1 < windowSize) {
+              start = Math.max(1, end - windowSize + 1);
+            }
+
+            const items: React.ReactNode[] = [];
+            if (start > 1) {
+              items.push(
+                <button key="first" type="button" className="btn btn-outline-secondary btn-sm me-1" disabled={isApplying || fetching} onClick={() => setPage(1)}>1</button>
+              );
+              if (start > 2) items.push(<span key="dots-start" className="me-2">…</span>);
+            }
+
+            for (let p = start; p <= end; p++) {
+              items.push(
+                <button
+                  key={p}
+                  type="button"
+                  className={`btn btn-sm me-1 ${p === page ? 'btn-primary' : 'btn-outline-secondary'}`}
+                  disabled={p === page || isApplying || fetching}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </button>
+              );
+            }
+
+            if (end < totalPages) {
+              if (end < totalPages - 1) items.push(<span key="dots-end" className="me-2">…</span>);
+              items.push(
+                <button key="last" type="button" className="btn btn-outline-secondary btn-sm" disabled={isApplying || fetching} onClick={() => setPage(totalPages)}>{totalPages}</button>
+              );
+            }
+
+            return items;
+          })()}
+        </div>
+      </div>
       </div>
     </div>
   );

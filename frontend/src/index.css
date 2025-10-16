@@ -24,8 +24,8 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  /* allow the layout to flow naturally so Bootstrap containers can control width
+     Removing global flex centering prevents pages from appearing narrow on desktop */
   min-width: 320px;
   min-height: 100vh;
 }

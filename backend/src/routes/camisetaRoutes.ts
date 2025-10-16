@@ -5,6 +5,7 @@ const router: express.Router = express.Router();
 
 // 🎯 CRUD básico + filtros para REGULARIDAD
 router.get('/', CamisetaController.getAll);        // GET /api/camisetas?equipo=Argentina
+router.get('/stats', CamisetaController.stats);   // GET /api/camisetas/stats
 router.get('/:id', CamisetaController.getOne);     // GET /api/camisetas/1
 router.post('/', CamisetaController.create);       // POST /api/camisetas
 router.put('/:id', CamisetaController.update);     // PUT /api/camisetas/1
