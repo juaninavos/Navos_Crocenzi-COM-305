@@ -109,6 +109,8 @@ export const camisetaService = {
     const params = Object.fromEntries(
       Object.entries(normalized).filter(([, v]) => v !== '' && v !== undefined && v !== null)
     );
+    // DEBUG: log params being sent to the API to verify price filters
+    console.log('camisetaService.getAll -> params:', params);
 
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
     

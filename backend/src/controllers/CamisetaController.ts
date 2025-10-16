@@ -75,6 +75,14 @@ export class CamisetaController {
   if (typeof parsed.precioMax === 'number') priceCond.$lte = parsed.precioMax;
   if (Object.keys(priceCond).length > 0) where.precioInicial = priceCond;
 
+  // DEBUG: log parsed filtros and where to help tracing issues with price filters
+  console.log('Parsed filtros:', parsed);
+  try {
+    console.log('Constructed where for query:', JSON.stringify(where));
+  } catch (err) {
+    console.log('Constructed where (non-serializable):', where);
+  }
+
   // Paginación y ordenamiento
   const page = parsed.page ?? 1;
   const limit = parsed.limit ?? 9;
@@ -313,6 +321,28 @@ export class CamisetaController {
     } catch (error) {
       console.error('Error en publicarParaVenta:', error);
       res.status(500).json({ success: false, message: 'Error al publicar camiseta' });
+    }
+  }
+
+  // GET /api/camisetas/stats - devuelve precio mínimo y máximo de camisetas activas
+  static async stats(req: Request, res: Response) {
+    try {
+      const orm = req.app.locals.orm as MikroORM;
+      const em = orm.em.fork();
+
+  const knex = (orm.em as any).getConnection().getKnex();
+      const row = await knex('camiseta')
+        .whereNot('estado', 'INACTIVA')
+        .select(knex.raw('MIN(precio_inicial) as minPrecio'), knex.raw('MAX(precio_inicial) as maxPrecio'))
+        .first();
+
+      const minPrecio = row?.minPrecio ? Number(row.minPrecio) : null;
+      const maxPrecio = row?.maxPrecio ? Number(row.maxPrecio) : null;
+
+      res.json({ success: true, data: { minPrecio, maxPrecio } });
+    } catch (error) {
+      console.error('Error en stats camisetas:', error);
+      res.status(500).json({ success: false, message: 'Error al obtener estadísticas de camisetas' });
     }
   }
 }

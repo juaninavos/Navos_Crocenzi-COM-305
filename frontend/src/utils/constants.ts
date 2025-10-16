@@ -1,5 +1,6 @@
 // La dirección de tu backend
-export const API_BASE_URL = 'http://localhost:3000/api';
+// Use the backend port where the server is running (3002 in development)
+export const API_BASE_URL = 'http://localhost:3002/api';
 
 // Las páginas de tu app
 export const ROUTES = {

@@ -4,12 +4,14 @@ import authMiddleware from '../middleware/auth';
 
 const router = Router();
 
-// ✅ CONECTAR MÉTODOS ESTÁTICOS
-router.get('/', CamisetaController.getAll);                    // GET /api/camisetas
-router.get('/:id', CamisetaController.getOne);                 // GET /api/camisetas/:id
-router.post('/', authMiddleware(), CamisetaController.create);  // POST /api/camisetas
-router.post('/publicar', authMiddleware(), CamisetaController.publicarParaVenta); // POST /api/camisetas/publicar
-router.put('/:id', authMiddleware(), CamisetaController.update); // PUT /api/camisetas/:id
-router.delete('/:id', authMiddleware(), CamisetaController.delete); // DELETE /api/camisetas/:id
+// 🎯 CRUD básico + filtros para REGULARIDAD
+router.get('/', CamisetaController.getAll);        // GET /api/camisetas?equipo=Argentina
+router.get('/:id', CamisetaController.getOne);     // GET /api/camisetas/1
+router.post('/', CamisetaController.create);       // POST /api/camisetas
+router.put('/:id', CamisetaController.update);     // PUT /api/camisetas/1
+router.delete('/:id', CamisetaController.delete);  // DELETE /api/camisetas/1
+
+// 🚀 CASO DE USO para REGULARIDAD
+router.post('/publicar', CamisetaController.publicarParaVenta);  // POST /api/camisetas/publicar
 
 export default router;

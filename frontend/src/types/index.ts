@@ -1,52 +1,58 @@
-// src/types/index.ts - ALINEADO 100% CON EL BACKEND
+// src/types/index.ts - CORREGIDO PARA erasableSyntaxOnly
 
 // =========================
-// 🎯 ENUMS EXACTOS DEL BACKEND
+// 🎯 TIPOS EXACTOS DEL BACKEND (const objects en lugar de enums)
 // =========================
 
-export enum UsuarioRol {
-  USUARIO = 'usuario',
-  ADMINISTRADOR = 'administrador'
-}
+export const UsuarioRol = {
+  USUARIO: 'usuario',
+  ADMINISTRADOR: 'administrador'
+} as const;
+export type UsuarioRol = typeof UsuarioRol[keyof typeof UsuarioRol];
 
-export enum Talle {
-  XS = 'XS',
-  S = 'S',
-  M = 'M',
-  L = 'L',
-  XL = 'XL',
-  XXL = 'XXL'
-}
+export const Talle = {
+  XS: 'XS',
+  S: 'S',
+  M: 'M',
+  L: 'L',
+  XL: 'XL',
+  XXL: 'XXL'
+} as const;
+export type Talle = typeof Talle[keyof typeof Talle];
 
-export enum CondicionCamiseta {
-  NUEVA = 'Nueva',
-  USADA = 'Usada',
-  VINTAGE = 'Vintage'
-}
+export const CondicionCamiseta = {
+  NUEVA: 'Nueva',
+  USADA: 'Usada',
+  VINTAGE: 'Vintage'
+} as const;
+export type CondicionCamiseta = typeof CondicionCamiseta[keyof typeof CondicionCamiseta];
 
-export enum EstadoCamiseta {
-  DISPONIBLE = 'disponible',
-  VENDIDA = 'vendida',
-  EN_SUBASTA = 'en_subasta',
-  INACTIVA = 'inactiva'  // ✅ CORREGIR: era 'pausada' pero backend usa 'inactiva'
-}
+export const EstadoCamiseta = {
+  DISPONIBLE: 'disponible',
+  VENDIDA: 'vendida',
+  EN_SUBASTA: 'en_subasta',
+  INACTIVA: 'inactiva'
+} as const;
+export type EstadoCamiseta = typeof EstadoCamiseta[keyof typeof EstadoCamiseta];
 
-export enum EstadoCompra {
-  PENDIENTE = 'pendiente',
-  CONFIRMADA = 'confirmada',
-  PAGADA = 'pagada',
-  ENVIADA = 'enviada',
-  ENTREGADA = 'entregada',
-  CANCELADA = 'cancelada'
-}
+export const EstadoCompra = {
+  PENDIENTE: 'pendiente',
+  CONFIRMADA: 'confirmada',
+  PAGADA: 'pagada',
+  ENVIADA: 'enviada',
+  ENTREGADA: 'entregada',
+  CANCELADA: 'cancelada'
+} as const;
+export type EstadoCompra = typeof EstadoCompra[keyof typeof EstadoCompra];
 
-export enum EstadoPago {
-  PENDIENTE = 'pendiente',
-  PROCESANDO = 'procesando',
-  COMPLETADO = 'completado',
-  FALLIDO = 'fallido',
-  CANCELADO = 'cancelado'
-}
+export const EstadoPago = {
+  PENDIENTE: 'pendiente',
+  PROCESANDO: 'procesando',
+  COMPLETADO: 'completado',
+  FALLIDO: 'fallido',
+  CANCELADO: 'cancelado'
+} as const;
+export type EstadoPago = typeof EstadoPago[keyof typeof EstadoPago];
 
 // =========================
 // 🏗️ INTERFACES EXACTAS DEL BACKEND
@@ -281,7 +287,7 @@ export interface Cart {
 // 🎯 TYPES AUXILIARES
 // =========================
 
-// ✅ QUITAR tipos duplicados y usar los enums directamente
+// ✅ Tipos auxiliares para compatibilidad
 export type TalleType = Talle;
 export type CondicionCamisetaType = CondicionCamiseta;
 export type EstadoCamisetaType = EstadoCamiseta;

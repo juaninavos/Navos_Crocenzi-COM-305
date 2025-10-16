@@ -21,10 +21,10 @@ export const Login = () => {
     setError('');
     
     try {
-      // ✅ CAMBIAR: authService.login devuelve directamente { usuario, token }
+      // ✅ MANTENER: authService.login devuelve directamente { usuario, token }
       const authResponse = await authService.login(formData);
       
-      // ✅ CAMBIAR: Ya no hay .success o .data, es directo
+      // ✅ MANTENER: Ya no hay .success o .data, es directo
       login(authResponse.usuario, authResponse.token);
       
       navigate('/');
@@ -44,63 +44,73 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Iniciar Sesión
-          </h2>
+    // ✅ USAR Bootstrap (versión de tu compañero) pero mantener la lógica nuestra
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-6 col-lg-4">
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-center">🔐 Iniciar Sesión</h3>
+            </div>
+            <div className="card-body">
+              
+              {/* Mostrar error si existe */}
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+
+              {/* Formulario */}
+              <form onSubmit={handleSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">Email</label>
+                  <input
+                    type="email"
+                    className="form-control"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="contrasena" className="form-label">Contraseña</label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    id="contrasena"
+                    name="contrasena"
+                    value={formData.contrasena}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Ingresando...
+                    </>
+                  ) : (
+                    'Ingresar'
+                  )}
+                </button>
+              </form>
+
+              <div className="text-center mt-3">
+                <p>¿No tienes cuenta? <Link to="/register">Regístrate aquí</Link></p>
+              </div>
+            </div>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <input
-                id="contrasena"
-                name="contrasena"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Contraseña"
-                value={formData.contrasena}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <Link to="/register" className="text-indigo-600 hover:text-indigo-500">
-              ¿No tienes cuenta? Regístrate
-            </Link>
-          </div>
-        </form>
       </div>
     </div>
   );
