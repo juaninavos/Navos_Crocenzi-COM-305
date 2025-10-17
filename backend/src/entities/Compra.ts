@@ -3,6 +3,7 @@ import { Usuario } from './Usuario';
 import { Camiseta } from './Camiseta';     
 import { MetodoPago } from './MetodoPago'; 
 import { Pago } from './Pago';    
+import { CompraItem } from './CompraItem';
 
 export enum EstadoCompra {
   PENDIENTE = 'pendiente',
@@ -36,8 +37,8 @@ export class Compra {
   @ManyToOne('Usuario')
   comprador!: Usuario;
 
-  @ManyToOne('Camiseta')
-  camiseta!: Camiseta;
+  @OneToMany(() => CompraItem, item => item.compra)
+  items = new Collection<CompraItem>(this);
 
   @ManyToOne('MetodoPago')
   metodoPago!: MetodoPago;
@@ -46,16 +47,14 @@ export class Compra {
   pagos = new Collection<Pago>(this);
 
   constructor(
-  total: number,
-  comprador: Usuario,      // ✅ Objeto completo
-  camiseta: Camiseta,      // ✅ Objeto completo
-  metodoPago: MetodoPago,  // ✅ Objeto completo
-  direccionEnvio?: string
-) {
-  this.total = total;
-  this.comprador = comprador;
-  this.camiseta = camiseta;
-  this.metodoPago = metodoPago;
-  this.direccionEnvio = direccionEnvio;
-}
+    total: number,
+    comprador: Usuario,
+    metodoPago: MetodoPago,
+    direccionEnvio?: string
+  ) {
+    this.total = total;
+    this.comprador = comprador;
+    this.metodoPago = metodoPago;
+    this.direccionEnvio = direccionEnvio;
+  }
 }

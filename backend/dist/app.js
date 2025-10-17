@@ -29,8 +29,26 @@ async function main() {
     const orm = await core_1.MikroORM.init(mikro_orm_config_1.default);
     const app = (0, express_1.default)();
     // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
+    // Permitir orígenes de desarrollo comunes y hacerlo configurable por variable de entorno
+    const defaultAllowed = [
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:5174',
+    ];
+    const envAllowed = process.env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
+    const allowedOrigins = envAllowed.length > 0 ? envAllowed : defaultAllowed;
     app.use((0, cors_1.default)({
-        origin: 'http://localhost:5173', // ✅ Frontend URL
+        origin: (origin, cb) => {
+            // permitir llamadas sin origin (curl, servidores internos)
+            if (!origin)
+                return cb(null, true);
+            // en producción, validar contra lista; en desarrollo, ser más permisivo
+            const isAllowed = allowedOrigins.includes(origin);
+            if (isAllowed || process.env.NODE_ENV !== 'production')
+                return cb(null, true);
+            return cb(new Error(`CORS origin not allowed: ${origin}`));
+        },
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization']
@@ -58,10 +76,6 @@ async function main() {
     app.use('/api/descuentos', descuentoRoutes_1.default);
     app.use('/api/metodos-pago', metodoPagoRoutes_1.default);
     app.use('/api/admin', adminRoutes_1.default);
-    // 🚀 FASE 2: APROBACIÓN - Se agregarán más adelante
-    // app.use('/api/subastas', subastaRoutes);
-    // app.use('/api/ofertas', ofertaRoutes);
-    // app.use('/api/compras', compraRoutes);
     // Ruta de salud para verificar que funciona
     app.get('/api/health', (req, res) => {
         res.json({
@@ -81,6 +95,11 @@ async function main() {
             ]
         });
     });
+    // DEBUG: endpoint temporal para inspeccionar query params que llegan al backend
+    app.get('/api/debug/echo', (req, res) => {
+        // Devolver exactamente lo que vino en req.query para pruebas rápidas
+        res.json({ success: true, query: req.query });
+    });
     // Ejemplo: ruta protegida por JWT y por role
     app.get('/api/protegida/admin', (0, auth_1.default)(), (0, roleGuard_1.default)(['admin']), (req, res) => {
         res.json({ message: 'Acceso concedido a administrador' });
@@ -90,11 +109,13 @@ async function main() {
     // Middleware global de manejo de errores (debe ir al final)
     app.use(errorHandler_1.errorHandler);
     // Puerto del servidor
-    const PORT = process.env.PORT || 3001; // ✅ CAMBIAR AQUÍ
-    app.listen(PORT, () => {
-        console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    const PORT = Number(process.env.PORT) || 3001; // ✅ CAMBIAR AQUÍ
+    const HOST = process.env.HOST || '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+        console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
         console.log(`📋 Fase actual: REGULARIDAD`);
-        console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+        console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
+        console.log(`🌐 Escuchando en interfaces: ${HOST}`);
     });
 }
 main().catch(console.error);

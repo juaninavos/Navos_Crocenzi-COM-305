@@ -28,13 +28,24 @@ async function main() {
   const app = express();
 
   // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
-  // Permitir los orígenes de desarrollo comunes (Vite puede arrancar en 5173 o 5174)
-  const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
+  // Permitir orígenes de desarrollo comunes y hacerlo configurable por variable de entorno
+  const defaultAllowed = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+  ];
+  const envAllowed = process.env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
+  const allowedOrigins = envAllowed.length > 0 ? envAllowed : defaultAllowed;
+
   app.use(cors({
     origin: (origin, cb) => {
-      // permitir llamadas sin origin (ej: curl, servidores internos) o los orígenes listados
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error('CORS origin not allowed'));
+      // permitir llamadas sin origin (curl, servidores internos)
+      if (!origin) return cb(null, true);
+      // en producción, validar contra lista; en desarrollo, ser más permisivo
+      const isAllowed = allowedOrigins.includes(origin);
+      if (isAllowed || process.env.NODE_ENV !== 'production') return cb(null, true);
+      return cb(new Error(`CORS origin not allowed: ${origin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

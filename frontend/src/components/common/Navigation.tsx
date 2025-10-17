@@ -24,19 +24,16 @@ export const Navigation: React.FC = () => {
           <Link to="/catalog" className="hover:underline">
             Catálogo
           </Link>
-          
+          <Link to="/carrito" className="hover:underline">
+            Carrito
+          </Link>
           {isAuthenticated ? (
             <>
-              <Link to="/cart" className="hover:underline">
-                Carrito
-              </Link>
-              
               {user?.rol === 'administrador' && (
                 <Link to="/admin" className="hover:underline">
                   Admin
                 </Link>
               )}
-              
               <span>Hola, {user?.nombre}</span>
               <button onClick={handleLogout} className="hover:underline">
                 Cerrar Sesión
