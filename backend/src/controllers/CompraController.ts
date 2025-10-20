@@ -91,122 +91,64 @@ export class CompraController {
   // POST /api/compras - CORREGIDO
   static async create(req: Request, res: Response) {
     try {
-      const { usuarioId, camisetaId, cantidad, codigoDescuento } = req.body;
-      
+      const { usuarioId, direccionEnvio, metodoPagoId, items } = req.body;
+
       // Validaciones básicas
       if (!usuarioId) {
-        return res.status(400).json({
-          success: false,
-          message: 'El usuario es obligatorio'
-        });
+        return res.status(400).json({ success: false, message: 'El usuario es obligatorio' });
       }
-      
-      if (!camisetaId) {
-        return res.status(400).json({
-          success: false,
-          message: 'La camiseta es obligatoria'
-        });
-      }
-      
-      if (!cantidad || cantidad <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: 'La cantidad debe ser mayor a 0'
-        });
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ success: false, message: 'Debes agregar al menos un producto al carrito' });
       }
 
       const orm = req.app.locals.orm;
-      
+
       // Verificar que el usuario existe
       const usuario = await orm.em.findOne(Usuario, { id: usuarioId });
       if (!usuario) {
-        return res.status(404).json({
-          success: false,
-          message: 'Usuario no encontrado'
-        });
-      }
-      
-      // Verificar que la camiseta existe y está disponible
-      const camiseta = await orm.em.findOne(Camiseta, { id: camisetaId });
-      if (!camiseta) {
-        return res.status(404).json({
-          success: false,
-          message: 'Camiseta no encontrada'
-        });
-      }
-      
-      // ✅ CORREGIDO: Usar enum
-      if (camiseta.estado !== EstadoCamiseta.DISPONIBLE) {
-        return res.status(400).json({
-          success: false,
-          message: 'La camiseta no está disponible para compra'
-        });
+        return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
       }
 
-      // Calcular precio base
-      let precioUnitario = camiseta.precioInicial;  // CORREGIDO
-      let precioTotal = precioUnitario * cantidad;
-      let descuentoAplicado = null;
-      let montoDescuento = 0;
-
-      // Aplicar descuento si se proporciona código
-      if (codigoDescuento) {
-        const descuento = await orm.em.findOne(Descuento, { 
-          codigo: codigoDescuento,
-          activo: true 
-        });
-        
-        if (descuento) {
-          // Verificar si el descuento está vigente
-          const ahora = new Date();
-          if (descuento.fechaInicio <= ahora && descuento.fechaFin >= ahora) {
-            montoDescuento = (precioTotal * descuento.porcentaje) / 100;
-            descuentoAplicado = descuento;
-          }
-        }
-      }
-
-      const precioFinal = precioTotal - montoDescuento;
-
-      // ✅ CORREGIDO: Obtener objeto MetodoPago completo
-      let metodoPago = await orm.em.findOne(MetodoPago, { id: 1 });
+      // Obtener método de pago
+      let metodoPago = metodoPagoId ? await orm.em.findOne(MetodoPago, { id: metodoPagoId }) : await orm.em.findOne(MetodoPago, { id: 1 });
       if (!metodoPago) {
         metodoPago = new MetodoPago('Efectivo', 'Pago en efectivo');
         await orm.em.persistAndFlush(metodoPago);
       }
 
-      // ✅ CORREGIDO: Pasar objetos completos al constructor
-      const nuevaCompra = new Compra(
-        precioFinal,           
-        usuario,        // ✅ CORREGIDO: Pasar objeto completo
-        camiseta,       // ✅ CORREGIDO: Pasar objeto completo
-        metodoPago,     // ✅ CORREGIDO: Pasar objeto completo
-        usuario.direccion     
-      );
-      
-      await orm.em.persistAndFlush(nuevaCompra);
-
-      // Respuesta con detalles del descuento aplicado
-      const respuesta: any = {
-        success: true,
-        data: nuevaCompra,
-        message: 'Compra creada correctamente',
-        detalles: {
-          precioOriginal: precioTotal,
-          descuentoAplicado: montoDescuento,
-          precioFinal: precioFinal
+      // Crear la compra (total 0, se calcula luego)
+      const nuevaCompra = new Compra(0, usuario, metodoPago, direccionEnvio);
+      let total = 0;
+      for (const item of items) {
+        // Validar cada item
+        if (!item.camisetaId || !item.cantidad || item.cantidad <= 0) {
+          continue;
         }
-      };
+        const camiseta = await orm.em.findOne(Camiseta, { id: item.camisetaId });
+        if (!camiseta) {
+          continue;
+        }
+        if (camiseta.estado !== EstadoCamiseta.DISPONIBLE) {
+          continue;
+        }
 
-      if (descuentoAplicado) {
-        respuesta.descuento = {
-          codigo: descuentoAplicado.codigo,
-          descripcion: descuentoAplicado.descripcion,
-          porcentaje: descuentoAplicado.porcentaje
-        };
+        // Calcular subtotal
+        const subtotal = camiseta.precioInicial * item.cantidad;
+        total += subtotal;
+
+        // Crear CompraItem
+        const compraItem = orm.em.create('CompraItem', {
+          compra: nuevaCompra,
+          camiseta,
+          cantidad: item.cantidad
+        });
+        nuevaCompra.items.add(compraItem);
+        await orm.em.persistAndFlush(compraItem);
       }
-
-      res.status(201).json(respuesta);
+      
+      nuevaCompra.total = total;
+      await orm.em.persistAndFlush(nuevaCompra);
+      res.status(201).json({ success: true, data: nuevaCompra, message: 'Compra creada correctamente' });
     } catch (error) {
       console.error('Error en create compra:', error);
       res.status(500).json({

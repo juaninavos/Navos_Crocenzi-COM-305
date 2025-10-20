@@ -46,14 +46,19 @@ export class Compra {
   @OneToMany(() => Pago, pago => pago.compra)
   pagos = new Collection<Pago>(this);
 
+  @ManyToOne('Camiseta')
+  camiseta!: Camiseta;
+
   constructor(
     total: number,
     comprador: Usuario,
+    camiseta: Camiseta,
     metodoPago: MetodoPago,
     direccionEnvio?: string
   ) {
     this.total = total;
     this.comprador = comprador;
+    this.camiseta = camiseta;
     this.metodoPago = metodoPago;
     this.direccionEnvio = direccionEnvio;
   }
