@@ -1,20 +1,24 @@
-import React from 'react';
-import { useCart } from '../context/CartContext';
+
+import { Link } from 'react-router-dom';
+import { useCart } from '../context/useCart';
 
 const CartPage: React.FC = () => {
   const { items, updateQuantity, removeFromCart, clearCart, total } = useCart();
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', padding: '1rem', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px #eee' }}>
+    <div style={{ maxWidth: 700, margin: '2rem auto', padding: '1.5rem', background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px #eee' }}>
       <h2>Carrito de compras</h2>
       {items.length === 0 ? (
-        <p>Tu carrito está vacío.</p>
+        <div>
+          <p>Tu carrito está vacío.</p>
+          <Link to="/catalog">Ir al catálogo</Link>
+        </div>
       ) : (
         <>
-          <table style={{ width: '100%', marginBottom: '1rem' }}>
+          <table style={{ width: '100%', marginBottom: '1rem', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th>Producto</th>
+                <th style={{ textAlign: 'left' }}>Producto</th>
                 <th>Cantidad</th>
                 <th>Precio</th>
                 <th>Subtotal</th>
@@ -24,7 +28,7 @@ const CartPage: React.FC = () => {
             <tbody>
               {items.map(({ producto, cantidad }) => (
                 <tr key={producto.id}>
-                  <td>{producto.nombre}</td>
+                  <td>{producto.titulo || 'Camiseta'}</td>
                   <td>
                     <input
                       type="number"
@@ -37,7 +41,7 @@ const CartPage: React.FC = () => {
                   <td>${producto.precioInicial}</td>
                   <td>${(producto.precioInicial * cantidad).toFixed(2)}</td>
                   <td>
-                    <button onClick={() => removeFromCart(producto.id)} style={{ color: 'red' }}>Eliminar</button>
+                    <button onClick={() => removeFromCart(producto.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>Eliminar</button>
                   </td>
                 </tr>
               ))}
@@ -45,7 +49,7 @@ const CartPage: React.FC = () => {
           </table>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <strong>Total: ${total.toFixed(2)}</strong>
-            <button onClick={clearCart} style={{ background: '#eee', border: 'none', padding: '0.5rem 1rem', borderRadius: 4 }}>Vaciar carrito</button>
+            <button onClick={clearCart} style={{ background: '#eee', border: 'none', padding: '0.5rem 1rem', borderRadius: 4, cursor: 'pointer' }}>Vaciar carrito</button>
           </div>
         </>
       )}

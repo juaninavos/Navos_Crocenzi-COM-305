@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const Navigation: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { usuario, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,12 +29,12 @@ export const Navigation: React.FC = () => {
           </Link>
           {isAuthenticated ? (
             <>
-              {user?.rol === 'administrador' && (
+              {usuario?.rol === 'administrador' && (
                 <Link to="/admin" className="hover:underline">
                   Admin
                 </Link>
               )}
-              <span>Hola, {user?.nombre}</span>
+              <span>Hola, {usuario?.nombre}</span>
               <button onClick={handleLogout} className="hover:underline">
                 Cerrar Sesión
               </button>
