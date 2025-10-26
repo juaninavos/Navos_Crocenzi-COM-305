@@ -1,34 +1,122 @@
 import { Request, Response } from 'express';
 import { Subasta } from '../entities/Subasta';
-import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';  // ✅ AGREGAR EstadoCamiseta
+import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';
+import { z } from 'zod';
 
 export class SubastaController {
-  // GET /api/subastas - PERFECTO
+  // GET /api/subastas
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const { activas } = req.query;
-      
-      let filtros: any = {};
-      
-      // Filtro para subastas activas
+      const em = orm.em.fork();
+
+      const { 
+        activas, 
+        camisetaId,
+        vendedorId,
+        page = '1', 
+        limit = '50' 
+      } = req.query;
+
+      console.log('📊 Query params:', { activas, camisetaId, vendedorId });
+
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+      const offset = (pageNum - 1) * limitNum;
+
+      const where: any = {};
+
+      // Filtro por activas/finalizadas
       if (activas === 'true') {
-        filtros.fechaFin = { $gte: new Date() };
-        filtros.activa = true;  // ✅ AGREGAR: También verificar campo activa
+        where.fechaFin = { $gte: new Date() };
+        console.log('🔥 Filtrando ACTIVAS');
+      } else if (activas === 'false') {
+        where.fechaFin = { $lt: new Date() };
+        console.log('📦 Filtrando FINALIZADAS');
       }
-      
-      const subastas = await orm.em.find(Subasta, filtros, { 
-        populate: ['camiseta', 'camiseta.categoria', 'camiseta.vendedor']
-      });
-      
+
+      // ✅ Filtro por camisetaId
+      if (camisetaId) {
+        const id = parseInt(camisetaId as string, 10);
+        if (!isNaN(id)) {
+          where.camiseta = id;
+          console.log('👕 Filtrando por camiseta:', id);
+        }
+      }
+
+      console.log('🔍 WHERE:', JSON.stringify(where));
+
+      let subastas: Subasta[];
+      let count: number;
+
+      // ✅ QUERY DIFERENTE para vendedorId
+      if (vendedorId) {
+        const vendedorIdNum = parseInt(vendedorId as string, 10);
+        console.log('👤 Buscando subastas del vendedor:', vendedorIdNum);
+
+        // ✅ Buscar con query builder para evitar errores de populate
+        const qb = em.createQueryBuilder(Subasta, 's');
+        qb.select('s.*')
+          .leftJoin('s.camiseta', 'c')
+          .where(where)
+          .andWhere({ 'c.vendedor': vendedorIdNum })
+          .orderBy({ 's.fechaInicio': 'DESC' })
+          .limit(limitNum)
+          .offset(offset);
+
+        subastas = await qb.getResultList();
+        count = await qb.getCount();
+
+        // ✅ Populate manual después de la query
+        await em.populate(subastas, ['camiseta', 'camiseta.vendedor', 'camiseta.categoria']);
+
+      } else {
+        // ✅ QUERY NORMAL sin vendedorId
+        try {
+          [subastas, count] = await em.findAndCount(
+            Subasta, 
+            where, 
+            {
+              populate: ['camiseta', 'camiseta.vendedor', 'camiseta.categoria'],
+              limit: limitNum,
+              offset,
+              orderBy: { fechaInicio: 'DESC' }
+            }
+          );
+        } catch (populateError) {
+          console.error('❌ Error en populate, intentando sin categoria:', populateError);
+          
+          // ✅ Fallback: sin categoria
+          [subastas, count] = await em.findAndCount(
+            Subasta, 
+            where, 
+            {
+              populate: ['camiseta', 'camiseta.vendedor'],
+              limit: limitNum,
+              offset,
+              orderBy: { fechaInicio: 'DESC' }
+            }
+          );
+        }
+      }
+
+      console.log(`✅ Encontradas ${count} subastas`);
+
       res.json({
         success: true,
         data: subastas,
-        count: subastas.length,
-        message: 'Subastas obtenidas correctamente'
+        count,
+        page: pageNum,
+        totalPages: Math.ceil(count / limitNum)
       });
+
     } catch (error) {
-      console.error('Error en getAll subastas:', error);
+      console.error('❌ ERROR COMPLETO en getAll subastas:', error);
+      
+      if (error instanceof Error) {
+        console.error('❌ Stack:', error.stack);
+      }
+
       res.status(500).json({
         success: false,
         message: 'Error al obtener subastas',
@@ -37,16 +125,18 @@ export class SubastaController {
     }
   }
 
-  // GET /api/subastas/:id - MEJORAR populate
+  // GET /api/subastas/:id
+  // ✅ CAMBIO: Renombrar de getOne a getById
   static async getById(req: Request, res: Response) {
     try {
-      const { id } = req.params;
       const orm = req.app.locals.orm;
-      
-      const subasta = await orm.em.findOne(Subasta, { id: parseInt(id) }, { 
-        populate: ['camiseta', 'camiseta.categoria', 'camiseta.vendedor', 'ganador']  // ✅ MEJORADO
-      });
-      
+      const em = orm.em.fork();
+      const { id } = req.params;
+
+      console.log('📊 Buscando subasta:', id);
+
+      const subasta = await em.findOne(Subasta, { id: parseInt(id) });
+
       if (!subasta) {
         return res.status(404).json({
           success: false,
@@ -54,71 +144,52 @@ export class SubastaController {
         });
       }
 
+      // ✅ Populate manual con try/catch
+      try {
+        await em.populate(subasta, ['camiseta', 'camiseta.vendedor', 'camiseta.categoria']);
+      } catch (populateError) {
+        console.warn('⚠️ Error al popular categoria, continuando sin ella');
+        await em.populate(subasta, ['camiseta', 'camiseta.vendedor']);
+      }
+
       res.json({
         success: true,
-        data: subasta,
-        message: 'Subasta obtenida correctamente'
+        data: subasta
       });
     } catch (error) {
-      console.error('Error en getById subasta:', error);
+      console.error('❌ Error en getById subasta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener subasta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'Error al obtener subasta'
       });
     }
   }
 
-  // POST /api/subastas - CORREGIR constructor
+  // POST /api/subastas
   static async create(req: Request, res: Response) {
     try {
-      const { fechaInicio, fechaFin, camisetaId, precioInicial } = req.body;
-      
-      // ✅ MEJORAR validaciones
-      if (!fechaInicio) {
+      const createSubastaSchema = z.object({
+        fechaInicio: z.coerce.date(),
+        fechaFin: z.coerce.date(),
+        camisetaId: z.coerce.number().int().positive(),
+        precioInicial: z.coerce.number().positive().optional()
+      }).refine(data => data.fechaFin > data.fechaInicio, {
+        message: 'La fecha de fin debe ser posterior a la de inicio'
+      });
+
+      const parseResult = createSubastaSchema.safeParse(req.body);
+      if (!parseResult.success) {
         return res.status(400).json({
           success: false,
-          message: 'La fecha de inicio es obligatoria'
-        });
-      }
-      
-      if (!fechaFin) {
-        return res.status(400).json({
-          success: false,
-          message: 'La fecha de fin es obligatoria'
-        });
-      }
-      
-      if (!camisetaId) {
-        return res.status(400).json({
-          success: false,
-          message: 'La camiseta es obligatoria'
+          errors: parseResult.error.issues
         });
       }
 
-      // ✅ AGREGAR: Validaciones de fechas
-      const inicio = new Date(fechaInicio);
-      const fin = new Date(fechaFin);
-      const ahora = new Date();
-
-      if (fin <= inicio) {
-        return res.status(400).json({
-          success: false,
-          message: 'La fecha de fin debe ser posterior a la fecha de inicio'
-        });
-      }
-
-      if (inicio < ahora) {
-        return res.status(400).json({
-          success: false,
-          message: 'La fecha de inicio no puede ser en el pasado'
-        });
-      }
-
+      const { fechaInicio, fechaFin, camisetaId, precioInicial } = parseResult.data;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      // Verificar que la camiseta existe y está disponible
-      const camiseta = await orm.em.findOne(Camiseta, { id: camisetaId });
+      const camiseta = await em.findOne(Camiseta, { id: camisetaId });
       if (!camiseta) {
         return res.status(404).json({
           success: false,
@@ -126,7 +197,6 @@ export class SubastaController {
         });
       }
 
-      // ✅ AGREGAR: Verificar que la camiseta esté disponible
       if (camiseta.estado !== EstadoCamiseta.DISPONIBLE) {
         return res.status(400).json({
           success: false,
@@ -134,44 +204,22 @@ export class SubastaController {
         });
       }
 
-      // ✅ AGREGAR: Verificar que no haya otra subasta activa para esta camiseta
-      const subastaExistente = await orm.em.findOne(Subasta, {
-        camiseta: camiseta,
-        activa: true,
-        fechaFin: { $gte: ahora }
-      });
-
-      if (subastaExistente) {
-        return res.status(400).json({
-          success: false,
-          message: 'La camiseta ya tiene una subasta activa'
-        });
-      }
-
-      // ✅ CORREGIDO: Usar constructor con parámetros
       const nuevaSubasta = new Subasta(
-        inicio,                                    // fechaInicio
-        fin,                                       // fechaFin  
-        precioInicial || camiseta.precioInicial,   // precioActual
-        camiseta                                   // camiseta
+        fechaInicio,
+        fechaFin,
+        precioInicial || camiseta.precioInicial,
+        camiseta
       );
 
-      // ✅ YA NO ES NECESARIO: Los valores ya están asignados por el constructor
-      // nuevaSubasta.fechaInicio = inicio;
-      // nuevaSubasta.fechaFin = fin;
-      // nuevaSubasta.precioActual = precioInicial || camiseta.precioInicial;
-      // nuevaSubasta.camiseta = camiseta;
-      // nuevaSubasta.activa = true;  // ← Se inicializa por defecto
-
-      // ✅ AGREGAR: Cambiar estado de la camiseta
       camiseta.estado = EstadoCamiseta.EN_SUBASTA;
+      camiseta.esSubasta = true;
 
-      await orm.em.persistAndFlush([nuevaSubasta, camiseta]);
+      await em.persistAndFlush([nuevaSubasta, camiseta]);
 
-      // Cargar subasta completa para respuesta
-      const subastaCompleta = await orm.em.findOne(Subasta, { id: nuevaSubasta.id }, {
-        populate: ['camiseta', 'camiseta.categoria', 'camiseta.vendedor']
-      });
+      const subastaCompleta = await em.findOne(Subasta, { id: nuevaSubasta.id });
+      if (subastaCompleta) {
+        await em.populate(subastaCompleta, ['camiseta', 'camiseta.vendedor']);
+      }
 
       res.status(201).json({
         success: true,
@@ -188,13 +236,14 @@ export class SubastaController {
     }
   }
 
-  // ✅ AGREGAR: Método para finalizar subasta
+  // PUT /api/subastas/:id/finalizar
   static async finalizar(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const subasta = await orm.em.findOne(Subasta, { id: parseInt(id) }, {
+      const subasta = await em.findOne(Subasta, { id: parseInt(id) }, {
         populate: ['camiseta']
       });
       
@@ -229,7 +278,7 @@ export class SubastaController {
         }
       }
 
-      await orm.em.persistAndFlush([subasta, subasta.camiseta]);
+      await em.persistAndFlush([subasta, subasta.camiseta]);
 
       res.json({
         success: true,

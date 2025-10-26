@@ -6,7 +6,7 @@ import roleGuard from '../middleware/roleGuard';
 const router = Router();
 
 // ✅ CONECTAR MÉTODOS ESTÁTICOS CON MIDDLEWARE DE ADMIN
-const adminAuth = [authMiddleware(), roleGuard(['administrador'])];
+const adminAuth = [authMiddleware, roleGuard(['administrador'])];
 
 router.get('/dashboard', ...adminAuth, AdminController.getDashboard);
 router.get('/usuarios', ...adminAuth, AdminController.gestionarUsuarios);

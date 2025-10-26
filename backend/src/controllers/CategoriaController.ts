@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Categoria } from '../entities/Categoria';  // ✅ CORREGIDO: Agregar .js
-import { Camiseta } from '../entities/Camiseta';     // ✅ AGREGAR: Para el count
-import { UsuarioRol } from '../entities/Usuario';   // ✅ AGREGAR: Para el rol de usuario
+import { Categoria } from '../entities/Categoria';
+import { Camiseta } from '../entities/Camiseta';
+import { UsuarioRol } from '../entities/Usuario';
 
 export class CategoriaController {
   
@@ -63,7 +63,14 @@ export class CategoriaController {
   // POST /api/categorias
   static async create(req: Request, res: Response) {
     try {
-      // ✅ AGREGAR: Solo administradores pueden crear categorías
+      // ✅ VALIDACIÓN AGREGADA
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado'
+        });
+      }
+
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -73,7 +80,6 @@ export class CategoriaController {
 
       const { nombre, descripcion } = req.body;
       
-      // Validaciones básicas
       if (!nombre) {
         return res.status(400).json({
           success: false,
@@ -91,7 +97,6 @@ export class CategoriaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
       
-      // Verificar que no exista una categoría con el mismo nombre
       const existeCategoria = await em.findOne(Categoria, { nombre: nombre.trim() });
       if (existeCategoria) {
         return res.status(400).json({
@@ -100,7 +105,6 @@ export class CategoriaController {
         });
       }
       
-      // ✅ PERFECTO: Uso correcto del constructor
       const nuevaCategoria = new Categoria(nombre.trim(), descripcion?.trim());
       
       em.persist(nuevaCategoria);
@@ -138,7 +142,6 @@ export class CategoriaController {
         });
       }
 
-      // Validaciones si se envía nombre
       if (nombre !== undefined) {
         if (!nombre || nombre.length < 2 || nombre.length > 100) {
           return res.status(400).json({
@@ -147,7 +150,6 @@ export class CategoriaController {
           });
         }
 
-        // Verificar que no exista otra categoría con el mismo nombre
         const existeCategoria = await em.findOne(Categoria, { 
           nombre: nombre.trim(),
           id: { $ne: parseInt(id) }
@@ -199,7 +201,6 @@ export class CategoriaController {
         });
       }
 
-      // ✅ PERFECTO: Verificar relaciones antes de eliminar
       const camisetasAsociadas = await em.count(Camiseta, { categoria: categoria });
       if (camisetasAsociadas > 0) {
         return res.status(400).json({
@@ -208,7 +209,6 @@ export class CategoriaController {
         });
       }
 
-      // Soft delete: marcar como inactiva
       categoria.activa = false;
       await em.flush();
 

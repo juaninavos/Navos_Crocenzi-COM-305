@@ -58,58 +58,57 @@ export class CamisetaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
 
-  type FiltrosCamiseta = z.infer<typeof filtrosSchema> & { estado: { $ne: EstadoCamiseta } };
-  const parsed = parseResult.data;
+      const parsed = parseResult.data;
 
-  // Construir where dinámico para incluir rango de precio si está presente
-  const where: any = { estado: { $ne: EstadoCamiseta.INACTIVA } };
-  if (parsed.equipo) where.equipo = parsed.equipo;
-  if (parsed.temporada) where.temporada = parsed.temporada;
-  if (parsed.talle) where.talle = parsed.talle;
-  if (parsed.condicion) where.condicion = parsed.condicion;
-  if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
+      // Construir where dinámico para incluir rango de precio si está presente
+      const where: any = { estado: { $ne: EstadoCamiseta.INACTIVA } };
+      if (parsed.equipo) where.equipo = parsed.equipo;
+      if (parsed.temporada) where.temporada = parsed.temporada;
+      if (parsed.talle) where.talle = parsed.talle;
+      if (parsed.condicion) where.condicion = parsed.condicion;
+      if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
 
-  // Rango de precio
-  const priceCond: any = {};
-  if (typeof parsed.precioMin === 'number') priceCond.$gte = parsed.precioMin;
-  if (typeof parsed.precioMax === 'number') priceCond.$lte = parsed.precioMax;
-  if (Object.keys(priceCond).length > 0) where.precioInicial = priceCond;
+      // Rango de precio
+      const priceCond: any = {};
+      if (typeof parsed.precioMin === 'number') priceCond.$gte = parsed.precioMin;
+      if (typeof parsed.precioMax === 'number') priceCond.$lte = parsed.precioMax;
+      if (Object.keys(priceCond).length > 0) where.precioInicial = priceCond;
 
-  // DEBUG: log parsed filtros and where to help tracing issues with price filters
-  console.log('Parsed filtros:', parsed);
-  try {
-    console.log('Constructed where for query:', JSON.stringify(where));
-  } catch (err) {
-    console.log('Constructed where (non-serializable):', where);
-  }
+      // DEBUG: log parsed filtros and where to help tracing issues with price filters
+      console.log('Parsed filtros:', parsed);
+      try {
+        console.log('Constructed where for query:', JSON.stringify(where));
+      } catch (err) {
+        console.log('Constructed where (non-serializable):', where);
+      }
 
-  // Paginación y ordenamiento
-  const page = parsed.page ?? 1;
-  const limit = parsed.limit ?? 9;
-  const offset = (page - 1) * limit;
+      // Paginación y ordenamiento
+      const page = parsed.page ?? 1;
+      const limit = parsed.limit ?? 9;
+      const offset = (page - 1) * limit;
 
-  let orderBy: any = { fechaPublicacion: 'DESC' };
-  switch (parsed.sort) {
-    case 'precioAsc':
-      orderBy = { precioInicial: 'ASC' };
-      break;
-    case 'precioDesc':
-      orderBy = { precioInicial: 'DESC' };
-      break;
-    case 'fechaAsc':
-      orderBy = { fechaPublicacion: 'ASC' };
-      break;
-    case 'fechaDesc':
-    default:
-      orderBy = { fechaPublicacion: 'DESC' };
-  }
+      let orderBy: any = { fechaPublicacion: 'DESC' };
+      switch (parsed.sort) {
+        case 'precioAsc':
+          orderBy = { precioInicial: 'ASC' };
+          break;
+        case 'precioDesc':
+          orderBy = { precioInicial: 'DESC' };
+          break;
+        case 'fechaAsc':
+          orderBy = { fechaPublicacion: 'ASC' };
+          break;
+        case 'fechaDesc':
+        default:
+          orderBy = { fechaPublicacion: 'DESC' };
+      }
 
-  const [camisetasList, total] = await Promise.all([
-    em.find(Camiseta, where, { populate: ['categoria', 'vendedor'], limit, offset, orderBy }),
-    em.count(Camiseta, where)
-  ]);
+      const [camisetasList, total] = await Promise.all([
+        em.find(Camiseta, where, { populate: ['categoria', 'vendedor'], limit, offset, orderBy }),
+        em.count(Camiseta, where)
+      ]);
 
-  res.json({ success: true, data: camisetasList, count: total, page, limit });
+      res.json({ success: true, data: camisetasList, count: total, page, limit });
     } catch (error) {
       console.error('Error en getAll camisetas:', error);
       res.status(500).json({ success: false, message: 'Error al obtener camisetas' });
@@ -137,6 +136,11 @@ export class CamisetaController {
   // POST /api/camisetas
   static async create(req: Request, res: Response) {
     try {
+      // ✅ VALIDACIÓN AGREGADA
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+      }
+
       if (req.user.rol !== UsuarioRol.USUARIO) {
         return res.status(403).json({ success: false, message: 'Solo usuarios pueden publicar camisetas' });
       }
@@ -245,6 +249,11 @@ export class CamisetaController {
   // POST /api/camisetas/publicar
   static async publicarParaVenta(req: Request, res: Response) {
     try {
+      // ✅ VALIDACIÓN AGREGADA
+      if (!req.user) {
+        return res.status(401).json({ success: false, message: 'No autorizado' });
+      }
+
       if (req.user.rol !== UsuarioRol.USUARIO) {
         return res.status(403).json({ success: false, message: 'Solo usuarios pueden publicar camisetas' });
       }
@@ -330,7 +339,7 @@ export class CamisetaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
 
-  const knex = (orm.em as any).getConnection().getKnex();
+      const knex = (orm.em as any).getConnection().getKnex();
       const row = await knex('camiseta')
         .whereNot('estado', 'INACTIVA')
         .select(knex.raw('MIN(precio_inicial) as minPrecio'), knex.raw('MAX(precio_inicial) as maxPrecio'))

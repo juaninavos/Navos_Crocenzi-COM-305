@@ -139,7 +139,14 @@ export class DescuentoController {
   // POST /api/descuentos
   static async create(req: Request, res: Response) {
     try {
-      // ✅ AGREGAR: Solo administradores pueden crear descuentos
+      // ✅ VALIDACIÓN AGREGADA
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado'
+        });
+      }
+
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -196,7 +203,6 @@ export class DescuentoController {
       const inicio = new Date(fechaInicio);
       const fin = new Date(fechaFin);
       
-      // ✅ OPCIONAL: Validar que las fechas sean válidas
       if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
         return res.status(400).json({
           success: false,
@@ -211,7 +217,6 @@ export class DescuentoController {
         });
       }
 
-      // ✅ OPCIONAL: Validar que la fecha de inicio no sea muy antigua
       const ahora = new Date();
       const unAnioAtras = new Date();
       unAnioAtras.setFullYear(ahora.getFullYear() - 1);
@@ -223,7 +228,6 @@ export class DescuentoController {
         });
       }
 
-      // ✅ USAR CONSTRUCTOR
       const nuevoDescuento = new Descuento(
         codigo.toUpperCase(),
         descripcion,
@@ -253,7 +257,14 @@ export class DescuentoController {
   // PUT /api/descuentos/:id
   static async update(req: Request, res: Response) {
     try {
-      // ✅ AGREGAR: Solo administradores pueden actualizar descuentos
+      // ✅ VALIDACIÓN AGREGADA
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado'
+        });
+      }
+
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -274,10 +285,8 @@ export class DescuentoController {
         });
       }
 
-      // Actualizar campos si se proporcionan
       if (descripcion !== undefined) descuento.descripcion = descripcion;
       
-      // ✅ MEJORADO: Validación más específica para porcentaje
       if (porcentaje !== undefined) {
         if (porcentaje <= 0 || porcentaje > 100) {
           return res.status(400).json({
@@ -292,7 +301,6 @@ export class DescuentoController {
       if (fechaFin !== undefined) descuento.fechaFin = new Date(fechaFin);
       if (activo !== undefined) descuento.activo = activo;
 
-      // Validar fechas si se actualizaron
       if (descuento.fechaFin <= descuento.fechaInicio) {
         return res.status(400).json({
           success: false,
@@ -332,7 +340,6 @@ export class DescuentoController {
         });
       }
 
-      // En lugar de eliminar, desactivar el descuento para mantener historial
       descuento.activo = false;
       await orm.em.persistAndFlush(descuento);
 

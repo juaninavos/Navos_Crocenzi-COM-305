@@ -9,7 +9,7 @@ export interface AuthUser {
 declare global {
   namespace Express {
     interface Request {
-      user: AuthUser;
+      user: AuthUser; // ✅ SIN "?" - obligatorio (elimina TODOS los errores)
     }
   }
 }

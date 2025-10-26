@@ -1,4 +1,3 @@
-
 // src/app.ts
 import 'reflect-metadata';
 import 'dotenv/config';
@@ -108,8 +107,12 @@ async function main() {
   });
 
   // Ejemplo: ruta protegida por JWT y por role
-  app.get('/api/protegida/admin', authMiddleware(), roleGuard(['admin']), (req, res) => {
-    res.json({ message: 'Acceso concedido a administrador' });
+  app.get('/api/protegida/admin', authMiddleware, roleGuard(['admin']), (req, res) => {
+    res.json({ 
+      success: true, 
+      message: 'Acceso permitido para admin',
+      usuario: req.user 
+    });
   });
 
   // Middleware para rutas no encontradas (debe ir después de todas las rutas)
@@ -130,3 +133,4 @@ async function main() {
 }
 
 main().catch(console.error);
+
