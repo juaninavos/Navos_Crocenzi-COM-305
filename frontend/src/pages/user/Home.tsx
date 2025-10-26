@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { camisetaService } from '../../services/api';
-// ✅ SEPARAR: Enums (valores) e interfaces (tipos)
+import { useCart } from '../../context/useCart'; // ✅ AGREGAR
 import { 
-  EstadoCamiseta,     // ✅ Sin 'type' - es un const object (valor)
-  Talle,             // ✅ Sin 'type' - es un const object (valor)  
-  CondicionCamiseta  // ✅ Sin 'type' - es un const object (valor)
+  EstadoCamiseta,
+  Talle,
+  CondicionCamiseta
 } from '../../types';
 import type { 
-  Camiseta,          // ✅ Con 'type' - es una interface
-  CamisetaFiltro     // ✅ Con 'type' - es una interface
+  Camiseta,
+  CamisetaFiltro
 } from '../../types';
 
 export const Home = () => {
   const PAGE_SIZE = 9;
+  const { addToCart } = useCart(); // ✅ AGREGAR
 
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -128,6 +129,16 @@ export const Home = () => {
     } finally {
       setLoading(false);
       setFetching(false);
+    }
+  };
+
+  const handleAddToCart = (camiseta: Camiseta) => {
+    try {
+      addToCart(camiseta, 1);
+      alert(`✅ ${camiseta.titulo} agregada al carrito`);
+    } catch (error) {
+      console.error('Error al agregar al carrito:', error);
+      alert('❌ Error al agregar al carrito');
     }
   };
 
@@ -397,20 +408,25 @@ export const Home = () => {
 
                       {/* Botón de acción mejorado UX */}
                       {camiseta.estado === EstadoCamiseta.VENDIDA ? (
-                        <button type="button" className="btn btn-secondary w-100" disabled title="Esta camiseta ya fue vendida">
+                        <button type="button" className="btn btn-secondary w-100" disabled>
                           Vendida
                         </button>
                       ) : camiseta.esSubasta ? (
-                        <button type="button" className="btn btn-warning w-100" title="Participa en la subasta">
+                        <button type="button" className="btn btn-warning w-100">
                           Ver Subasta
                         </button>
                       ) : camiseta.estado !== EstadoCamiseta.DISPONIBLE ? (
-                        <button type="button" className="btn btn-secondary w-100" disabled title="No disponible para comprar">
+                        <button type="button" className="btn btn-secondary w-100" disabled>
                           No disponible
                         </button>
                       ) : (
-                        <button type="button" className="btn btn-primary w-100">
-                          Comprar
+                        <button 
+                          type="button" 
+                          className="btn btn-primary w-100"
+                          onClick={() => handleAddToCart(camiseta)} // ✅ AGREGAR ESTO
+                          disabled={camiseta.stock <= 0}
+                        >
+                          {camiseta.stock > 0 ? '🛒 Agregar al Carrito' : 'Sin Stock'}
                         </button>
                       )}
                     </div>

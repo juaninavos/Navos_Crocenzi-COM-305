@@ -3,13 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { camisetaService } from '../../services/api';
 import { ProductCard } from '../../components/common/ProductCard';
-// ✅ CAMBIAR: Importar tipos con 'type'
+import { useCart } from '../../context/useCart'; // ✅ AGREGAR
 import type { Camiseta } from '../../types';
 
 export const Catalog: React.FC = () => {
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { addToCart } = useCart(); // ✅ AGREGAR
 
   useEffect(() => {
     loadCamisetas();
@@ -17,7 +18,6 @@ export const Catalog: React.FC = () => {
 
   const loadCamisetas = async () => {
     try {
-      // ✅ USAR TU API SERVICE
       const result = await camisetaService.getAll();
       setCamisetas(result.data);
     } catch (err) {
@@ -28,9 +28,16 @@ export const Catalog: React.FC = () => {
     }
   };
 
+  // ✅ CAMBIAR esta función:
   const handleAddToCart = (camiseta: Camiseta) => {
-    // TODO: Implementar carrito
-    alert(`${camiseta.titulo} agregada al carrito`);
+    try {
+      addToCart(camiseta, 1);
+      // Opcional: usar una librería de notificaciones en lugar de alert
+      alert(`✅ ${camiseta.titulo} agregada al carrito`);
+    } catch (error) {
+      console.error('Error al agregar al carrito:', error);
+      alert('❌ Error al agregar al carrito');
+    }
   };
 
   if (loading) return <div className="p-4">Cargando...</div>;

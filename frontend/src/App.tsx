@@ -3,14 +3,13 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Navigation } from './components/common/Navigation';
 
-// Pages - ✅ USAR NAMED IMPORTS (con llaves)
+// Pages
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { Home } from './pages/user/Home';
 import { Catalog } from './pages/user/Catalog';
-import { AdminDashboard } from './pages/admin/Dashboard'; // ✅ CAMBIAR a AdminDashboard
+import { AdminDashboard } from './pages/admin/Dashboard';
 
-// Estos SÍ usan export default
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/user/OrdersPage';
@@ -20,9 +19,9 @@ import './App.css';
 
 function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <CartProvider>
           <div className="min-h-screen bg-gray-50">
             <Navigation />
             <main>
@@ -34,13 +33,13 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} /> {/* ✅ CAMBIAR */}
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
               </Routes>
             </main>
           </div>
-        </Router>
-      </CartProvider>
-    </AuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

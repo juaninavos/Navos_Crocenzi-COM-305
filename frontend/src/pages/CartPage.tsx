@@ -14,7 +14,7 @@ export const CartPage: React.FC = () => {
           <p className="text-muted">¡Agrega algunos productos para comenzar!</p>
           <button 
             className="btn btn-primary mt-3"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
           >
             Ver Catálogo
           </button>
@@ -28,16 +28,13 @@ export const CartPage: React.FC = () => {
       <h1 className="mb-4">🛒 Mi Carrito ({items.length} {items.length === 1 ? 'producto' : 'productos'})</h1>
 
       <div className="row">
-        {/* Lista de items */}
         <div className="col-lg-8">
-          {/* ✅ CAMBIAR: usar index como key porque CartItem no tiene id */}
+          {/* ✅ Ya está bien: usar index como key */}
           {items.map((item, index) => (
-            <div key={index} className="card mb-3">
+            <div key={`cart-item-${item.producto.id}-${index}`} className="card mb-3">
               <div className="card-body">
                 <div className="row align-items-center">
-                  {/* Imagen */}
                   <div className="col-md-2">
-                    {/* ✅ CAMBIAR: item.camiseta → item.producto */}
                     {item.producto.imagen ? (
                       <img 
                         src={item.producto.imagen} 
@@ -52,7 +49,6 @@ export const CartPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="col-md-4">
                     <h5 className="mb-1">{item.producto.titulo}</h5>
                     <p className="text-muted mb-1">
@@ -61,7 +57,6 @@ export const CartPage: React.FC = () => {
                     <small className="text-muted">Stock disponible: {item.producto.stock}</small>
                   </div>
 
-                  {/* Cantidad */}
                   <div className="col-md-2">
                     <label className="form-label small">Cantidad:</label>
                     <div className="input-group input-group-sm">
@@ -99,13 +94,11 @@ export const CartPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Precio */}
                   <div className="col-md-2 text-end">
                     <p className="mb-0 fw-bold fs-5">${(item.producto.precioInicial * item.cantidad).toLocaleString()}</p>
                     <small className="text-muted">${item.producto.precioInicial.toLocaleString()} c/u</small>
                   </div>
 
-                  {/* Eliminar */}
                   <div className="col-md-2 text-end">
                     <button 
                       className="btn btn-outline-danger btn-sm"
@@ -127,7 +120,7 @@ export const CartPage: React.FC = () => {
           <div className="d-flex justify-content-between align-items-center mt-3">
             <button 
               className="btn btn-outline-secondary"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
               type="button"
             >
               ← Seguir Comprando
@@ -146,7 +139,6 @@ export const CartPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Resumen */}
         <div className="col-lg-4">
           <div className="card sticky-top" style={{ top: '20px' }}>
             <div className="card-header bg-primary text-white">
@@ -177,7 +169,7 @@ export const CartPage: React.FC = () => {
               
               <button 
                 className="btn btn-outline-secondary w-100"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
                 type="button"
               >
                 Continuar Comprando

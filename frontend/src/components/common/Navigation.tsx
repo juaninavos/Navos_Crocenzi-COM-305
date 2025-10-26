@@ -3,15 +3,19 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../context/useCart';
 
 export const Navigation: React.FC = () => {
   const { usuario, logout, isAuthenticated } = useAuth();
+  const { items } = useCart();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  const totalItems = items.reduce((sum, item) => sum + item.cantidad, 0);
 
   return (
     <nav className="bg-blue-600 text-white p-4">
@@ -20,13 +24,38 @@ export const Navigation: React.FC = () => {
           Tienda Retro
         </Link>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center" style={{ gap: '24px' }}>
           <Link to="/catalog" className="hover:underline">
             Catálogo
           </Link>
-          <Link to="/carrito" className="hover:underline">
-            Carrito
+          
+          {/* ✅ CARRITO CON BADGE - USANDO INLINE STYLES */}
+          <Link to="/cart" className="hover:underline" style={{ position: 'relative', display: 'inline-block' }}>
+            <span style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '8px' 
+            }}>
+              🛒 Carrito
+              {totalItems > 0 && (
+                <span style={{
+                  backgroundColor: '#ef4444',
+                  color: 'white',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  borderRadius: '12px',
+                  padding: '4px 8px',
+                  minWidth: '20px',
+                  textAlign: 'center',
+                  display: 'inline-block',
+                  lineHeight: '1'
+                }}>
+                  {totalItems}
+                </span>
+              )}
+            </span>
           </Link>
+
           {isAuthenticated ? (
             <>
               {usuario?.rol === 'administrador' && (
