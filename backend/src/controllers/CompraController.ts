@@ -117,7 +117,15 @@ export class CompraController {
       }
 
       // Crear la compra (total 0, se calcula luego)
-      const nuevaCompra = new Compra(0, usuario, metodoPago, direccionEnvio);
+      // const nuevaCompra = new Compra(0, usuario, metodoPago, direccionEnvio);
+      const nuevaCompra = orm.em.create(Compra, {
+        total: 0,
+        comprador: usuario,
+        metodoPago,
+        direccionEnvio,
+        estado: EstadoCompra.PENDIENTE
+      });
+
       let total = 0;
       for (const item of items) {
         // Validar cada item

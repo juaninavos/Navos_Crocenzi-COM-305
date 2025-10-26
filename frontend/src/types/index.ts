@@ -65,8 +65,8 @@ export interface Usuario {
   email: string;
   email_normalized: string;
   contrasena?: string;  // Solo para backend, nunca se envía al frontend
-  direccion: string;
-  telefono: string;
+  direccion?: string;   // ✅ CAMBIAR: hacerla opcional
+  telefono?: string;    // ✅ CAMBIAR: hacerla opcional
   rol: UsuarioRol;
   activo: boolean;
   fechaRegistro: Date;
@@ -271,10 +271,10 @@ export interface DashboardData {
 // =========================
 
 export interface CartItem {
-  id: number;
-  camiseta: Camiseta;
-  quantity: number;
-  subtotal: number;
+  id: number;                    // ✅ ID del item en el carrito
+  camiseta: Camiseta;           // ✅ Información completa de la camiseta
+  quantity: number;             // ✅ Cantidad seleccionada
+  subtotal?: number;            // ✅ Opcional: subtotal calculado
 }
 
 export interface Cart {

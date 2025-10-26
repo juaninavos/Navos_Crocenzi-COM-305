@@ -4,6 +4,7 @@ import { Camiseta } from './entities/Camiseta';
 import { Subasta } from './entities/Subasta';
 import { Oferta } from './entities/Oferta';
 import { Compra } from './entities/Compra';
+import { CompraItem } from './entities/CompraItem'; // ✅ AGREGAR
 import { MetodoPago } from './entities/MetodoPago';
 import { Pago } from './entities/Pago';
 import { Categoria } from './entities/Categoria';
@@ -21,6 +22,7 @@ export default defineConfig({
     Subasta,
     Oferta,
     Compra,
+    CompraItem, // ✅ AGREGAR
     MetodoPago,
     Pago,
     Categoria,

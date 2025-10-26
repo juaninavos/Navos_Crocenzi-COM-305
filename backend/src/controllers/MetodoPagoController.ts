@@ -5,28 +5,20 @@ export class MetodoPagoController {
   // GET /api/metodos-pago
   static async getAll(req: Request, res: Response) {
     try {
-      const orm = req.app.locals.orm;
-      const { activos } = req.query;
+      const orm = req.app.locals.orm; // ✅ Obtener orm de req.app.locals
+      const em = orm.em.fork();
+      const metodosPago = await em.find(MetodoPago, {});
       
-      let filtros: any = {};
-      if (activos === 'true') {
-        filtros.activo = true;
-      }
-      
-      const metodosPago = await orm.em.find(MetodoPago, filtros);
-      
-      res.json({
+      return res.json({
         success: true,
         data: metodosPago,
-        count: metodosPago.length,
-        message: 'Métodos de pago obtenidos correctamente'
+        count: metodosPago.length
       });
     } catch (error) {
-      console.error('Error en getAll métodos pago:', error);
-      res.status(500).json({
+      console.error('Error in MetodoPagoController.getAll:', error);
+      return res.status(500).json({
         success: false,
-        message: 'Error al obtener métodos de pago',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        error: 'Error interno del servidor'
       });
     }
   }
@@ -36,26 +28,25 @@ export class MetodoPagoController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const metodoPago = await orm.em.findOne(MetodoPago, { id: parseInt(id) });
+      const metodoPago = await em.findOne(MetodoPago, { id: parseInt(id) });
       
       if (!metodoPago) {
         return res.status(404).json({
           success: false,
-          message: 'Método de pago no encontrado'
+          error: 'Método de pago no encontrado'
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
-        data: metodoPago,
-        message: 'Método de pago obtenido correctamente'
+        data: metodoPago
       });
     } catch (error) {
       console.error('Error en getById método pago:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Error al obtener método de pago',
         error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
@@ -69,41 +60,45 @@ export class MetodoPagoController {
       if (!nombre) {
         return res.status(400).json({
           success: false,
-          message: 'El nombre es obligatorio'
+          error: 'El nombre es obligatorio'
         });
       }
       
       if (!descripcion) {
         return res.status(400).json({
           success: false,
-          message: 'La descripción es obligatoria'
+          error: 'La descripción es obligatoria'
         });
       }
 
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
       // Verificar que no exista un método con el mismo nombre
-      const existeMetodo = await orm.em.findOne(MetodoPago, { nombre });
+      const existeMetodo = await em.findOne(MetodoPago, { nombre });
       if (existeMetodo) {
         return res.status(400).json({
           success: false,
-          message: 'Ya existe un método de pago con ese nombre'
+          error: 'Ya existe un método de pago con ese nombre'
         });
       }
 
-      const nuevoMetodo = new MetodoPago(nombre, descripcion);
-      await orm.em.persistAndFlush(nuevoMetodo);
+      const nuevoMetodo = em.create(MetodoPago, {
+        nombre,
+        descripcion,
+        activo: true
+      });
+      
+      await em.persistAndFlush(nuevoMetodo);
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        data: nuevoMetodo,
-        message: 'Método de pago creado correctamente'
+        data: nuevoMetodo
       });
     } catch (error) {
       console.error('Error en create método pago:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Error al crear método de pago',
         error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
@@ -116,64 +111,64 @@ export class MetodoPagoController {
       const { nombre, descripcion, activo } = req.body;
       
       const orm = req.app.locals.orm;
-      const metodoPago = await orm.em.findOne(MetodoPago, { id: parseInt(id) });
+      const em = orm.em.fork();
+      
+      const metodoPago = await em.findOne(MetodoPago, { id: parseInt(id) });
       
       if (!metodoPago) {
         return res.status(404).json({
           success: false,
-          message: 'Método de pago no encontrado'
+          error: 'Método de pago no encontrado'
         });
       }
 
-      if (nombre) metodoPago.nombre = nombre;
-      if (descripcion) metodoPago.descripcion = descripcion;
+      if (nombre !== undefined) metodoPago.nombre = nombre;
+      if (descripcion !== undefined) metodoPago.descripcion = descripcion;
       if (activo !== undefined) metodoPago.activo = activo;
 
-      await orm.em.persistAndFlush(metodoPago);
+      await em.persistAndFlush(metodoPago);
 
-      res.json({
+      return res.json({
         success: true,
-        data: metodoPago,
-        message: 'Método de pago actualizado correctamente'
+        data: metodoPago
       });
     } catch (error) {
       console.error('Error en update método pago:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Error al actualizar método de pago',
         error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
   }
 
-  // DELETE /api/metodos-pago/:id
+  // DELETE /api/metodos-pago/:id (Soft delete)
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const metodoPago = await orm.em.findOne(MetodoPago, { id: parseInt(id) });
+      const metodoPago = await em.findOne(MetodoPago, { id: parseInt(id) });
       
       if (!metodoPago) {
         return res.status(404).json({
           success: false,
-          message: 'Método de pago no encontrado'
+          error: 'Método de pago no encontrado'
         });
       }
 
-      // Soft delete
+      // Soft delete - solo desactivar
       metodoPago.activo = false;
-      await orm.em.persistAndFlush(metodoPago);
+      await em.persistAndFlush(metodoPago);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Método de pago desactivado correctamente'
       });
     } catch (error) {
       console.error('Error en delete método pago:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: 'Error al eliminar método de pago',
         error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
