@@ -3,7 +3,6 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-// ✅ CAMBIAR: Todos los tipos con 'type'
 import type { 
   LoginData, 
   RegisterData, 
@@ -11,10 +10,14 @@ import type {
   ApiResponse, 
   AuthResponse, 
   CamisetaFiltro, 
-  DashboardData 
+  DashboardData,
+  Subasta,
+  Oferta,
+  CreateSubastaData,
+  CreateOfertaData,
+  SubastaFiltro
 } from '../types';
 
-// Tipo de error personalizado para manejar expiración de sesión, etc.
 export class ApiAuthError extends Error {
   constructor(message = 'UNAUTHORIZED') {
     super(message);
@@ -30,9 +33,9 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// =========================
-// 🧩 Interceptor de requests (token)
-// =========================
+// ✅ SIN INTERCEPTOR DE TOKEN (comentado para desarrollo)
+// En producción, descomentar esto:
+/*
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -40,6 +43,7 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+*/
 
 // =========================
 // ⚠️ Interceptor de respuestas (manejo global de errores)
@@ -49,14 +53,12 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     const status = error.response?.status;
 
-    // 401 → token expirado o inválido
     if (status === 401) {
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('usuario');
       return Promise.reject(new ApiAuthError());
     }
 
-    // Log en desarrollo
     if (import.meta.env.MODE === 'development') {
       console.error('❌ Error en API:', error.response || error.message);
     }
@@ -85,7 +87,6 @@ export const authService = {
 // =========================
 export const camisetaService = {
   getAll: async (filtros: CamisetaFiltro = {}): Promise<{ data: Camiseta[]; count: number; page?: number; limit?: number }> => {
-    // Normalizar y validar filtros de precio
     const normalized: Record<string, unknown> = { ...filtros };
     
     if (typeof filtros.precioMin === 'string' && filtros.precioMin.trim() !== '') {
@@ -109,7 +110,7 @@ export const camisetaService = {
     const params = Object.fromEntries(
       Object.entries(normalized).filter(([, v]) => v !== '' && v !== undefined && v !== null)
     );
-    // DEBUG: log params being sent to the API to verify price filters
+
     console.log('camisetaService.getAll -> params:', params);
 
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
@@ -164,12 +165,93 @@ export const adminService = {
 };
 
 // =========================
-// 🧠 Exportación agrupada
+// 🔨 Servicios de subastas
 // =========================
+export const subastaService = {
+  getAll: async (filtros: SubastaFiltro = {}): Promise<{ data: Subasta[]; count: number }> => {
+    console.log('🌐 subastaService.getAll llamado con:', filtros);
+    
+    const params = Object.fromEntries(
+      Object.entries(filtros).filter(([, v]) => v !== undefined && v !== null)
+    );
+    
+    console.log('📤 Params enviados:', params);
+    
+    try {
+      const response = await api.get<ApiResponse<Subasta[]>>('/subastas', { params });
+      
+      console.log('📥 Respuesta:', {
+        status: response.status,
+        count: response.data.count,
+        cantidad: response.data.data?.length
+      });
+      
+      return {
+        data: response.data.data,
+        count: response.data.count ?? response.data.data.length
+      };
+    } catch (error) {
+      console.error('❌ Error en subastaService.getAll:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id: number): Promise<Subasta> => {
+    const response = await api.get<ApiResponse<Subasta>>(`/subastas/${id}`);
+    return response.data.data;
+  },
+
+  create: async (data: CreateSubastaData): Promise<Subasta> => {
+    const response = await api.post<ApiResponse<Subasta>>('/subastas', data);
+    return response.data.data;
+  },
+
+  getOfertas: async (subastaId: number): Promise<Oferta[]> => {
+    const response = await api.get<ApiResponse<Oferta[]>>('/ofertas', {
+      params: { subastaId }
+    });
+    return response.data.data;
+  },
+
+  getMisSubastas: async (vendedorId: number): Promise<Subasta[]> => {
+    const response = await api.get<ApiResponse<Subasta[]>>(`/subastas?vendedorId=${vendedorId}`);
+    return response.data.data;
+  },
+};
+
+// =========================
+// 💰 Servicios de ofertas
+// =========================
+export const ofertaService = {
+  getAll: async (): Promise<Oferta[]> => {
+    const response = await api.get<ApiResponse<Oferta[]>>('/ofertas');
+    return response.data.data;
+  },
+
+  getById: async (id: number): Promise<Oferta> => {
+    const response = await api.get<ApiResponse<Oferta>>(`/ofertas/${id}`);
+    return response.data.data;
+  },
+
+  create: async (data: CreateOfertaData): Promise<Oferta> => {
+    const response = await api.post<ApiResponse<Oferta>>('/ofertas', data);
+    return response.data.data;
+  },
+
+  getMisOfertas: async (usuarioId: number): Promise<Oferta[]> => {
+    const response = await api.get<ApiResponse<Oferta[]>>('/ofertas', {
+      params: { usuarioId }
+    });
+    return response.data.data;
+  },
+};
+
 export const services = {
   auth: authService,
   camiseta: camisetaService,
   admin: adminService,
+  subasta: subastaService,
+  oferta: ofertaService,
 };
 
 export default api;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
-import { useCart } from '../../context/useCart'; // ✅ AGREGAR
+import { useCart } from '../../context/useCart';
 import { 
   EstadoCamiseta,
   Talle,
@@ -8,12 +9,14 @@ import {
 } from '../../types';
 import type { 
   Camiseta,
-  CamisetaFiltro
+  CamisetaFiltro,
+  Subasta // ✅ AGREGAR ESTE IMPORT
 } from '../../types';
 
 export const Home = () => {
   const PAGE_SIZE = 9;
   const { addToCart } = useCart(); // ✅ AGREGAR
+  const navigate = useNavigate(); // ✅ AGREGAR
 
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -46,6 +49,9 @@ export const Home = () => {
   const [sort, setSort] = useState<'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc'>('fechaDesc');
   const [page, setPage] = useState<number>(1);
   const [appliedFiltros, setAppliedFiltros] = useState<typeof filtros>(filtros);
+
+  // Al inicio del componente, agregar estado para subastas
+  const [subastas, setSubastas] = useState<Record<number, Subasta>>({});
 
   // Helper to update filtros and reset page immediately to avoid race/flicker
   const updateFiltro = (patch: Partial<typeof filtros>) => {
@@ -81,7 +87,8 @@ export const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedFiltros, page, sort]);
 
-  const isApplying = JSON.stringify(appliedFiltros) !== JSON.stringify(filtros);
+  // En este punto, ya no es necesario el efecto de subastas, ya que se cargan al montar el componente
+  // const isApplying = JSON.stringify(appliedFiltros) !== JSON.stringify(filtros);
 
   const loadCamisetas = async () => {
     try {
@@ -141,6 +148,48 @@ export const Home = () => {
       alert('❌ Error al agregar al carrito');
     }
   };
+
+  const handleVerSubasta = async (camisetaId: number) => {
+    try {
+      // Buscar subasta por camisetaId
+      const response = await fetch(`http://localhost:3001/api/subastas/camiseta/${camisetaId}`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        navigate(`/auctions/${data.data.id}`);
+      } else {
+        alert('No se encontró la subasta para esta camiseta');
+      }
+    } catch (error) {
+      console.error('Error al buscar subasta:', error);
+      alert('Error al buscar la subasta');
+    }
+  };
+
+  // Agregar useEffect para cargar subastas activas
+  useEffect(() => {
+    const cargarSubastas = async () => {
+      try {
+        const response = await fetch(`http://localhost:3001/api/subastas?activas=true`);
+        const data = await response.json();
+        
+        if (data.success) {
+          // Crear mapa camisetaId -> subasta
+          const mapa: Record<number, Subasta> = {};
+          data.data.forEach((s: Subasta) => {
+            if (s.camiseta?.id) {
+              mapa[s.camiseta.id] = s;
+            }
+          });
+          setSubastas(mapa);
+        }
+      } catch (error) {
+        console.error('Error al cargar subastas:', error);
+      }
+    };
+    
+    cargarSubastas();
+  }, []); // Solo al montar el componente
 
   if (loading) {
     return (
@@ -387,7 +436,20 @@ export const Home = () => {
                     <div className="mt-auto">
                       {/* Precio y temporada */}
                       <div className="d-flex justify-content-between align-items-center mb-2">
-                        <div className="precio">${camiseta.precioInicial.toLocaleString()}</div>
+                        <div className="precio">
+                          {camiseta.esSubasta && subastas[camiseta.id] ? (
+                            <>
+                              <div className="text-success fw-bold">
+                                ${subastas[camiseta.id].precioActual.toLocaleString()}
+                              </div>
+                              <small className="text-muted">
+                                Inicial: ${camiseta.precioInicial.toLocaleString()}
+                              </small>
+                            </>
+                          ) : (
+                            <>${camiseta.precioInicial.toLocaleString()}</>
+                          )}
+                        </div>
                         <small className="text-muted">Temporada {camiseta.temporada}</small>
                       </div>
 
@@ -412,7 +474,11 @@ export const Home = () => {
                           Vendida
                         </button>
                       ) : camiseta.esSubasta ? (
-                        <button type="button" className="btn btn-warning w-100">
+                        <button 
+                          type="button" 
+                          className="btn btn-warning w-100"
+                          onClick={() => handleVerSubasta(camiseta.id)} // ✅ CAMBIAR ESTO
+                        >
                           Ver Subasta
                         </button>
                       ) : camiseta.estado !== EstadoCamiseta.DISPONIBLE ? (
@@ -442,7 +508,7 @@ export const Home = () => {
           <button 
             type="button" 
             className="btn btn-outline-primary" 
-            disabled={page <= 1 || isApplying || fetching} 
+            disabled={page <= 1 || fetching} 
             onClick={() => setPage(p => Math.max(1, p - 1))}
           >
             Anterior
@@ -451,7 +517,7 @@ export const Home = () => {
           <button 
             type="button" 
             className="btn btn-outline-primary" 
-            disabled={page >= Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) || isApplying || fetching} 
+            disabled={page >= Math.max(1, Math.ceil(totalCount / PAGE_SIZE)) || fetching} 
             onClick={() => setPage(p => p + 1)}
           >
             Siguiente

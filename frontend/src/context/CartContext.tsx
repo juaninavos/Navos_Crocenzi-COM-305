@@ -20,6 +20,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (producto: Camiseta, cantidad: number = 1) => {
     console.log('➕ Agregando al carrito:', producto.titulo, 'cantidad:', cantidad); // ✅ LOG
+    
+    // ✅ VALIDACIÓN: Verificar que el producto tenga precio
+    if (!producto.precioInicial || producto.precioInicial <= 0) {
+      console.error('❌ Producto sin precio válido:', producto);
+      throw new Error('El producto no tiene un precio válido');
+    }
+
     setItems(prev => {
       const idx = prev.findIndex(i => i.producto.id === producto.id);
       if (idx !== -1) {

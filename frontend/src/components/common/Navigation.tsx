@@ -29,13 +29,15 @@ export const Navigation: React.FC = () => {
             Catálogo
           </Link>
           
-          {/* ✅ CARRITO CON BADGE - USANDO INLINE STYLES */}
+          {/* ✅ UNA SOLA PESTAÑA DE SUBASTAS */}
+          {isAuthenticated && (
+            <Link to="/auctions" className="hover:underline">
+              🔨 Subastas
+            </Link>
+          )}
+          
           <Link to="/cart" className="hover:underline" style={{ position: 'relative', display: 'inline-block' }}>
-            <span style={{ 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '8px' 
-            }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               🛒 Carrito
               {totalItems > 0 && (
                 <span style={{
@@ -58,9 +60,13 @@ export const Navigation: React.FC = () => {
 
           {isAuthenticated ? (
             <>
+              <Link to="/orders" className="hover:underline">
+                📋 Órdenes
+              </Link>
+              
               {usuario?.rol === 'administrador' && (
-                <Link to="/admin" className="hover:underline">
-                  Admin
+                <Link to="/admin/dashboard" className="hover:underline">
+                  👨‍💼 Admin
                 </Link>
               )}
               <span>Hola, {usuario?.nombre}</span>

@@ -95,8 +95,12 @@ export const CartPage: React.FC = () => {
                   </div>
 
                   <div className="col-md-2 text-end">
-                    <p className="mb-0 fw-bold fs-5">${(item.producto.precioInicial * item.cantidad).toLocaleString()}</p>
-                    <small className="text-muted">${item.producto.precioInicial.toLocaleString()} c/u</small>
+                    <p className="mb-0 fw-bold fs-5">
+                      ${((item.producto?.precioInicial ?? 0) * item.cantidad).toLocaleString()}
+                    </p>
+                    <small className="text-muted">
+                      ${(item.producto?.precioInicial ?? 0).toLocaleString()} c/u
+                    </small>
                   </div>
 
                   <div className="col-md-2 text-end">

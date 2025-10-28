@@ -284,6 +284,45 @@ export interface Cart {
 }
 
 // =========================
+// 🔨 TIPOS AUXILIARES PARA SUBASTAS
+// =========================
+
+export interface CreateSubastaData {
+  fechaInicio: Date | string;
+  fechaFin: Date | string;
+  camisetaId: number;
+  precioInicial?: number;
+}
+
+export interface CreateOfertaData {
+  monto: number;
+  usuarioId: number;
+  subastaId: number;
+}
+
+export interface SubastaFiltro {
+  activas?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+// =========================
+// 📊 ESTADÍSTICAS DE SUBASTA
+// =========================
+
+export interface SubastaStats {
+  tiempoRestante: {
+    dias: number;
+    horas: number;
+    minutos: number;
+    segundos: number;
+    total: number; // milisegundos
+  };
+  finalizada: boolean;
+  puedeOfertar: boolean;
+}
+
+// =========================
 // 🎯 TYPES AUXILIARES
 // =========================
 

@@ -14,6 +14,10 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/user/OrdersPage';
 
+// ✅ IMPORTAR páginas de subastas
+import { AuctionsPage } from './pages/auction/AuctionsPage';
+import { AuctionDetailPage } from './pages/auction/AuctionDetailPage';
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
@@ -34,6 +38,10 @@ function App() {
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                
+                {/* ✅ RUTAS DE SUBASTAS */}
+                <Route path="/auctions" element={<AuctionsPage />} />
+                <Route path="/auctions/:id" element={<AuctionDetailPage />} />
               </Routes>
             </main>
           </div>
