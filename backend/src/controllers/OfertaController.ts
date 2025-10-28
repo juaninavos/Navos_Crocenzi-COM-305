@@ -8,17 +8,35 @@ export class OfertaController {
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const ofertas = await orm.em.find(Oferta, {}, { 
-        populate: ['usuario', 'subasta', 'subasta.camiseta'] 
+      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      
+      const { subastaId, usuarioId } = req.query;
+      
+      const where: any = {};
+      
+      // Filtro por subasta
+      if (subastaId) {
+        where.subasta = parseInt(subastaId as string);
+      }
+      
+      // Filtro por usuario
+      if (usuarioId) {
+        where.usuario = parseInt(usuarioId as string);
+      }
+      
+      const ofertas = await em.find(Oferta, where, { 
+        populate: ['usuario', 'subasta', 'subasta.camiseta'],
+        orderBy: { fechaOferta: 'DESC' }
       });
       
       res.json({
         success: true,
         data: ofertas,
+        count: ofertas.length,
         message: 'Ofertas obtenidas correctamente'
       });
     } catch (error) {
-      console.error('Error en getAll ofertas:', error);
+      console.error('❌ Error en getAll ofertas:', error);
       res.status(500).json({
         success: false,
         message: 'Error al obtener ofertas',
@@ -32,8 +50,9 @@ export class OfertaController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ AGREGAR fork()
       
-      const oferta = await orm.em.findOne(Oferta, { id: parseInt(id) }, { 
+      const oferta = await em.findOne(Oferta, { id: parseInt(id) }, { 
         populate: ['usuario', 'subasta', 'subasta.camiseta'] 
       });
       
@@ -50,7 +69,7 @@ export class OfertaController {
         message: 'Oferta obtenida correctamente'
       });
     } catch (error) {
-      console.error('Error en getById oferta:', error);
+      console.error('❌ Error en getById oferta:', error);
       res.status(500).json({
         success: false,
         message: 'Error al obtener oferta',
@@ -87,9 +106,10 @@ export class OfertaController {
       }
 
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ AGREGAR fork()
       
       // Verificar que el usuario existe
-      const usuario = await orm.em.findOne(Usuario, { id: usuarioId });
+      const usuario = await em.findOne(Usuario, { id: usuarioId });
       if (!usuario) {
         return res.status(404).json({
           success: false,
@@ -98,7 +118,7 @@ export class OfertaController {
       }
       
       // Verificar que la subasta existe y está activa
-      const subasta = await orm.em.findOne(Subasta, { id: subastaId });
+      const subasta = await em.findOne(Subasta, { id: subastaId });
       if (!subasta) {
         return res.status(404).json({
           success: false,
@@ -121,17 +141,15 @@ export class OfertaController {
         });
       }
 
-      // ✅ CORREGIDO - Orden correcto según constructor
-      const nuevaOferta = new Oferta(
-        subasta,     // Subasta (primer parámetro)
-        usuario,     // Usuario (segundo parámetro)  
-        monto        // number (tercer parámetro)
-      );
+      const nuevaOferta = new Oferta(subasta, usuario, monto);
 
       // Actualizar precio actual de la subasta
       subasta.precioActual = monto;
 
-      await orm.em.persistAndFlush([nuevaOferta, subasta]);
+      await em.persistAndFlush([nuevaOferta, subasta]);
+
+      // Populate para devolver datos completos
+      await em.populate(nuevaOferta, ['usuario', 'subasta', 'subasta.camiseta']);
 
       res.status(201).json({
         success: true,
@@ -139,7 +157,7 @@ export class OfertaController {
         message: 'Oferta creada correctamente'
       });
     } catch (error) {
-      console.error('Error en create oferta:', error);
+      console.error('❌ Error en create oferta:', error);
       res.status(500).json({
         success: false,
         message: 'Error al crear oferta',
@@ -155,7 +173,9 @@ export class OfertaController {
       const { monto } = req.body;
       
       const orm = req.app.locals.orm;
-      const oferta = await orm.em.findOne(Oferta, { id: parseInt(id) });
+      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      
+      const oferta = await em.findOne(Oferta, { id: parseInt(id) });
       
       if (!oferta) {
         return res.status(404).json({
@@ -168,7 +188,7 @@ export class OfertaController {
         oferta.monto = monto;
       }
 
-      await orm.em.persistAndFlush(oferta);
+      await em.persistAndFlush(oferta);
 
       res.json({
         success: true,
@@ -176,7 +196,7 @@ export class OfertaController {
         message: 'Oferta actualizada correctamente'
       });
     } catch (error) {
-      console.error('Error en update oferta:', error);
+      console.error('❌ Error en update oferta:', error);
       res.status(500).json({
         success: false,
         message: 'Error al actualizar oferta',
@@ -190,8 +210,9 @@ export class OfertaController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ AGREGAR fork()
       
-      const oferta = await orm.em.findOne(Oferta, { id: parseInt(id) });
+      const oferta = await em.findOne(Oferta, { id: parseInt(id) });
       
       if (!oferta) {
         return res.status(404).json({
@@ -200,14 +221,14 @@ export class OfertaController {
         });
       }
 
-      await orm.em.removeAndFlush(oferta);
+      await em.removeAndFlush(oferta);
 
       res.json({
         success: true,
         message: 'Oferta eliminada correctamente'
       });
     } catch (error) {
-      console.error('Error en delete oferta:', error);
+      console.error('❌ Error en delete oferta:', error);
       res.status(500).json({
         success: false,
         message: 'Error al eliminar oferta',
