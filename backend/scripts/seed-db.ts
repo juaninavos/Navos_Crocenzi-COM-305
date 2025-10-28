@@ -1,4 +1,4 @@
-// scripts/seed-db.ts - VERSIÓN SIMPLIFICADA
+// scripts/seed-db.ts - VERSIÓN COMPLETA CON SUBASTAS
 import 'reflect-metadata';
 import 'dotenv/config';
 import { MikroORM } from '@mikro-orm/core';
@@ -8,9 +8,8 @@ import { Categoria } from '../src/entities/Categoria';
 import { MetodoPago } from '../src/entities/MetodoPago';
 import { Descuento } from '../src/entities/Descuento';
 import { Camiseta, Talle, CondicionCamiseta } from '../src/entities/Camiseta';
+import { Subasta } from '../src/entities/Subasta'; // ✅ AGREGAR
 import bcrypt from 'bcryptjs';
-
-// ✅ SIN IMPORTS PROBLEMÁTICOS
 
 async function seedDatabase() {
   const orm = await MikroORM.init(config);
@@ -19,8 +18,10 @@ async function seedDatabase() {
   try {
     console.log('🧹 Limpiando la base de datos...');
     
-    // Limpiar con SQL directo si nativeDelete falla
+    // Limpiar con SQL directo
     await em.getConnection().execute('SET FOREIGN_KEY_CHECKS = 0');
+    await em.getConnection().execute('TRUNCATE TABLE oferta'); // ✅ AGREGAR
+    await em.getConnection().execute('TRUNCATE TABLE subasta'); // ✅ AGREGAR
     await em.getConnection().execute('TRUNCATE TABLE camiseta');
     await em.getConnection().execute('TRUNCATE TABLE descuento');
     await em.getConnection().execute('TRUNCATE TABLE metodo_pago');
@@ -99,7 +100,7 @@ async function seedDatabase() {
 
     em.persist([descuento1, descuento2]);
 
-    // Guardar primero
+    // Guardar primero para obtener IDs
     await em.flush();
 
     // 5. Crear camisetas
@@ -169,7 +170,49 @@ async function seedDatabase() {
     camiseta5.esSubasta = true;
     camiseta5.categoria = categoriaSelecciones;
 
-    em.persist([camiseta1, camiseta2, camiseta3, camiseta4, camiseta5]);
+    // ✅ AGREGAR: Camiseta 6 para subasta
+    const camiseta6 = new Camiseta(
+      'Camiseta Italia 1982',
+      'Camiseta del campeón mundial Italia 1982 - SUBASTA',
+      'Italia',
+      '1982',
+      Talle.L,
+      CondicionCamiseta.VINTAGE,
+      'italia_1982.jpg',
+      40000,
+      adminUser
+    );
+    camiseta6.esSubasta = true;
+    camiseta6.categoria = categoriaSelecciones;
+
+    em.persist([camiseta1, camiseta2, camiseta3, camiseta4, camiseta5, camiseta6]);
+
+    // Guardar camisetas primero
+    await em.flush();
+
+    // ✅ 6. CREAR SUBASTAS (NUEVO)
+    const ahora = new Date();
+    const fechaFin7Dias = new Date();
+    fechaFin7Dias.setDate(ahora.getDate() + 7);
+
+    const fechaFin3Dias = new Date();
+    fechaFin3Dias.setDate(ahora.getDate() + 3);
+
+    const subasta1 = new Subasta(
+      ahora,
+      fechaFin7Dias,
+      35000, // Precio inicial de camiseta5
+      camiseta5
+    );
+
+    const subasta2 = new Subasta(
+      ahora,
+      fechaFin3Dias,
+      40000, // Precio inicial de camiseta6
+      camiseta6
+    );
+
+    em.persist([subasta1, subasta2]);
 
     await em.flush();
 
@@ -178,11 +221,16 @@ async function seedDatabase() {
     console.log('- 4 categorías creadas');
     console.log('- 4 métodos de pago creados');
     console.log('- 2 descuentos creados');
-    console.log('- 5 camisetas creadas');
+    console.log('- 6 camisetas creadas (2 en subasta)');
+    console.log('- 2 subastas activas creadas'); // ✅ NUEVO
     console.log('');
     console.log('🔑 Credenciales de prueba:');
     console.log('   Admin: admin@tiendaretro.com / admin123');
     console.log('   Usuario: maria@email.com / user123');
+    console.log('');
+    console.log('🔨 Subastas creadas:');
+    console.log(`   - Brasil 1970: Termina ${fechaFin7Dias.toLocaleDateString()}`);
+    console.log(`   - Italia 1982: Termina ${fechaFin3Dias.toLocaleDateString()}`);
 
   } catch (error) {
     console.error('❌ Error al sembrar datos:', error);
