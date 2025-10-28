@@ -1,9 +1,10 @@
-import { Router } from 'express';
+import express from 'express';
+import type { Router } from 'express';
 import { AdminController } from '../controllers/AdminController';
 import authMiddleware from '../middleware/auth';
 import roleGuard from '../middleware/roleGuard';
 
-const router = Router();
+const router: Router = express.Router();
 
 // ✅ CONECTAR MÉTODOS ESTÁTICOS CON MIDDLEWARE DE ADMIN
 const adminAuth = [authMiddleware, roleGuard(['administrador'])];

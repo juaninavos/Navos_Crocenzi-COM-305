@@ -1,8 +1,9 @@
-import { Router } from 'express';
+import express from 'express';
+import type { Router } from 'express';
 import { CamisetaController } from '../controllers/CamisetaController';
 import authMiddleware from '../middleware/auth';
 
-const router = Router();
+const router: Router = express.Router();
 
 // 🎯 CRUD básico + filtros para REGULARIDAD
 router.get('/', CamisetaController.getAll);

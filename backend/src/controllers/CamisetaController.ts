@@ -22,6 +22,10 @@ export class CamisetaController {
         temporada: z.string().optional(),
         talle: CamisetaController.TalleEnum.optional(),
         condicion: CamisetaController.CondicionEnum.optional(),
+        vendedorId: z.preprocess((v) => {
+          const n = Number(v);
+          return Number.isNaN(n) ? undefined : Math.trunc(n);
+        }, z.number().int().positive().optional()),
         esSubasta: z.preprocess((val) => {
           if (val === 'true') return true;
           if (val === 'false') return false;
@@ -67,6 +71,7 @@ export class CamisetaController {
       if (parsed.talle) where.talle = parsed.talle;
       if (parsed.condicion) where.condicion = parsed.condicion;
       if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
+  if (typeof parsed.vendedorId === 'number') where.vendedor = { id: parsed.vendedorId };
 
       // Rango de precio
       const priceCond: any = {};
