@@ -11,6 +11,7 @@ import type {
   AuthResponse, 
   CamisetaFiltro, 
   DashboardData,
+  Usuario,
   Subasta,
   Oferta,
   CreateSubastaData,
@@ -142,6 +143,11 @@ export const camisetaService = {
     const response = await api.delete<ApiResponse<{ message: string }>>(`/camisetas/${id}`);
     return response.data.data;
   },
+
+  publicar: async (data: Partial<Camiseta> & { precioInicial: number; esSubasta?: boolean; stock?: number; categoriaId?: number }): Promise<Camiseta> => {
+    const response = await api.post<ApiResponse<Camiseta>>('/camisetas/publicar', data);
+    return response.data.data;
+  }
 };
 
 // =========================
@@ -153,8 +159,8 @@ export const adminService = {
     return response.data.data;
   },
 
-  getUsuarios: async (): Promise<any[]> => {
-    const response = await api.get<ApiResponse<any[]>>('/admin/usuarios');
+  getUsuarios: async (): Promise<Usuario[]> => {
+    const response = await api.get<ApiResponse<Usuario[]>>('/admin/usuarios');
     return response.data.data;
   },
 

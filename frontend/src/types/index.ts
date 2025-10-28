@@ -239,6 +239,7 @@ export interface CamisetaFiltro {
   precioMax?: string | number;
   esSubasta?: boolean;
   search?: string;
+  vendedorId?: number;
   page?: number;
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
@@ -302,6 +303,7 @@ export interface CreateOfertaData {
 
 export interface SubastaFiltro {
   activas?: boolean;
+  camisetaId?: number;
   page?: number;
   limit?: number;
 }
@@ -333,4 +335,4 @@ export type EstadoCamisetaType = EstadoCamiseta;
 export type UsuarioRolType = UsuarioRol;
 
 // ✅ AGREGAR User para compatibilidad (alias de Usuario)
-export interface User extends Usuario {}
+export type User = Usuario;

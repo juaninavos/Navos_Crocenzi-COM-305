@@ -9,10 +9,14 @@ import { Register } from './pages/auth/Register';
 import { Home } from './pages/user/Home';
 import { Catalog } from './pages/user/Catalog';
 import { AdminDashboard } from './pages/admin/Dashboard';
+import UsersManagement from './pages/admin/UsersManagement';
 
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrdersPage from './pages/user/OrdersPage';
+import ProductDetailPage from './pages/user/ProductDetailPage';
+import ProfilePage from './pages/user/ProfilePage';
+import MyProductsPage from './pages/user/MyProductsPage';
 
 // ✅ IMPORTAR páginas de subastas
 import { AuctionsPage } from './pages/auction/AuctionsPage';
@@ -37,7 +41,11 @@ function App() {
                 <Route path="/cart" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/orders" element={<OrdersPage />} />
+                <Route path="/product/:id" element={<ProductDetailPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/my-products" element={<MyProductsPage />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<UsersManagement />} />
                 
                 {/* ✅ RUTAS DE SUBASTAS */}
                 <Route path="/auctions" element={<AuctionsPage />} />

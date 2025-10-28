@@ -42,7 +42,7 @@ export const CheckoutPage: React.FC = () => {
       const metodosActivos = response.data.data.filter((m: MetodoPago) => m.activo);
       setMetodosPago(metodosActivos);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading payment methods:', error);
       setError('Error al cargar métodos de pago. Intenta nuevamente.');
     } finally {
@@ -68,40 +68,53 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
+    // Validar stock de todos los items antes de proceder
+    const sinStock = items.find(i => i.cantidad > (i.producto?.stock ?? 0));
+    if (sinStock) {
+      setError(`No hay stock suficiente para "${sinStock.producto.titulo}"`);
+      alert('⚠️ Algunos productos no tienen stock suficiente. Por favor revisa tu carrito.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       const token = localStorage.getItem('token');
-      const comprasCreadas = [];
-      
-      // ✅ CAMBIAR: usar producto y cantidad en lugar de camiseta y quantity
-      for (const item of items) {
-        const response = await axios.post(
-          `${API_BASE_URL}/compras`,
-          {
-            camisetaId: item.producto.id,        // ✅ producto en lugar de camiseta
-            cantidad: item.cantidad,              // ✅ cantidad en lugar de quantity
-            direccionEnvio: formData.direccionEnvio,
-            metodoPagoId: parseInt(formData.metodoPagoId),
-            notas: formData.notas || undefined
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-        comprasCreadas.push(response.data.data);
-      }
+      if (!usuario) throw new Error('Usuario no autenticado');
+
+      // Construir payload para compra con múltiples ítems (según backend)
+      const payload = {
+        usuarioId: usuario.id,
+        direccionEnvio: formData.direccionEnvio,
+        metodoPagoId: parseInt(formData.metodoPagoId),
+        items: items.map((item) => ({
+          camisetaId: item.producto.id,
+          cantidad: item.cantidad,
+        })),
+        notas: formData.notas || undefined,
+      };
+
+      await axios.post(
+        `${API_BASE_URL}/compras`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       clearCart();
       
-      alert(`✅ ¡Compra realizada con éxito!\n\nSe crearon ${comprasCreadas.length} orden(es) por un total de $${total.toLocaleString()}`);
+      alert(`✅ ¡Compra realizada con éxito!\n\nTotal pagado: $${total.toLocaleString()}`);
+      navigate('/orders');
       
-      navigate('/');
-      
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating order:', error);
-      const errorMsg = error.response?.data?.error || 'Error al procesar la compra. Intenta nuevamente.';
+      let errorMsg = 'Error al procesar la compra. Intenta nuevamente.';
+      if (axios.isAxiosError(error)) {
+        const data = error.response?.data as { error?: string } | undefined;
+        errorMsg = data?.error || error.message || errorMsg;
+      } else if (error instanceof Error) {
+        errorMsg = error.message || errorMsg;
+      }
       setError(errorMsg);
       
       if (errorMsg.includes('stock')) {
@@ -121,7 +134,7 @@ export const CheckoutPage: React.FC = () => {
           <p className="text-muted">Agrega productos antes de hacer checkout</p>
           <button 
             className="btn btn-primary mt-3"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/catalog')}
             type="button"
           >
             Ver Catálogo

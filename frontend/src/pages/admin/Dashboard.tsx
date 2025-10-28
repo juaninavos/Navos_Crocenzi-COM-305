@@ -29,9 +29,9 @@ export const AdminDashboard: React.FC = () => {
       // ✅ camisetasResponse.data contiene el array
       setCamisetas(camisetasResponse.data || []);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading admin data:', err);
-      setError(err.message || 'Error al cargar datos');
+      setError(err instanceof Error ? err.message : 'Error al cargar datos');
     } finally {
       setLoading(false);
     }
@@ -43,8 +43,9 @@ export const AdminDashboard: React.FC = () => {
         await camisetaService.delete(id);
         setCamisetas(camisetas.filter(c => c.id !== id));
         alert('Camiseta eliminada exitosamente');
-      } catch (err: any) {
-        alert(`Error al eliminar: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Error al eliminar';
+        alert(`Error al eliminar: ${msg}`);
       }
     }
   };
@@ -102,9 +103,12 @@ export const AdminDashboard: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Gestión de Camisetas</h2>
-          <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
-            + Nueva Camiseta
-          </button>
+          <div className="d-flex gap-2">
+            <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+              + Nueva Camiseta
+            </button>
+            <a href="/admin/users" className="btn btn-outline-primary">👥 Usuarios</a>
+          </div>
         </div>
         
         {camisetas.length > 0 ? (

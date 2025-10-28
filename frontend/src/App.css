@@ -55,4 +55,14 @@
   .card-camiseta {
     margin-bottom: 1rem;
   }
+
+  /* Menú responsive */
+  .nav-links {
+    width: 100%;
+    padding-top: 12px;
+  }
+  .nav-links a,
+  .nav-links button {
+    display: inline-block;
+  }
 }

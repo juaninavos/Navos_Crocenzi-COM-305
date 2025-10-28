@@ -1,6 +1,7 @@
 // src/components/common/ProductCard.tsx
 
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
@@ -8,9 +9,13 @@ import { subastaService } from '../../services/api';
 
 interface ProductCardProps {
   camiseta: Camiseta;
+  onAddToCart?: (camiseta: Camiseta) => void;
+  onEdit?: (id: number) => void;
+  onDelete?: (id: number) => void | Promise<void>;
+  showActions?: boolean;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ camiseta }) => {
+export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart, onEdit, onDelete, showActions }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [loading, setLoading] = useState(false);
@@ -62,14 +67,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta }) => {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.error('Error completo:', error);
       
-      if (typeof error === 'object' && error !== null) {
-        const axiosError = error as any;
-        if (axiosError.response) {
-          console.error('📡 Response:', {
-            status: axiosError.response.status,
-            data: axiosError.response.data
-          });
-        }
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('📡 Response:', {
+          status: error.response.status,
+          data: error.response.data
+        });
       }
       
       alert(`❌ Error al cargar la subasta.\n\n${error instanceof Error ? error.message : 'Error desconocido'}`);
@@ -84,13 +86,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta }) => {
 
   const handleAgregarAlCarrito = () => {
     console.log('🛒 Agregando al carrito:', camiseta);
-    addToCart({
-      camisetaId: camiseta.id,
-      titulo: camiseta.titulo,
-      precio: camiseta.precioInicial,
-      imagen: camiseta.imagen || '',
-      cantidad: 1,
-    });
+    if (onAddToCart) {
+      onAddToCart(camiseta);
+    } else {
+      addToCart(camiseta, 1);
+    }
     alert(`✅ ${camiseta.titulo} agregado al carrito`);
   };
 
@@ -149,7 +149,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta }) => {
           )}
         </div>
 
-        {/* BOTONES */}
+  {/* BOTONES */}
         <div className="mt-auto">
           {camiseta.esSubasta ? (
             <button
@@ -175,6 +175,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta }) => {
             >
               🛒 Agregar al Carrito
             </button>
+          )}
+
+          <button
+            onClick={() => navigate(`/product/${camiseta.id}`)}
+            className="btn btn-outline-secondary w-100 mt-2"
+            type="button"
+          >
+            Ver Detalle
+          </button>
+
+          {showActions && (
+            <div className="d-flex gap-2 mt-2">
+              {onEdit && (
+                <button className="btn btn-outline-warning w-50" type="button" onClick={() => onEdit(camiseta.id)}>Editar</button>
+              )}
+              {onDelete && (
+                <button className="btn btn-outline-danger w-50" type="button" onClick={() => onDelete(camiseta.id)}>Eliminar</button>
+              )}
+            </div>
           )}
         </div>
       </div>
