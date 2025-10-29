@@ -189,6 +189,7 @@ const authRouter = (orm: MikroORM): Router => {
 
       res.json({
         success: true,
+        data: { message: 'Contraseña actualizada correctamente' }, // ✅ CAMBIAR: envolver en data
         message: 'Contraseña actualizada correctamente'
       });
 

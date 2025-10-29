@@ -67,16 +67,28 @@ export class CompraController {
       const { usuarioId } = req.params;
       const orm = req.app.locals.orm;
       
+      // ✅ Validar que usuarioId sea un número
+      const id = parseInt(usuarioId);
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID de usuario inválido'
+        });
+      }
+      
       const compras = await orm.em.find(Compra, 
-        { comprador: { id: parseInt(usuarioId) } },  // CORREGIDO: usar 'comprador' no 'usuario'
-        { populate: ['camiseta', 'camiseta.categoria'] }  // REMOVIDO: 'descuento' no existe
+        { comprador: { id } },
+        { populate: ['camiseta', 'camiseta.categoria', 'metodoPago'] }
       );
       
+      // ✅ SIEMPRE DEVOLVER SUCCESS, INCLUSO SI ESTÁ VACÍO
       res.json({
         success: true,
         data: compras,
         count: compras.length,
-        message: 'Compras del usuario obtenidas correctamente'
+        message: compras.length > 0 
+          ? 'Compras del usuario obtenidas correctamente' 
+          : 'No se encontraron compras para este usuario'
       });
     } catch (error) {
       console.error('Error en getByUsuario compras:', error);
