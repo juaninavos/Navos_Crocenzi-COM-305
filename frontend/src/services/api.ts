@@ -16,7 +16,8 @@ import type {
   Oferta,
   CreateSubastaData,
   CreateOfertaData,
-  SubastaFiltro
+  SubastaFiltro,
+  Categoria
 } from '../types';
 
 export class ApiAuthError extends Error {
@@ -260,6 +261,47 @@ export const ofertaService = {
     });
     return response.data.data;
   },
+
+  // ✅ AGREGAR ESTE MÉTODO
+  getBySubasta: async (subastaId: number): Promise<Oferta[]> => {
+    const response = await api.get<ApiResponse<Oferta[]>>('/ofertas', {
+      params: { subastaId }
+    });
+    return response.data.data;
+  },
+};
+
+// =========================
+// 📂 Servicios de categorías
+// =========================
+export const categoriaService = {
+  getAll: async (): Promise<{ data: Categoria[]; count: number }> => {
+    const response = await api.get<ApiResponse<Categoria[]>>('/categorias');
+    return {
+      data: response.data.data,
+      count: response.data.count ?? response.data.data.length
+    };
+  },
+
+  getById: async (id: number): Promise<Categoria> => {
+    const response = await api.get<ApiResponse<Categoria>>(`/categorias/${id}`);
+    return response.data.data;
+  },
+
+  create: async (data: { nombre: string; descripcion?: string }): Promise<Categoria> => {
+    const response = await api.post<ApiResponse<Categoria>>('/categorias', data);
+    return response.data.data;
+  },
+
+  update: async (id: number, data: { nombre?: string; descripcion?: string }): Promise<Categoria> => {
+    const response = await api.put<ApiResponse<Categoria>>(`/categorias/${id}`, data);
+    return response.data.data;
+  },
+
+  delete: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/categorias/${id}`);
+    return response.data.data;
+  },
 };
 
 export const services = {
@@ -268,6 +310,7 @@ export const services = {
   admin: adminService,
   subasta: subastaService,
   oferta: ofertaService,
+  categoria: categoriaService, // ✅ AGREGAR
 };
 
 export default api;

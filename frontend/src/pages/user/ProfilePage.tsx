@@ -7,7 +7,7 @@ import type { Usuario, Compra, EstadoCompra } from '../../types';
 
 export const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
-    const { usuario, token, login, isAuthenticated } = useAuth();
+    const { usuario, token, login, isAuthenticated, logout } = useAuth();
 
     const [form, setForm] = useState({
         nombre: '',
@@ -229,6 +229,18 @@ export const ProfilePage: React.FC = () => {
                     {saving ? (<><span className="spinner-border spinner-border-sm me-2"></span> Guardando...</>) : 'Guardar Cambios'}
                 </button>
                 <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/orders')}>📦 Mis Compras</button>
+                <button 
+                    type="button" 
+                    className="btn btn-outline-danger" 
+                    onClick={() => {
+                    if (window.confirm('¿Seguro que deseas cerrar sesión?')) {
+                        logout();
+                        navigate('/login');
+                    }
+                    }}
+                >
+                    🚪 Cerrar Sesión
+                </button>
                 </div>
             </form>
 

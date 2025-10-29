@@ -26,14 +26,30 @@ export const OrdersPage: React.FC = () => {
   const loadCompras = async () => {
     try {
       setLoading(true);
+      setError('');
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_BASE_URL}/compras`, {
+      
+      // ✅ CAMBIAR: Usar endpoint con filtro por usuario
+      const response = await axios.get(`${API_BASE_URL}/compras/usuario/${usuario?.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCompras(response.data.data);
+      
+      // ✅ MANEJAR RESPUESTA VACÍA SIN ERROR
+      if (response.data.success) {
+        setCompras(response.data.data || []);
+      } else {
+        setCompras([]);
+      }
     } catch (error: any) {
       console.error('Error loading orders:', error);
-      setError('Error al cargar las compras');
+      
+      // ✅ DISTINGUIR ENTRE ERROR REAL Y LISTA VACÍA
+      if (error.response?.status === 404 || error.response?.data?.count === 0) {
+        // No es un error, simplemente no hay compras
+        setCompras([]);
+      } else {
+        setError('Error al cargar las compras');
+      }
     } finally {
       setLoading(false);
     }

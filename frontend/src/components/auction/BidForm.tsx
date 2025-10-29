@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useBids } from '../../hooks/useBids';
+import { useAuth } from '../../contexts/AuthContext'; // ✅ AGREGAR
 import type { Subasta } from '../../types';
 
 interface BidFormProps {
@@ -9,6 +10,7 @@ interface BidFormProps {
 
 export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
   const { crearOferta, loading, error } = useBids();
+  const { usuario } = useAuth(); // ✅ AGREGAR
   const [monto, setMonto] = useState<string>('');
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -17,6 +19,12 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
+
+    // ✅ AGREGAR: Verificar que haya usuario logueado
+    if (!usuario) {
+      setLocalError('Debes iniciar sesión para hacer una oferta');
+      return;
+    }
 
     const montoNum = parseFloat(monto);
 
@@ -36,8 +44,8 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
       return;
     }
 
-    // Crear oferta
-    const resultado = await crearOferta(subasta.id, montoNum);
+    // ✅ CAMBIAR: Pasar usuario.id al crear oferta
+    const resultado = await crearOferta(subasta.id, montoNum, usuario.id);
 
     if (resultado) {
       setMonto('');
@@ -58,6 +66,19 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
   const sugerirMonto = () => {
     setMonto(montoMinimo.toString());
   };
+
+  // ✅ AGREGAR: Validar que el usuario esté logueado
+  if (!usuario) {
+    return (
+      <div className="card">
+        <div className="card-body text-center">
+          <h5 className="card-title mb-3">💰 Hacer una Oferta</h5>
+          <p className="text-muted">Debes iniciar sesión para participar en esta subasta</p>
+          <a href="/login" className="btn btn-primary">Iniciar Sesión</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">

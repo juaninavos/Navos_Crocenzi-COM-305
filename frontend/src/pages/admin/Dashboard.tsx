@@ -108,6 +108,8 @@ export const AdminDashboard: React.FC = () => {
               + Nueva Camiseta
             </button>
             <a href="/admin/users" className="btn btn-outline-primary">👥 Usuarios</a>
+            {/* ✅ AGREGAR ESTE BOTÓN */}
+            <a href="/admin/categories" className="btn btn-outline-success">📂 Categorías</a>
           </div>
         </div>
         

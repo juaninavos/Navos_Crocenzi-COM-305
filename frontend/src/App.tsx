@@ -10,6 +10,7 @@ import { Home } from './pages/user/Home';
 import { Catalog } from './pages/user/Catalog';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import UsersManagement from './pages/admin/UsersManagement';
+import CategoriesManagement from './pages/admin/CategoriesManagement'; // ✅ AGREGAR
 
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -44,9 +45,11 @@ function App() {
                 <Route path="/product/:id" element={<ProductDetailPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/my-products" element={<MyProductsPage />} />
+                <Route path="/admin" element={<AdminDashboard />} /> {/* ✅ AGREGAR */}
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<UsersManagement />} />
-                
+                <Route path="/admin/categories" element={<CategoriesManagement />} /> {/* ✅ AGREGAR */}
+
                 {/* ✅ RUTAS DE SUBASTAS */}
                 <Route path="/auctions" element={<AuctionsPage />} />
                 <Route path="/auctions/:id" element={<AuctionDetailPage />} />
