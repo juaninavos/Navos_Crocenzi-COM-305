@@ -137,6 +137,70 @@ const authRouter = (orm: MikroORM): Router => {
     }
   });
 
+  // POST /api/auth/change-password
+  router.post('/change-password', async (req: Request, res: Response) => {
+    try {
+      const changePasswordSchema = z.object({
+        usuarioId: z.number().int().positive('ID de usuario requerido'),
+        contrasenaActual: z.string().min(1, 'Contraseña actual requerida'),
+        contrasenaNueva: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres')
+      });
+
+      const parseResult = changePasswordSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({
+          success: false,
+          message: 'Datos inválidos',
+          errors: parseResult.error.issues
+        });
+      }
+
+      const { usuarioId, contrasenaActual, contrasenaNueva } = parseResult.data;
+      const em = orm.em.fork();
+
+      // Buscar usuario
+      const usuario = await em.findOne(Usuario, { id: usuarioId, activo: true });
+
+      if (!usuario) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado'
+        });
+      }
+
+      // Verificar contraseña actual
+      const passwordValida = await bcrypt.compare(contrasenaActual, usuario.contrasena);
+
+      if (!passwordValida) {
+        return res.status(401).json({
+          success: false,
+          message: 'La contraseña actual es incorrecta'
+        });
+      }
+
+      // Hashear nueva contraseña
+      const hashedPassword = await bcrypt.hash(contrasenaNueva, 10);
+
+      // Actualizar
+      usuario.contrasena = hashedPassword;
+      await em.persistAndFlush(usuario);
+
+      console.log(`✅ Contraseña actualizada para usuario ID: ${usuarioId}`);
+
+      res.json({
+        success: true,
+        message: 'Contraseña actualizada correctamente'
+      });
+
+    } catch (error) {
+      console.error('❌ Error en change-password:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al cambiar contraseña'
+      });
+    }
+  });
+
   return router;
 };
 

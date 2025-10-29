@@ -24,6 +24,16 @@ export const ProfilePage: React.FC = () => {
     const [compras, setCompras] = useState<Compra[]>([]);
     const [loadingCompras, setLoadingCompras] = useState(false);
 
+    // Estados para cambio de contraseña
+    const [passwordForm, setPasswordForm] = useState({
+      actual: '',
+      nueva: '',
+      confirmar: ''
+    });
+    const [changingPassword, setChangingPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState<string>('');
+    const [passwordSuccess, setPasswordSuccess] = useState<string>('');
+
     useEffect(() => {
         if (!isAuthenticated || !usuario) {
             navigate('/login');
@@ -108,6 +118,52 @@ export const ProfilePage: React.FC = () => {
     }
     };
 
+    // Función para cambiar contraseña
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!usuario) return;
+
+        // Validaciones
+        if (passwordForm.nueva !== passwordForm.confirmar) {
+            setPasswordError('Las contraseñas nuevas no coinciden');
+            return;
+        }
+
+        if (passwordForm.nueva.length < 6) {
+            setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+
+        if (passwordForm.actual === passwordForm.nueva) {
+            setPasswordError('La nueva contraseña debe ser diferente a la actual');
+            return;
+        }
+
+        setPasswordError('');
+        setPasswordSuccess('');
+        setChangingPassword(true);
+
+        try {
+            const { authService } = await import('../../services/api');
+            await authService.changePassword(usuario.id, passwordForm.actual, passwordForm.nueva);
+            
+            setPasswordSuccess('✅ Contraseña actualizada correctamente');
+            setPasswordForm({ actual: '', nueva: '', confirmar: '' });
+            
+            // Auto-limpiar mensaje después de 5 segundos
+            setTimeout(() => setPasswordSuccess(''), 5000);
+        } catch (e: unknown) {
+            console.error('Error cambiando contraseña', e);
+            if (axios.isAxiosError(e) && e.response?.status === 401) {
+                setPasswordError('La contraseña actual es incorrecta');
+            } else {
+                setPasswordError('No se pudo cambiar la contraseña. Intenta nuevamente.');
+            }
+        } finally {
+            setChangingPassword(false);
+        }
+    };
+
     if (!usuario) return null;
 
     return (
@@ -176,15 +232,69 @@ export const ProfilePage: React.FC = () => {
                 </div>
             </form>
 
-            {/* Cambio de contraseña (pendiente backend) */}
+            {/* Cambio de contraseña */}
             <div className="card mt-4">
                 <div className="card-header bg-light">
                 <h5 className="mb-0">🔒 Cambiar Contraseña</h5>
                 </div>
                 <div className="card-body">
-                <div className="alert alert-info mb-0">
-                    Esta funcionalidad requiere un endpoint de backend (p. ej. POST /auth/change-password). Por ahora se deja como pendiente.
-                </div>
+                <form onSubmit={handleChangePassword}>
+                    <div className="row g-3">
+                    <div className="col-12">
+                        <label className="form-label">Contraseña Actual</label>
+                        <input 
+                        type="password" 
+                        className="form-control" 
+                        value={passwordForm.actual} 
+                        onChange={e => setPasswordForm(f => ({ ...f, actual: e.target.value }))}
+                        required
+                        minLength={6}
+                        />
+                    </div>
+                    <div className="col-12">
+                        <label className="form-label">Nueva Contraseña</label>
+                        <input 
+                        type="password" 
+                        className="form-control" 
+                        value={passwordForm.nueva} 
+                        onChange={e => setPasswordForm(f => ({ ...f, nueva: e.target.value }))}
+                        required
+                        minLength={6}
+                        />
+                        <small className="text-muted">Mínimo 6 caracteres</small>
+                    </div>
+                    <div className="col-12">
+                        <label className="form-label">Confirmar Nueva Contraseña</label>
+                        <input 
+                        type="password" 
+                        className="form-control" 
+                        value={passwordForm.confirmar} 
+                        onChange={e => setPasswordForm(f => ({ ...f, confirmar: e.target.value }))}
+                        required
+                        minLength={6}
+                        />
+                    </div>
+                    </div>
+                    
+                    {passwordError && (
+                    <div className="alert alert-danger mt-3 mb-0">{passwordError}</div>
+                    )}
+                    {passwordSuccess && (
+                    <div className="alert alert-success mt-3 mb-0">{passwordSuccess}</div>
+                    )}
+
+                    <button 
+                    type="submit" 
+                    className="btn btn-warning mt-3" 
+                    disabled={changingPassword || !passwordForm.actual || !passwordForm.nueva || !passwordForm.confirmar}
+                    >
+                    {changingPassword ? (
+                        <><span className="spinner-border spinner-border-sm me-2"></span> Cambiando...</>
+                    ) : (
+                        '🔒 Cambiar Contraseña'
+                    )}
+                    </button>
+                </form>
                 </div>
             </div>
             </div>

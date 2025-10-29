@@ -81,6 +81,16 @@ export const authService = {
     const response = await api.post<ApiResponse<AuthResponse>>('/auth/register', data);
     return response.data.data;
   },
+
+  // ✅ AGREGAR ESTE MÉTODO
+  changePassword: async (usuarioId: number, contrasenaActual: string, contrasenaNueva: string): Promise<{ message: string }> => {
+    const response = await api.post<ApiResponse<{ message: string }>>('/auth/change-password', {
+      usuarioId,
+      contrasenaActual,
+      contrasenaNueva
+    });
+    return response.data.data;
+  },
 };
 
 // =========================
