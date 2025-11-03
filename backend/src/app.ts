@@ -22,12 +22,14 @@ import authRouter from './controllers/AuthController';
 import authMiddleware from './middleware/auth';
 import roleGuard from './middleware/roleGuard';
 
-async function main() {
-  const orm = await MikroORM.init(config);
-  const app = express();
+let app: express.Express;
+let orm: MikroORM;
 
-  // ✅ CORS HABILITADO - DEBE IR ANTES DE express.json()
-  // Permitir orígenes de desarrollo comunes y hacerlo configurable por variable de entorno
+export async function createApp() {
+  orm = await MikroORM.init(config);
+  app = express();
+
+  // CORS
   const defaultAllowed = [
     'http://localhost:5173',
     'http://localhost:5174',
@@ -39,9 +41,7 @@ async function main() {
 
   app.use(cors({
     origin: (origin, cb) => {
-      // permitir llamadas sin origin (curl, servidores internos)
       if (!origin) return cb(null, true);
-      // en producción, validar contra lista; en desarrollo, ser más permisivo
       const isAllowed = allowedOrigins.includes(origin);
       if (isAllowed || process.env.NODE_ENV !== 'production') return cb(null, true);
       return cb(new Error(`CORS origin not allowed: ${origin}`));
@@ -51,7 +51,6 @@ async function main() {
     allowedHeaders: ['Content-Type', 'Authorization']
   }));
 
-  // Middleware
   app.use(express.json());
 
   app.use((req, res, next) => {
@@ -61,13 +60,8 @@ async function main() {
     next();
   });
 
-  // Hacer ORM disponible en todas las rutas
   app.locals.orm = orm;
-
-  // Auth routes
   app.use('/api/auth', authRouter(orm));
-
-  // 🎯 FASE 1: REGULARIDAD - Rutas básicas
   app.use('/api/usuarios', usuarioRoutes);
   app.use('/api/categorias', categoriaRoutes);
   app.use('/api/camisetas', camisetaRoutes);
@@ -78,9 +72,7 @@ async function main() {
   app.use('/api/descuentos', descuentoRoutes);
   app.use('/api/metodos-pago', metodoPagoRoutes);  
   app.use('/api/admin', adminRoutes);  
-  
 
-  // Ruta de salud para verificar que funciona
   app.get('/api/health', (req: Request, res: Response) => {
     res.json({ 
       success: true, 
@@ -100,13 +92,10 @@ async function main() {
     });
   });
 
-  // DEBUG: endpoint temporal para inspeccionar query params que llegan al backend
   app.get('/api/debug/echo', (req: Request, res: Response) => {
-    // Devolver exactamente lo que vino en req.query para pruebas rápidas
     res.json({ success: true, query: req.query });
   });
 
-  // Ejemplo: ruta protegida por JWT y por role
   app.get('/api/protegida/admin', authMiddleware, roleGuard(['admin']), (req, res) => {
     res.json({ 
       success: true, 
@@ -115,22 +104,23 @@ async function main() {
     });
   });
 
-  // Middleware para rutas no encontradas (debe ir después de todas las rutas)
   app.use(notFoundHandler);
-
-  // Middleware global de manejo de errores (debe ir al final)
   app.use(errorHandler);
 
-  // Puerto del servidor
-  const PORT = Number(process.env.PORT) || 3001; // ✅ CAMBIAR AQUÍ
-  const HOST = process.env.HOST || '0.0.0.0';
-  app.listen(PORT, HOST, () => {
-    console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-    console.log(`📋 Fase actual: REGULARIDAD`);
-    console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
-    console.log(`🌐 Escuchando en interfaces: ${HOST}`);
-  });
+  return app;
 }
 
-main().catch(console.error);
+if (require.main === module) {
+  (async () => {
+    const app = await createApp();
+    const PORT = Number(process.env.PORT) || 3001;
+    const HOST = process.env.HOST || '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+      console.log(`📋 Fase actual: REGULARIDAD`);
+      console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
+      console.log(`🌐 Escuchando en interfaces: ${HOST}`);
+    });
+  })();
+}
 

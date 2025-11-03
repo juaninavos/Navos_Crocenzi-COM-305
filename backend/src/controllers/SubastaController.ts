@@ -35,6 +35,7 @@ export class SubastaController {
       
       res.json({
         success: true,
+        message: 'Operación getAll realizada correctamente.',
         data: subastas,
         count: subastas.length,
         page: 1,
@@ -44,8 +45,9 @@ export class SubastaController {
       console.error('❌ Error en getAll subastas:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener subastas',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener subastas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -65,10 +67,11 @@ export class SubastaController {
       if (!subasta) {
         return res.status(404).json({
           success: false,
-          message: 'Subasta no encontrada'
+          message: 'No se pudo obtener subasta: subasta no encontrada.',
+          error: 'Subasta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
-
       // ✅ Populate manual con try/catch
       try {
         await em.populate(subasta, ['camiseta', 'camiseta.vendedor', 'camiseta.categoria']);
@@ -76,16 +79,18 @@ export class SubastaController {
         console.warn('⚠️ Error al popular categoria, continuando sin ella');
         await em.populate(subasta, ['camiseta', 'camiseta.vendedor']);
       }
-
       res.json({
         success: true,
+        message: 'Operación getById realizada correctamente.',
         data: subasta
       });
     } catch (error) {
       console.error('❌ Error en getById subasta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener subasta'
+        message: 'No se pudo obtener subasta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYID_ERROR'
       });
     }
   }
@@ -106,7 +111,10 @@ export class SubastaController {
       if (!parseResult.success) {
         return res.status(400).json({
           success: false,
-          errors: parseResult.error.issues
+          message: 'No se pudo crear subasta: datos inválidos.',
+          error: 'Datos inválidos',
+          code: 'INVALID_DATA',
+          details: parseResult.error.issues
         });
       }
 
@@ -118,14 +126,18 @@ export class SubastaController {
       if (!camiseta) {
         return res.status(404).json({
           success: false,
-          message: 'Camiseta no encontrada'
+          message: 'No se pudo crear subasta: camiseta no encontrada.',
+          error: 'Camiseta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
       if (camiseta.estado !== EstadoCamiseta.DISPONIBLE) {
         return res.status(400).json({
           success: false,
-          message: 'La camiseta no está disponible para subasta'
+          message: 'No se pudo crear subasta: la camiseta no está disponible para subasta.',
+          error: 'Camiseta no disponible',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -148,15 +160,16 @@ export class SubastaController {
 
       res.status(201).json({
         success: true,
-        data: subastaCompleta,
-        message: 'Subasta creada correctamente'
+        message: 'Operación create realizada correctamente.',
+        data: subastaCompleta
       });
     } catch (error) {
       console.error('Error en create subasta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear subasta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo crear subasta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -175,21 +188,27 @@ export class SubastaController {
       if (!subasta) {
         return res.status(404).json({
           success: false,
-          message: 'Subasta no encontrada'
+          message: 'No se pudo finalizar subasta: subasta no encontrada.',
+          error: 'Subasta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
       if (!subasta.activa) {
         return res.status(400).json({
           success: false,
-          message: 'La subasta ya está finalizada'
+          message: 'No se pudo finalizar subasta: la subasta ya está finalizada.',
+          error: 'Subasta finalizada',
+          code: 'INVALID_STATE'
         });
       }
 
       if (subasta.fechaFin > new Date()) {
         return res.status(400).json({
           success: false,
-          message: 'La subasta aún no ha terminado'
+          message: 'No se pudo finalizar subasta: la subasta aún no ha terminado.',
+          error: 'Subasta no terminada',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -207,15 +226,16 @@ export class SubastaController {
 
       res.json({
         success: true,
-        data: subasta,
-        message: 'Subasta finalizada correctamente'
+        message: 'Operación finalizar realizada correctamente.',
+        data: subasta
       });
     } catch (error) {
       console.error('Error en finalizar subasta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al finalizar subasta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo finalizar subasta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'FINALIZAR_ERROR'
       });
     }
   }
@@ -239,7 +259,9 @@ export class SubastaController {
         console.log('❌ No se encontró subasta para camiseta:', camisetaId);
         return res.status(404).json({
           success: false,
-          message: 'No hay subasta para esta camiseta'
+          message: 'No se pudo obtener subasta: no hay subasta para esta camiseta.',
+          error: 'No hay subasta',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -254,14 +276,16 @@ export class SubastaController {
 
       res.json({
         success: true,
+        message: 'Operación getByCamiseta realizada correctamente.',
         data: subasta
       });
     } catch (error) {
       console.error('❌ Error en getByCamiseta subasta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener subasta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener subasta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYCAMISETA_ERROR'
       });
     }
   }

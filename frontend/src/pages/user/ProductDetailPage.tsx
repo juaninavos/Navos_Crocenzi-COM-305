@@ -11,6 +11,7 @@ export const ProductDetailPage: React.FC = () => {
   const [camiseta, setCamiseta] = useState<Camiseta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
 
   useEffect(() => {
     const load = async () => {
@@ -30,9 +31,10 @@ export const ProductDetailPage: React.FC = () => {
   }, [id]);
 
   const handleAddToCart = () => {
-    if (!camiseta) return;
-    addToCart(camiseta, 1);
-    alert(`✅ ${camiseta.titulo} agregado al carrito`);
+  if (!camiseta) return;
+  addToCart(camiseta, 1);
+  setSuccess(`✅ ${camiseta.titulo} agregado al carrito`);
+  setTimeout(() => setSuccess(''), 2000);
   };
 
   if (loading) {
@@ -58,6 +60,12 @@ export const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="container mt-4 mb-5">
+      {success && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          {success}
+          <button type="button" className="btn-close" onClick={() => setSuccess('')} aria-label="Close"></button>
+        </div>
+      )}
       <div className="d-flex align-items-center mb-3">
         <button className="btn btn-outline-secondary me-3" onClick={() => navigate(-1)} type="button">← Volver</button>
         <h1 className="mb-0">{camiseta.titulo}</h1>

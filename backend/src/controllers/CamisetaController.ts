@@ -56,7 +56,13 @@ export class CamisetaController {
 
       const parseResult = filtrosSchema.safeParse(req.query);
       if (!parseResult.success) {
-        return res.status(400).json({ success: false, errors: parseResult.error.issues });
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo obtener camisetas: filtros inválidos.',
+          error: 'Filtros inválidos',
+          code: 'INVALID_FILTERS',
+          details: parseResult.error.issues
+        });
       }
 
       const orm = req.app.locals.orm as MikroORM;
@@ -113,10 +119,22 @@ export class CamisetaController {
         em.count(Camiseta, where)
       ]);
 
-      res.json({ success: true, data: camisetasList, count: total, page, limit });
+      res.json({
+        success: true,
+        message: 'Operación getAll realizada correctamente.',
+        data: camisetasList,
+        count: total,
+        page,
+        limit
+      });
     } catch (error) {
       console.error('Error en getAll camisetas:', error);
-      res.status(500).json({ success: false, message: 'Error al obtener camisetas' });
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo obtener camisetas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETALL_ERROR'
+      });
     }
   }
 
@@ -128,13 +146,26 @@ export class CamisetaController {
       const camiseta = await em.findOne(Camiseta, { id: Number(req.params.id) }, { populate: ['categoria', 'vendedor'] });
 
       if (!camiseta || camiseta.estado === EstadoCamiseta.INACTIVA) {
-        return res.status(404).json({ success: false, message: 'Camiseta no encontrada' });
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo obtener camiseta: camiseta no encontrada.',
+          error: 'Camiseta no encontrada',
+          code: 'NOT_FOUND'
+        });
       }
-
-      res.json({ success: true, data: camiseta });
+      res.json({
+        success: true,
+        message: 'Operación getOne realizada correctamente.',
+        data: camiseta
+      });
     } catch (error) {
       console.error('Error en getOne camiseta:', error);
-      res.status(500).json({ success: false, message: 'Error al obtener camiseta' });
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo obtener camiseta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETONE_ERROR'
+      });
     }
   }
 
@@ -143,11 +174,20 @@ export class CamisetaController {
     try {
       // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
-        return res.status(401).json({ success: false, message: 'No autorizado' });
+        return res.status(401).json({
+          success: false,
+          message: 'No se pudo crear camiseta: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
+        });
       }
-
       if (req.user.rol !== UsuarioRol.USUARIO) {
-        return res.status(403).json({ success: false, message: 'Solo usuarios pueden publicar camisetas' });
+        return res.status(403).json({
+          success: false,
+          message: 'No se pudo crear camiseta: solo usuarios pueden publicar camisetas.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
+        });
       }
 
       const createSchema = z.object({
@@ -164,7 +204,13 @@ export class CamisetaController {
 
       const parseResult = createSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ success: false, errors: parseResult.error.issues });
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo crear camiseta: datos inválidos.',
+          error: 'Datos inválidos',
+          code: 'INVALID_DATA',
+          details: parseResult.error.issues
+        });
       }
 
       const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, categoriaId } = parseResult.data;
@@ -173,7 +219,12 @@ export class CamisetaController {
       const em = orm.em.fork();
 
       const vendedor = await em.findOne(Usuario, { id: req.user.id });
-      if (!vendedor) return res.status(404).json({ success: false, message: 'Vendedor no encontrado' });
+      if (!vendedor) return res.status(404).json({
+        success: false,
+        message: 'No se pudo crear camiseta: vendedor no encontrado.',
+        error: 'Vendedor no encontrado',
+        code: 'NOT_FOUND'
+      });
 
       const nuevaCamiseta = new Camiseta(titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, vendedor);
 
@@ -187,7 +238,11 @@ export class CamisetaController {
 
       const camisetaCompleta = await em.findOneOrFail(Camiseta, { id: nuevaCamiseta.id }, { populate: ['categoria', 'vendedor'] });
 
-      res.status(201).json({ success: true, data: camisetaCompleta });
+      res.status(201).json({
+        success: true,
+        message: 'Operación create realizada correctamente.',
+        data: camisetaCompleta
+      });
     } catch (error) {
       console.error('Error en create camiseta:', error);
       res.status(500).json({ success: false, message: 'Error al crear camiseta' });
@@ -207,7 +262,13 @@ export class CamisetaController {
 
       const parseResult = updateSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ success: false, errors: parseResult.error.issues });
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo actualizar camiseta: datos inválidos.',
+          error: 'Datos inválidos',
+          code: 'INVALID_DATA',
+          details: parseResult.error.issues
+        });
       }
 
       const orm = req.app.locals.orm as MikroORM;
@@ -215,7 +276,12 @@ export class CamisetaController {
 
       const camiseta = await em.findOne(Camiseta, { id: Number(req.params.id) });
       if (!camiseta || camiseta.estado === EstadoCamiseta.INACTIVA) {
-        return res.status(404).json({ success: false, message: 'Camiseta no encontrada' });
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo actualizar camiseta: camiseta no encontrada.',
+          error: 'Camiseta no encontrada',
+          code: 'NOT_FOUND'
+        });
       }
 
       Object.assign(camiseta, parseResult.data);
@@ -223,7 +289,11 @@ export class CamisetaController {
 
       const camisetaCompleta = await em.findOneOrFail(Camiseta, { id: camiseta.id }, { populate: ['categoria', 'vendedor'] });
 
-      res.json({ success: true, data: camisetaCompleta });
+      res.json({
+        success: true,
+        message: 'Operación update realizada correctamente.',
+        data: camisetaCompleta
+      });
     } catch (error) {
       console.error('Error en update camiseta:', error);
       res.status(500).json({ success: false, message: 'Error al actualizar camiseta' });
@@ -238,13 +308,21 @@ export class CamisetaController {
 
       const camiseta = await em.findOne(Camiseta, { id: Number(req.params.id) });
       if (!camiseta || camiseta.estado === EstadoCamiseta.INACTIVA) {
-        return res.status(404).json({ success: false, message: 'Camiseta no encontrada' });
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo eliminar camiseta: camiseta no encontrada.',
+          error: 'Camiseta no encontrada',
+          code: 'NOT_FOUND'
+        });
       }
 
       camiseta.estado = EstadoCamiseta.INACTIVA;
       await em.flush();
 
-      res.json({ success: true, message: 'Camiseta eliminada correctamente' });
+      res.json({
+        success: true,
+        message: 'Operación delete realizada correctamente.'
+      });
     } catch (error) {
       console.error('Error en delete camiseta:', error);
       res.status(500).json({ success: false, message: 'Error al eliminar camiseta' });
@@ -256,11 +334,20 @@ export class CamisetaController {
     try {
       // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
-        return res.status(401).json({ success: false, message: 'No autorizado' });
+        return res.status(401).json({
+          success: false,
+          message: 'No se pudo publicar camiseta: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
+        });
       }
-
       if (req.user.rol !== UsuarioRol.USUARIO) {
-        return res.status(403).json({ success: false, message: 'Solo usuarios pueden publicar camisetas' });
+        return res.status(403).json({
+          success: false,
+          message: 'No se pudo publicar camiseta: solo usuarios pueden publicar camisetas.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
+        });
       }
 
       const publicarSchema = z.object({
@@ -283,7 +370,13 @@ export class CamisetaController {
 
       const parseResult = publicarSchema.safeParse(req.body);
       if (!parseResult.success) {
-        return res.status(400).json({ success: false, errors: parseResult.error.issues });
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo publicar camiseta: datos inválidos.',
+          error: 'Datos inválidos',
+          code: 'INVALID_DATA',
+          details: parseResult.error.issues
+        });
       }
 
       const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, esSubasta, stock, categoriaId, fechaFinSubasta } = parseResult.data;
@@ -292,7 +385,12 @@ export class CamisetaController {
       const em = orm.em.fork();
 
       const vendedor = await em.findOne(Usuario, { id: req.user.id, activo: true });
-      if (!vendedor) return res.status(404).json({ success: false, message: 'Vendedor no encontrado o inactivo' });
+      if (!vendedor) return res.status(404).json({
+        success: false,
+        message: 'No se pudo publicar camiseta: vendedor no encontrado o inactivo.',
+        error: 'Vendedor no encontrado o inactivo',
+        code: 'NOT_FOUND'
+      });
 
       const nuevaCamiseta = new Camiseta(
         titulo,
@@ -322,8 +420,8 @@ export class CamisetaController {
 
       res.status(201).json({
         success: true,
+        message: `Operación publicarParaVenta realizada correctamente.`,
         data: camisetaCompleta,
-        message: `Camiseta ${esSubasta ? 'publicada en subasta' : 'publicada para venta'} correctamente`,
         detalles: {
           tipo_venta: esSubasta ? 'subasta' : 'precio_fijo',
           precio_inicial: precioInicial,
@@ -353,10 +451,19 @@ export class CamisetaController {
       const minPrecio = row?.minPrecio ? Number(row.minPrecio) : null;
       const maxPrecio = row?.maxPrecio ? Number(row.maxPrecio) : null;
 
-      res.json({ success: true, data: { minPrecio, maxPrecio } });
+      res.json({
+        success: true,
+        message: 'Operación stats realizada correctamente.',
+        data: { minPrecio, maxPrecio }
+      });
     } catch (error) {
       console.error('Error en stats camisetas:', error);
-      res.status(500).json({ success: false, message: 'Error al obtener estadísticas de camisetas' });
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo obtener estadísticas de camisetas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'STATS_ERROR'
+      });
     }
   }
 }

@@ -1,208 +1,258 @@
-import { Router, Request, Response } from 'express';
+import express, { Request, Response, Router, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
-import { z } from 'zod';
-import { Usuario, UsuarioRol } from '../entities/Usuario';
-import { MikroORM } from '@mikro-orm/core';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
+import { MikroORM, wrap } from '@mikro-orm/core';
+import { Usuario } from '../entities/Usuario';
 
-const authRouter = (orm: MikroORM): Router => {
-  const router = Router();
 
-  // POST /api/auth/register
+import { AuthUser } from '../types/auth';
+
+const router: Router = express.Router();
+
+// --- Configuración / validaciones iniciales ---
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET no configurado. Define la variable de entorno JWT_SECRET y reinicia la aplicación.');
+
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+const JWT_ISSUER = process.env.JWT_ISSUER || 'mi-app';
+const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || '10');
+const JWT_USE_COOKIE = process.env.JWT_USE_COOKIE === 'true'; // opcional: si quieres setear el token como cookie HttpOnly
+const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'token';
+
+const ALLOWED_ROLES = ['usuario', 'administrador']; // ajusta según tu dominio
+
+function createToken(payload: object, subject?: string) {
+  const opts: SignOptions = {
+    expiresIn: JWT_EXPIRES_IN,
+    issuer: JWT_ISSUER,
+    subject: subject,
+    algorithm: 'HS256' as SignOptions['algorithm'],
+  } as SignOptions;
+  return jwt.sign(payload as any, JWT_SECRET as string, opts);
+}
+
+// --- Helpers simples de validación / sanitización ---
+function isValidEmail(v: any): v is string {
+  return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
+function sanitizeString(v: any): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  const t = v.trim();
+  return t === '' ? undefined : t;
+}
+
+// --- Middleware exportable para proteger rutas ---
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction) {
+  const header = (req.headers.authorization || '') as string;
+  if (!header.startsWith('Bearer ')) return res.status(401).json({
+    success: false,
+    message: 'No autorizado: token requerido.',
+    error: 'Token requerido',
+    code: 'TOKEN_REQUIRED'
+  });
+  const token = header.slice(7);
+  try {
+    const payload = jwt.verify(token, JWT_SECRET as string) as any;
+    const id = typeof payload.id === 'number' ? payload.id : Number(payload.id ?? payload.sub);
+    req.user = { id, rol: payload.rol, email: payload.email || '' } as AuthUser;
+    return next();
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      message: 'No autorizado: token inválido.',
+      error: 'Token inválido',
+      code: 'TOKEN_INVALID'
+    });
+  }
+}
+
+export default function authRouter(orm: MikroORM): Router {
+  // Registro
   router.post('/register', async (req: Request, res: Response) => {
     try {
-      const registerSchema = z.object({
-        nombre: z.string().min(2, 'Nombre debe tener al menos 2 caracteres'),
-        apellido: z.string().min(2, 'Apellido debe tener al menos 2 caracteres'),
-        email: z.string().email('Email inválido'),
-        contrasena: z.string().min(6, 'Contraseña debe tener al menos 6 caracteres'),
-        direccion: z.string().min(5, 'Dirección debe tener al menos 5 caracteres'),
-        telefono: z.string().min(8, 'Teléfono debe tener al menos 8 caracteres')
-      });
-
-      const parseResult = registerSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({
-          success: false,
-          errors: parseResult.error.issues
-        });
-      }
-
-      const { nombre, apellido, email, contrasena, direccion, telefono } = parseResult.data;
       const em = orm.em.fork();
+      // Sanitizar y validar input
+      const nombre = sanitizeString(req.body.nombre);
+      const apellido = sanitizeString(req.body.apellido);
+      const emailRaw = sanitizeString(req.body.email);
+      const contrasenaRaw = sanitizeString(req.body.contrasena);
+      const direccion = sanitizeString(req.body.direccion);
+      const telefono = sanitizeString(req.body.telefono);
+      const rolRaw = sanitizeString(req.body.rol);
 
-      const usuarioExistente = await em.findOne(Usuario, { 
-        email_normalized: email.toLowerCase().trim() 
+      if (!emailRaw || !contrasenaRaw) return res.status(400).json({
+        success: false,
+        message: 'No se pudo registrar: email y contraseña requeridos.',
+        error: 'Datos obligatorios',
+        code: 'INVALID_DATA'
+      });
+      const email = emailRaw.toLowerCase();
+      const email_normalized = email;
+
+      if (!isValidEmail(email)) return res.status(400).json({
+        success: false,
+        message: 'No se pudo registrar: email inválido.',
+        error: 'Email inválido',
+        code: 'INVALID_DATA'
+      });
+      if (contrasenaRaw.length < 8) return res.status(400).json({
+        success: false,
+        message: 'No se pudo registrar: la contraseña debe tener al menos 8 caracteres.',
+        error: 'Contraseña corta',
+        code: 'INVALID_DATA'
       });
 
-      if (usuarioExistente) {
-        return res.status(400).json({
-          success: false,
-          message: 'El email ya está registrado'
-        });
+      const rol = rolRaw ?? 'usuario';
+      if (rol && !ALLOWED_ROLES.includes(rol)) return res.status(400).json({
+        success: false,
+        message: 'No se pudo registrar: rol inválido.',
+        error: 'Rol inválido',
+        code: 'INVALID_DATA'
+      });
+
+      // Evitar duplicados (check optimista). La defensa definitiva debe ser un UNIQUE en la BD.
+      const exist = await em.findOne(Usuario, { email_normalized });
+      if (exist) return res.status(409).json({
+        success: false,
+        message: 'No se pudo registrar: usuario ya existe.',
+        error: 'Duplicado',
+        code: 'DUPLICATE'
+      });
+
+      const hashed = await bcrypt.hash(contrasenaRaw, BCRYPT_SALT_ROUNDS);
+
+      const user = em.create(Usuario, {nombre,apellido,email,email_normalized,contrasena: hashed,direccion,telefono,rol,} as any);
+
+      try {
+        await em.persistAndFlush(user);
+      } catch (e: any) {
+        // Manejo de constraint unique (Postgres: code === '23505', sqlite: message contiene 'UNIQUE')
+        const msg = String(e?.message || '');
+        if (e?.code === '23505' || /unique/i.test(msg) || /UNIQUE constraint failed/i.test(msg)) {
+          return res.status(409).json({
+            success: false,
+            message: 'No se pudo registrar: usuario ya existe.',
+            error: 'Duplicado',
+            code: 'DUPLICATE'
+          });
+        }
+        throw e;
       }
 
-      const hashedPassword = await bcrypt.hash(contrasena, 10);
+      if (!(user as any).id || typeof (user as any).id !== 'number') {
+        return res.status(500).json({
+          success: false,
+          message: 'No se pudo registrar: error interno.',
+          error: 'Error interno',
+          code: 'REGISTER_ERROR'
+        });
+      }
+      // Serializar el usuario de forma segura usando wrap().toObject()
+      const safeUser = wrap(user).toObject();
+      delete (safeUser as any).contrasena;
 
-      const nuevoUsuario = new Usuario(
-        nombre,
-        apellido,
-        email,
-        hashedPassword,
-        direccion,
-        telefono,
-        UsuarioRol.USUARIO
-      );
+      const token = createToken({ id: user.id, rol: user.rol }, String(user.id));
+      const decoded = jwt.decode(token) as JwtPayload;
+      const maxAge = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
 
-      await em.persistAndFlush(nuevoUsuario);
+      // Opcional: setear cookie HttpOnly si lo configuraste
+      if (JWT_USE_COOKIE) {
+        res.cookie(COOKIE_NAME, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge, // directamente desde decoded.exp
+  });
+}
 
-      // ✅ SIN JWT: Solo devolver usuario
-      const { contrasena: _, ...usuarioSinPassword } = nuevoUsuario;
-
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
-        data: {
-          usuario: usuarioSinPassword,
-          token: 'fake-token-for-development' // ✅ Token fake para desarrollo
-        },
-        message: 'Usuario registrado correctamente'
+        message: 'Registro realizado correctamente.',
+        user: safeUser,
+        token
       });
-
-    } catch (error) {
-      console.error('Error en register:', error);
-      res.status(500).json({
+    } catch (err) {
+      console.error('POST /auth/register error:', err);
+      return res.status(500).json({
         success: false,
-        message: 'Error al registrar usuario'
+        message: 'No se pudo registrar: error interno.',
+        error: 'Error interno',
+        code: 'REGISTER_ERROR'
       });
     }
   });
 
-  // POST /api/auth/login
+  // Login
   router.post('/login', async (req: Request, res: Response) => {
     try {
-      const loginSchema = z.object({
-        email: z.string().email('Email inválido'),
-        contrasena: z.string().min(1, 'Contraseña requerida')
-      });
-
-      const parseResult = loginSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({
-          success: false,
-          errors: parseResult.error.issues
-        });
-      }
-
-      const { email, contrasena } = parseResult.data;
       const em = orm.em.fork();
+      const emailRaw = sanitizeString(req.body.email);
+      const contrasenaRaw = sanitizeString(req.body.contrasena);
 
-      const usuario = await em.findOne(Usuario, { 
-        email_normalized: email.toLowerCase().trim(),
-        activo: true
-      });
-
-      if (!usuario) {
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciales inválidas'
-        });
-      }
-
-      const passwordValida = await bcrypt.compare(contrasena, usuario.contrasena);
-
-      if (!passwordValida) {
-        return res.status(401).json({
-          success: false,
-          message: 'Credenciales inválidas'
-        });
-      }
-
-      // ✅ SIN JWT: Solo devolver usuario
-      const { contrasena: _, ...usuarioSinPassword } = usuario;
-
-      res.json({
-        success: true,
-        data: {
-          usuario: usuarioSinPassword,
-          token: 'fake-token-for-development' // ✅ Token fake para desarrollo
-        },
-        message: 'Login exitoso'
-      });
-
-    } catch (error) {
-      console.error('Error en login:', error);
-      res.status(500).json({
+      if (!emailRaw || !contrasenaRaw) return res.status(400).json({
         success: false,
-        message: 'Error al iniciar sesión'
+        message: 'No se pudo iniciar sesión: email y contraseña requeridos.',
+        error: 'Datos obligatorios',
+        code: 'INVALID_DATA'
       });
-    }
-  });
+      const email = emailRaw.toLowerCase();
 
-  // POST /api/auth/change-password
-  router.post('/change-password', async (req: Request, res: Response) => {
-    try {
-      const changePasswordSchema = z.object({
-        usuarioId: z.number().int().positive('ID de usuario requerido'),
-        contrasenaActual: z.string().min(1, 'Contraseña actual requerida'),
-        contrasenaNueva: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres')
-      });
-
-      const parseResult = changePasswordSchema.safeParse(req.body);
-      if (!parseResult.success) {
-        return res.status(400).json({
-          success: false,
-          message: 'Datos inválidos',
-          errors: parseResult.error.issues
-        });
-      }
-
-      const { usuarioId, contrasenaActual, contrasenaNueva } = parseResult.data;
-      const em = orm.em.fork();
-
-      // Buscar usuario
-      const usuario = await em.findOne(Usuario, { id: usuarioId, activo: true });
-
-      if (!usuario) {
-        return res.status(404).json({
-          success: false,
-          message: 'Usuario no encontrado'
-        });
-      }
-
-      // Verificar contraseña actual
-      const passwordValida = await bcrypt.compare(contrasenaActual, usuario.contrasena);
-
-      if (!passwordValida) {
-        return res.status(401).json({
-          success: false,
-          message: 'La contraseña actual es incorrecta'
-        });
-      }
-
-      // Hashear nueva contraseña
-      const hashedPassword = await bcrypt.hash(contrasenaNueva, 10);
-
-      // Actualizar
-      usuario.contrasena = hashedPassword;
-      await em.persistAndFlush(usuario);
-
-      console.log(`✅ Contraseña actualizada para usuario ID: ${usuarioId}`);
-
-      res.json({
-        success: true,
-        data: { message: 'Contraseña actualizada correctamente' }, // ✅ CAMBIAR: envolver en data
-        message: 'Contraseña actualizada correctamente'
-      });
-
-    } catch (error) {
-      console.error('❌ Error en change-password:', error);
-      res.status(500).json({
+      if (!isValidEmail(email)) return res.status(400).json({
         success: false,
-        message: 'Error al cambiar contraseña'
+        message: 'No se pudo iniciar sesión: email inválido.',
+        error: 'Email inválido',
+        code: 'INVALID_DATA'
+      });
+
+      const user = await em.findOne(Usuario, { email });
+      // No revelar si el usuario existe o no: responder igual para credenciales invalidas
+      if (!user) return res.status(401).json({
+        success: false,
+        message: 'No se pudo iniciar sesión: credenciales inválidas.',
+        error: 'Credenciales inválidas',
+        code: 'INVALID_CREDENTIALS'
+      });
+
+      const hashed = (user as any).contrasena;
+      const ok = await bcrypt.compare(contrasenaRaw, hashed);
+      if (!ok) return res.status(401).json({
+        success: false,
+        message: 'No se pudo iniciar sesión: credenciales inválidas.',
+        error: 'Credenciales inválidas',
+        code: 'INVALID_CREDENTIALS'
+      });
+
+      const token = createToken({ id: (user as any).id, rol: (user as any).rol }, String((user as any).id));
+
+      const safeUser = wrap(user).toObject();
+      delete (safeUser as any).contrasena;
+
+      if (JWT_USE_COOKIE) {
+        res.cookie(COOKIE_NAME, token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: 'Inicio de sesión realizado correctamente.',
+        user: safeUser,
+        token
+      });
+    } catch (err) {
+      console.error('POST /auth/login error:', err);
+      return res.status(500).json({
+        success: false,
+        message: 'No se pudo iniciar sesión: error interno.',
+        error: (err instanceof Error) ? err.message : 'unknown',
+        code: 'LOGIN_ERROR'
       });
     }
   });
 
   return router;
-};
-
-export default authRouter;
+}

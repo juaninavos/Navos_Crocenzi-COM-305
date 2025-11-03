@@ -28,16 +28,17 @@ export class DescuentoController {
       
       res.json({
         success: true,
+        message: 'Operación getAll realizada correctamente.',
         data: descuentos,
-        count: descuentos.length,
-        message: 'Descuentos obtenidos correctamente'
+        count: descuentos.length
       });
     } catch (error) {
       console.error('Error en getAll descuentos:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener descuentos',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener descuentos: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -53,21 +54,23 @@ export class DescuentoController {
       if (!descuento) {
         return res.status(404).json({
           success: false,
-          message: 'Descuento no encontrado'
+          message: 'No se pudo obtener descuento: descuento no encontrado.',
+          error: 'Descuento no encontrado',
+          code: 'NOT_FOUND'
         });
       }
-
       res.json({
         success: true,
-        data: descuento,
-        message: 'Descuento obtenido correctamente'
+        message: 'Operación getById realizada correctamente.',
+        data: descuento
       });
     } catch (error) {
       console.error('Error en getById descuento:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener descuento',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener descuento: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYID_ERROR'
       });
     }
   }
@@ -88,7 +91,9 @@ export class DescuentoController {
       if (!descuento) {
         return res.status(404).json({
           success: false,
-          message: 'Código de descuento no válido',
+          message: 'No se pudo validar código: código de descuento no válido.',
+          error: 'Código no válido',
+          code: 'NOT_FOUND',
           valido: false
         });
       }
@@ -100,7 +105,9 @@ export class DescuentoController {
       if (!vigente) {
         return res.status(400).json({
           success: false,
-          message: 'El código de descuento ha expirado',
+          message: 'No se pudo validar código: el código de descuento ha expirado.',
+          error: 'Código expirado',
+          code: 'EXPIRED',
           valido: false,
           fechaVencimiento: descuento.fechaFin
         });
@@ -115,7 +122,7 @@ export class DescuentoController {
 
       res.json({
         success: true,
-        message: 'Código de descuento válido',
+        message: 'Operación validarCodigo realizada correctamente.',
         valido: true,
         descuento: {
           id: descuento.id,
@@ -130,8 +137,9 @@ export class DescuentoController {
       console.error('Error en validar código descuento:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al validar código de descuento',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo validar código: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'VALIDAR_ERROR'
       });
     }
   }
@@ -143,14 +151,17 @@ export class DescuentoController {
       if (!req.user) {
         return res.status(401).json({
           success: false,
-          message: 'No autorizado'
+          message: 'No se pudo crear descuento: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
         });
       }
-
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Solo administradores pueden crear descuentos'
+          message: 'No se pudo crear descuento: solo administradores pueden crear descuentos.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -160,28 +171,33 @@ export class DescuentoController {
       if (!codigo) {
         return res.status(400).json({
           success: false,
-          message: 'El código es obligatorio'
+          message: 'No se pudo crear descuento: el código es obligatorio.',
+          error: 'Código obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!descripcion) {
         return res.status(400).json({
           success: false,
-          message: 'La descripción es obligatoria'
+          message: 'No se pudo crear descuento: la descripción es obligatoria.',
+          error: 'Descripción obligatoria',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!porcentaje || porcentaje <= 0 || porcentaje > 100) {
         return res.status(400).json({
           success: false,
-          message: 'El porcentaje debe estar entre 1 y 100'
+          message: 'No se pudo crear descuento: el porcentaje debe estar entre 1 y 100.',
+          error: 'Porcentaje fuera de rango',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!fechaInicio || !fechaFin) {
         return res.status(400).json({
           success: false,
-          message: 'Las fechas de inicio y fin son obligatorias'
+          message: 'No se pudo crear descuento: las fechas de inicio y fin son obligatorias.',
+          error: 'Fechas obligatorias',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -195,7 +211,9 @@ export class DescuentoController {
       if (codigoExistente) {
         return res.status(400).json({
           success: false,
-          message: 'El código de descuento ya existe'
+          message: 'No se pudo crear descuento: el código de descuento ya existe.',
+          error: 'Duplicado',
+          code: 'DUPLICATE'
         });
       }
 
@@ -206,14 +224,18 @@ export class DescuentoController {
       if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
         return res.status(400).json({
           success: false,
-          message: 'Las fechas proporcionadas no son válidas'
+          message: 'No se pudo crear descuento: las fechas proporcionadas no son válidas.',
+          error: 'Fechas inválidas',
+          code: 'INVALID_DATA'
         });
       }
       
       if (fin <= inicio) {
         return res.status(400).json({
           success: false,
-          message: 'La fecha de fin debe ser posterior a la fecha de inicio'
+          message: 'No se pudo crear descuento: la fecha de fin debe ser posterior a la fecha de inicio.',
+          error: 'Fechas fuera de rango',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -224,7 +246,9 @@ export class DescuentoController {
       if (inicio < unAnioAtras) {
         return res.status(400).json({
           success: false,
-          message: 'La fecha de inicio no puede ser más de un año en el pasado'
+          message: 'No se pudo crear descuento: la fecha de inicio no puede ser más de un año en el pasado.',
+          error: 'Fecha de inicio fuera de rango',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -241,15 +265,16 @@ export class DescuentoController {
 
       res.status(201).json({
         success: true,
-        data: nuevoDescuento,
-        message: 'Descuento creado correctamente'
+        message: 'Operación create realizada correctamente.',
+        data: nuevoDescuento
       });
     } catch (error) {
       console.error('Error en create descuento:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear descuento',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo crear descuento: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -261,14 +286,17 @@ export class DescuentoController {
       if (!req.user) {
         return res.status(401).json({
           success: false,
-          message: 'No autorizado'
+          message: 'No se pudo actualizar descuento: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
         });
       }
-
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Solo administradores pueden modificar descuentos'
+          message: 'No se pudo actualizar descuento: solo administradores pueden modificar descuentos.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -281,7 +309,9 @@ export class DescuentoController {
       if (!descuento) {
         return res.status(404).json({
           success: false,
-          message: 'Descuento no encontrado'
+          message: 'No se pudo actualizar descuento: descuento no encontrado.',
+          error: 'Descuento no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -291,7 +321,9 @@ export class DescuentoController {
         if (porcentaje <= 0 || porcentaje > 100) {
           return res.status(400).json({
             success: false,
-            message: 'El porcentaje debe estar entre 1 y 100'
+            message: 'No se pudo actualizar descuento: el porcentaje debe estar entre 1 y 100.',
+            error: 'Porcentaje fuera de rango',
+            code: 'INVALID_DATA'
           });
         }
         descuento.porcentaje = porcentaje;
@@ -304,7 +336,9 @@ export class DescuentoController {
       if (descuento.fechaFin <= descuento.fechaInicio) {
         return res.status(400).json({
           success: false,
-          message: 'La fecha de fin debe ser posterior a la fecha de inicio'
+          message: 'No se pudo actualizar descuento: la fecha de fin debe ser posterior a la fecha de inicio.',
+          error: 'Fechas fuera de rango',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -312,15 +346,16 @@ export class DescuentoController {
 
       res.json({
         success: true,
-        data: descuento,
-        message: 'Descuento actualizado correctamente'
+        message: 'Operación update realizada correctamente.',
+        data: descuento
       });
     } catch (error) {
       console.error('Error en update descuento:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al actualizar descuento',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo actualizar descuento: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'UPDATE_ERROR'
       });
     }
   }
@@ -336,7 +371,9 @@ export class DescuentoController {
       if (!descuento) {
         return res.status(404).json({
           success: false,
-          message: 'Descuento no encontrado'
+          message: 'No se pudo eliminar descuento: descuento no encontrado.',
+          error: 'Descuento no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -345,14 +382,15 @@ export class DescuentoController {
 
       res.json({
         success: true,
-        message: 'Descuento desactivado correctamente'
+        message: 'Operación delete realizada correctamente.'
       });
     } catch (error) {
       console.error('Error en delete descuento:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al eliminar descuento',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo eliminar descuento: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'DELETE_ERROR'
       });
     }
   }

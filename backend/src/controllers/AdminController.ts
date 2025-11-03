@@ -15,7 +15,9 @@ export class AdminController {
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Acceso denegado. Solo administradores'
+          message: 'No se pudo obtener dashboard: acceso denegado. Solo administradores.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -69,6 +71,7 @@ export class AdminController {
 
       res.json({
         success: true,
+        message: 'Operación getDashboard realizada correctamente.',
         data: {
           resumen: {
             totalUsuarios,
@@ -79,15 +82,15 @@ export class AdminController {
           },
           camisetasMasVendidas,
           ventasPorMes: Object.values(ventasPorMes)
-        },
-        message: 'Dashboard obtenido correctamente'
+        }
       });
     } catch (error) {
       console.error('Error en getDashboard:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener dashboard',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener dashboard: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETDASHBOARD_ERROR'
       });
     }
   }
@@ -100,7 +103,9 @@ export class AdminController {
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Acceso denegado. Solo administradores'
+          message: 'No se pudo obtener usuarios: acceso denegado. Solo administradores.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -129,15 +134,17 @@ export class AdminController {
 
       res.json({
         success: true,
+        message: 'Operación gestionarUsuarios realizada correctamente.',
         data: usuariosConStats,
-        count: usuarios.length,
-        message: 'Usuarios obtenidos correctamente'
+        count: usuarios.length
       });
     } catch (error) {
       console.error('Error en gestionarUsuarios:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener usuarios'
+        message: 'No se pudo obtener usuarios: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GESTIONARUSUARIOS_ERROR'
       });
     }
   }
@@ -152,7 +159,9 @@ export class AdminController {
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Acceso denegado. Solo administradores'
+          message: 'No se pudo cambiar estado de usuario: acceso denegado. Solo administradores.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -161,14 +170,18 @@ export class AdminController {
       if (!usuario) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: 'No se pudo cambiar estado de usuario: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
       if (usuario.rol === UsuarioRol.ADMINISTRADOR) {
         return res.status(400).json({
           success: false,
-          message: 'No se puede modificar el estado de un administrador'
+          message: 'No se pudo cambiar estado de usuario: no se puede modificar el estado de un administrador.',
+          error: 'No permitido',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -179,15 +192,17 @@ export class AdminController {
 
       res.json({
         success: true,
+        message: `Operación toggleEstadoUsuario realizada correctamente.`,
         data: usuario,
-        message: `Usuario ${estadoAnterior ? 'desactivado' : 'activado'} correctamente`,
         motivo: motivo || 'Sin motivo especificado'
       });
     } catch (error) {
       console.error('Error en toggleEstadoUsuario:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al cambiar estado del usuario'
+        message: 'No se pudo cambiar estado de usuario: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'TOGGLEESTADO_ERROR'
       });
     }
   }
@@ -201,7 +216,9 @@ export class AdminController {
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Acceso denegado. Solo administradores'
+          message: 'No se pudo generar reporte de ventas: acceso denegado. Solo administradores.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -237,17 +254,19 @@ export class AdminController {
 
       res.json({
         success: true,
+        message: 'Operación reporteVentas realizada correctamente.',
         data: {
           compras,
           resumen
-        },
-        message: 'Reporte de ventas generado correctamente'
+        }
       });
     } catch (error) {
       console.error('Error en reporteVentas:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al generar reporte de ventas'
+        message: 'No se pudo generar reporte de ventas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'REPORTEVENTAS_ERROR'
       });
     }
   }

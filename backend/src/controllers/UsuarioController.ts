@@ -14,16 +14,17 @@ export class UsuarioController {
       
       res.json({
         success: true,
+        message: 'Operación getAll realizada correctamente.',
         data: usuarios,
-        count: usuarios.length,
-        message: 'Usuarios obtenidos correctamente'
+        count: usuarios.length
       });
     } catch (error) {
       console.error('Error en getAll usuarios:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener usuarios',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo obtener usuarios: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -40,19 +41,23 @@ export class UsuarioController {
       if (!usuario) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: 'No se pudo obtener usuario: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
         });
       }
-
       res.json({
         success: true,
+        message: 'Operación getOne realizada correctamente.',
         data: usuario
       });
     } catch (error) {
       console.error('Error en getOne usuario:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener usuario'
+        message: 'No se pudo obtener usuario: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'GETONE_ERROR'
       });
     }
   }
@@ -66,42 +71,49 @@ export class UsuarioController {
       if (!nombre) {
         return res.status(400).json({
           success: false,
-          message: 'El nombre es obligatorio'
+          message: 'No se pudo crear usuario: el nombre es obligatorio.',
+          error: 'Nombre obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!apellido) {
         return res.status(400).json({
           success: false,
-          message: 'El apellido es obligatorio'
+          message: 'No se pudo crear usuario: el apellido es obligatorio.',
+          error: 'Apellido obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!email) {
         return res.status(400).json({
           success: false,
-          message: 'El email es obligatorio'
+          message: 'No se pudo crear usuario: el email es obligatorio.',
+          error: 'Email obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!contrasena) {
         return res.status(400).json({
           success: false,
-          message: 'La contraseña es obligatoria'
+          message: 'No se pudo crear usuario: la contraseña es obligatoria.',
+          error: 'Contraseña obligatoria',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!direccion) {
         return res.status(400).json({
           success: false,
-          message: 'La dirección es obligatoria'
+          message: 'No se pudo crear usuario: la dirección es obligatoria.',
+          error: 'Dirección obligatoria',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!telefono) {
         return res.status(400).json({
           success: false,
-          message: 'El teléfono es obligatorio'
+          message: 'No se pudo crear usuario: el teléfono es obligatorio.',
+          error: 'Teléfono obligatorio',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -109,7 +121,9 @@ export class UsuarioController {
       if (nombre.length < 2 || apellido.length < 2) {
         return res.status(400).json({
           success: false,
-          message: 'Nombre y apellido deben tener al menos 2 caracteres'
+          message: 'No se pudo crear usuario: nombre y apellido deben tener al menos 2 caracteres.',
+          error: 'Nombre/apellido corto',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -118,14 +132,18 @@ export class UsuarioController {
       if (!emailRegex.test(email)) {
         return res.status(400).json({
           success: false,
-          message: 'El formato del email no es válido'
+          message: 'No se pudo crear usuario: el formato del email no es válido.',
+          error: 'Email inválido',
+          code: 'INVALID_DATA'
         });
       }
 
       if (contrasena.length < 6) {
         return res.status(400).json({
           success: false,
-          message: 'La contraseña debe tener al menos 6 caracteres'
+          message: 'No se pudo crear usuario: la contraseña debe tener al menos 6 caracteres.',
+          error: 'Contraseña corta',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -133,7 +151,9 @@ export class UsuarioController {
       if (rol && !Object.values(UsuarioRol).includes(rol)) {
         return res.status(400).json({
           success: false,
-          message: `Rol inválido. Roles permitidos: ${Object.values(UsuarioRol).join(', ')}`
+          message: `No se pudo crear usuario: rol inválido. Roles permitidos: ${Object.values(UsuarioRol).join(', ')}`,
+          error: 'Rol inválido',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -145,7 +165,9 @@ export class UsuarioController {
       if (existeUsuario) {
         return res.status(400).json({
           success: false,
-          message: 'Ya existe un usuario con ese email'
+          message: 'No se pudo crear usuario: ya existe un usuario con ese email.',
+          error: 'Duplicado',
+          code: 'DUPLICATE'
         });
       }
 
@@ -165,14 +187,16 @@ export class UsuarioController {
 
       res.status(201).json({
         success: true,
-        data: nuevoUsuario,
-        message: 'Usuario creado correctamente'
+        message: 'Operación create realizada correctamente.',
+        data: nuevoUsuario
       });
     } catch (error) {
       console.error('Error en create usuario:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear usuario'
+        message: 'No se pudo crear usuario: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -190,7 +214,9 @@ export class UsuarioController {
       if (!usuario) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: 'No se pudo actualizar usuario: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -201,7 +227,9 @@ export class UsuarioController {
         if (!emailRegex.test(email)) {
           return res.status(400).json({
             success: false,
-            message: 'El formato del email no es válido'
+            message: 'No se pudo actualizar usuario: el formato del email no es válido.',
+            error: 'Email inválido',
+            code: 'INVALID_DATA'
           });
         }
 
@@ -213,7 +241,9 @@ export class UsuarioController {
         if (existeOtro) {
           return res.status(400).json({
             success: false,
-            message: 'Ya existe otro usuario con ese email'
+            message: 'No se pudo actualizar usuario: ya existe otro usuario con ese email.',
+            error: 'Duplicado',
+            code: 'DUPLICATE'
           });
         }
       }
@@ -222,7 +252,9 @@ export class UsuarioController {
       if (rol && !Object.values(UsuarioRol).includes(rol)) {
         return res.status(400).json({
           success: false,
-          message: `Rol inválido. Roles permitidos: ${Object.values(UsuarioRol).join(', ')}`
+          message: `No se pudo actualizar usuario: rol inválido. Roles permitidos: ${Object.values(UsuarioRol).join(', ')}`,
+          error: 'Rol inválido',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -238,14 +270,16 @@ export class UsuarioController {
 
       res.json({
         success: true,
-        data: usuario,
-        message: 'Usuario actualizado correctamente'
+        message: 'Operación update realizada correctamente.',
+        data: usuario
       });
     } catch (error) {
       console.error('Error en update usuario:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al actualizar usuario'
+        message: 'No se pudo actualizar usuario: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'UPDATE_ERROR'
       });
     }
   }
@@ -262,7 +296,9 @@ export class UsuarioController {
       if (!usuario) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: 'No se pudo eliminar usuario: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -272,13 +308,15 @@ export class UsuarioController {
 
       res.json({
         success: true,
-        message: 'Usuario eliminado correctamente'
+        message: 'Operación delete realizada correctamente.'
       });
     } catch (error) {
       console.error('Error en delete usuario:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al eliminar usuario'
+        message: 'No se pudo eliminar usuario: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'DELETE_ERROR'
       });
     }
   }

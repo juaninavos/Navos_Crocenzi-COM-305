@@ -15,15 +15,16 @@ export class PagoController {
       
       res.json({
         success: true,
-        data: pagos,
-        message: 'Pagos obtenidos correctamente'
+        message: 'Operación getAll realizada correctamente.',
+        data: pagos
       });
     } catch (error) {
       console.error('Error en getAll pagos:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener pagos',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener pagos: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -41,21 +42,23 @@ export class PagoController {
       if (!pago) {
         return res.status(404).json({
           success: false,
-          message: 'Pago no encontrado'
+          message: 'No se pudo obtener pago: pago no encontrado.',
+          error: 'Pago no encontrado',
+          code: 'NOT_FOUND'
         });
       }
-
       res.json({
         success: true,
-        data: pago,
-        message: 'Pago obtenido correctamente'
+        message: 'Operación getById realizada correctamente.',
+        data: pago
       });
     } catch (error) {
       console.error('Error en getById pago:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener pago',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener pago: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYID_ERROR'
       });
     }
   }
@@ -73,16 +76,17 @@ export class PagoController {
       
       res.json({
         success: true,
+        message: 'Operación getByCompra realizada correctamente.',
         data: pagos,
-        count: pagos.length,
-        message: 'Pagos de la compra obtenidos correctamente'
+        count: pagos.length
       });
     } catch (error) {
       console.error('Error en getByCompra pagos:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener pagos de la compra',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener pagos de la compra: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYCOMPRA_ERROR'
       });
     }
   }
@@ -96,21 +100,25 @@ export class PagoController {
       if (!compraId) {
         return res.status(400).json({
           success: false,
-          message: 'La compra es obligatoria'
+          message: 'No se pudo crear pago: la compra es obligatoria.',
+          error: 'Compra obligatoria',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!metodoPagoId) {
         return res.status(400).json({
           success: false,
-          message: 'El método de pago es obligatorio'
+          message: 'No se pudo crear pago: el método de pago es obligatorio.',
+          error: 'Método de pago obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!monto || monto <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'El monto debe ser mayor a 0'
+          message: 'No se pudo crear pago: el monto debe ser mayor a 0.',
+          error: 'Monto inválido',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -121,7 +129,9 @@ export class PagoController {
       if (!compra) {
         return res.status(404).json({
           success: false,
-          message: 'Compra no encontrada'
+          message: 'No se pudo crear pago: compra no encontrada.',
+          error: 'Compra no encontrada',
+          code: 'NOT_FOUND'
         });
       }
       
@@ -129,7 +139,9 @@ export class PagoController {
       if (compra.estado !== EstadoCompra.PENDIENTE) {
         return res.status(400).json({
           success: false,
-          message: 'La compra ya fue procesada o cancelada'
+          message: 'No se pudo crear pago: la compra ya fue procesada o cancelada.',
+          error: 'Compra no pendiente',
+          code: 'INVALID_STATE'
         });
       }
       
@@ -138,14 +150,18 @@ export class PagoController {
       if (!metodoPago) {
         return res.status(404).json({
           success: false,
-          message: 'Método de pago no encontrado'
+          message: 'No se pudo crear pago: método de pago no encontrado.',
+          error: 'Método de pago no encontrado',
+          code: 'NOT_FOUND'
         });
       }
       
       if (!metodoPago.activo) {
         return res.status(400).json({
           success: false,
-          message: 'El método de pago no está disponible'
+          message: 'No se pudo crear pago: el método de pago no está disponible.',
+          error: 'Método de pago inactivo',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -153,7 +169,9 @@ export class PagoController {
       if (monto !== compra.total) {
         return res.status(400).json({
           success: false,
-          message: `El monto debe ser exactamente $${compra.total}`
+          message: `No se pudo crear pago: el monto debe ser exactamente $${compra.total}.`,
+          error: 'Monto incorrecto',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -186,10 +204,10 @@ export class PagoController {
 
       res.status(201).json({
         success: true,
+        message: estadoPago === EstadoPago.COMPLETADO
+          ? 'Operación create realizada correctamente.'
+          : 'Pago iniciado, pendiente de confirmación.',
         data: nuevoPago,
-        message: estadoPago === EstadoPago.COMPLETADO 
-          ? 'Pago procesado correctamente' 
-          : 'Pago iniciado, pendiente de confirmación',
         estado: estadoPago,
         numeroTransaccion: numeroTransaccion
       });
@@ -197,8 +215,9 @@ export class PagoController {
       console.error('Error en create pago:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al procesar pago',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo crear pago: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -218,7 +237,9 @@ export class PagoController {
       if (!pago) {
         return res.status(404).json({
           success: false,
-          message: 'Pago no encontrado'
+          message: 'No se pudo confirmar pago: pago no encontrado.',
+          error: 'Pago no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -226,7 +247,9 @@ export class PagoController {
       if (pago.estado !== EstadoPago.PENDIENTE) {
         return res.status(400).json({
           success: false,
-          message: 'El pago ya fue procesado'
+          message: 'No se pudo confirmar pago: el pago ya fue procesado.',
+          error: 'Pago ya procesado',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -253,15 +276,16 @@ export class PagoController {
 
       res.json({
         success: true,
-        data: pago,
-        message: 'Pago confirmado correctamente'
+        message: 'Operación confirmar realizada correctamente.',
+        data: pago
       });
     } catch (error) {
       console.error('Error en confirmar pago:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al confirmar pago',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo confirmar pago: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'CONFIRMAR_ERROR'
       });
     }
   }
@@ -281,7 +305,9 @@ export class PagoController {
       if (!pago) {
         return res.status(404).json({
           success: false,
-          message: 'Pago no encontrado'
+          message: 'No se pudo rechazar pago: pago no encontrado.',
+          error: 'Pago no encontrado',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -289,7 +315,9 @@ export class PagoController {
       if (pago.estado !== EstadoPago.PENDIENTE) {
         return res.status(400).json({
           success: false,
-          message: 'Solo se pueden rechazar pagos pendientes'
+          message: 'No se pudo rechazar pago: solo se pueden rechazar pagos pendientes.',
+          error: 'Pago no pendiente',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -303,15 +331,16 @@ export class PagoController {
 
       res.json({
         success: true,
-        data: pago,
-        message: 'Pago rechazado'
+        message: 'Operación rechazar realizada correctamente.',
+        data: pago
       });
     } catch (error) {
       console.error('Error en rechazar pago:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al rechazar pago',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo rechazar pago: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'RECHAZAR_ERROR'
       });
     }
   }

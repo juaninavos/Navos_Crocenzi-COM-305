@@ -15,6 +15,7 @@ export const CheckoutPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     direccionEnvio: '', // ✅ CAMBIAR: inicializar vacío porque direccion no existe en Usuario
@@ -53,26 +54,23 @@ export const CheckoutPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validaciones
     if (items.length === 0) {
       setError('El carrito está vacío');
       return;
     }
-
     if (!formData.metodoPagoId) {
       setError('Selecciona un método de pago');
       return;
     }
-
     if (!formData.direccionEnvio.trim()) {
       setError('La dirección de envío es obligatoria');
       return;
     }
-
     // Validar stock de todos los items antes de proceder
     const sinStock = items.find(i => i.cantidad > (i.producto?.stock ?? 0));
     if (sinStock) {
       setError(`No hay stock suficiente para "${sinStock.producto.titulo}"`);
-      alert('⚠️ Algunos productos no tienen stock suficiente. Por favor revisa tu carrito.');
       return;
     }
 
@@ -102,10 +100,11 @@ export const CheckoutPage: React.FC = () => {
       );
 
       clearCart();
-      
-      alert(`✅ ¡Compra realizada con éxito!\n\nTotal pagado: $${total.toLocaleString()}`);
-      navigate('/orders');
-      
+      setSuccess(`✅ ¡Compra realizada con éxito! Total pagado: $${total.toLocaleString()}`);
+      setTimeout(() => {
+        setSuccess('');
+        navigate('/orders');
+      }, 2000);
     } catch (error: unknown) {
       console.error('Error creating order:', error);
       let errorMsg = 'Error al procesar la compra. Intenta nuevamente.';
@@ -117,9 +116,7 @@ export const CheckoutPage: React.FC = () => {
       }
       setError(errorMsg);
       
-      if (errorMsg.includes('stock')) {
-        alert('⚠️ Algunos productos no tienen stock suficiente. Por favor revisa tu carrito.');
-      }
+      // Si el error es de stock, mostrar mensaje visual
     } finally {
       setLoading(false);
     }
@@ -164,6 +161,17 @@ export const CheckoutPage: React.FC = () => {
             type="button" 
             className="btn-close" 
             onClick={() => setError('')}
+            aria-label="Close"
+          ></button>
+        </div>
+      )}
+      {success && (
+        <div className="alert alert-success alert-dismissible fade show" role="alert">
+          <strong>Éxito:</strong> {success}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setSuccess('')}
             aria-label="Close"
           ></button>
         </div>

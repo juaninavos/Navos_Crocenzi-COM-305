@@ -16,16 +16,17 @@ export class CategoriaController {
       
       res.json({
         success: true,
+        message: 'Operación getAll realizada correctamente.',
         data: categorias,
-        count: categorias.length,
-        message: 'Categorías obtenidas correctamente'
+        count: categorias.length
       });
     } catch (error) {
       console.error('Error en getAll categorias:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener categorías',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo obtener categorías: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -42,20 +43,23 @@ export class CategoriaController {
       if (!categoria) {
         return res.status(404).json({
           success: false,
-          message: 'Categoría no encontrada'
+          message: 'No se pudo obtener categoría: categoría no encontrada.',
+          error: 'Categoría no encontrada',
+          code: 'NOT_FOUND'
         });
       }
-
       res.json({
         success: true,
+        message: 'Operación getOne realizada correctamente.',
         data: categoria
       });
     } catch (error) {
       console.error('Error en getOne categoria:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener categoría',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo obtener categoría: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'GETONE_ERROR'
       });
     }
   }
@@ -67,14 +71,17 @@ export class CategoriaController {
       if (!req.user) {
         return res.status(401).json({
           success: false,
-          message: 'No autorizado'
+          message: 'No se pudo crear categoría: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
         });
       }
-
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'Solo administradores pueden crear categorías'
+          message: 'No se pudo crear categoría: solo administradores pueden crear categorías.',
+          error: 'Rol no permitido',
+          code: 'FORBIDDEN'
         });
       }
 
@@ -83,14 +90,17 @@ export class CategoriaController {
       if (!nombre) {
         return res.status(400).json({
           success: false,
-          message: 'El nombre es obligatorio'
+          message: 'No se pudo crear categoría: el nombre es obligatorio.',
+          error: 'Nombre obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-
       if (nombre.length < 2 || nombre.length > 100) {
         return res.status(400).json({
           success: false,
-          message: 'El nombre debe tener entre 2 y 100 caracteres'
+          message: 'No se pudo crear categoría: el nombre debe tener entre 2 y 100 caracteres.',
+          error: 'Nombre fuera de rango',
+          code: 'INVALID_DATA'
         });
       }
       
@@ -101,7 +111,9 @@ export class CategoriaController {
       if (existeCategoria) {
         return res.status(400).json({
           success: false,
-          message: 'Ya existe una categoría con ese nombre'
+          message: 'No se pudo crear categoría: ya existe una categoría con ese nombre.',
+          error: 'Duplicado',
+          code: 'DUPLICATE'
         });
       }
       
@@ -112,15 +124,16 @@ export class CategoriaController {
 
       res.status(201).json({
         success: true,
-        data: nuevaCategoria,
-        message: 'Categoría creada correctamente'
+        message: 'Operación create realizada correctamente.',
+        data: nuevaCategoria
       });
     } catch (error) {
       console.error('Error en create categoria:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear categoría',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo crear categoría: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -138,7 +151,9 @@ export class CategoriaController {
       if (!categoria) {
         return res.status(404).json({
           success: false,
-          message: 'Categoría no encontrada'
+          message: 'No se pudo actualizar categoría: categoría no encontrada.',
+          error: 'Categoría no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -146,7 +161,9 @@ export class CategoriaController {
         if (!nombre || nombre.length < 2 || nombre.length > 100) {
           return res.status(400).json({
             success: false,
-            message: 'El nombre debe tener entre 2 y 100 caracteres'
+            message: 'No se pudo actualizar categoría: el nombre debe tener entre 2 y 100 caracteres.',
+            error: 'Nombre fuera de rango',
+            code: 'INVALID_DATA'
           });
         }
 
@@ -157,7 +174,9 @@ export class CategoriaController {
         if (existeCategoria) {
           return res.status(400).json({
             success: false,
-            message: 'Ya existe otra categoría con ese nombre'
+            message: 'No se pudo actualizar categoría: ya existe otra categoría con ese nombre.',
+            error: 'Duplicado',
+            code: 'DUPLICATE'
           });
         }
 
@@ -172,15 +191,16 @@ export class CategoriaController {
 
       res.json({
         success: true,
-        data: categoria,
-        message: 'Categoría actualizada correctamente'
+        message: 'Operación update realizada correctamente.',
+        data: categoria
       });
     } catch (error) {
       console.error('Error en update categoria:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al actualizar categoría',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo actualizar categoría: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'UPDATE_ERROR'
       });
     }
   }
@@ -197,7 +217,9 @@ export class CategoriaController {
       if (!categoria) {
         return res.status(404).json({
           success: false,
-          message: 'Categoría no encontrada'
+          message: 'No se pudo eliminar categoría: categoría no encontrada.',
+          error: 'Categoría no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -205,7 +227,9 @@ export class CategoriaController {
       if (camisetasAsociadas > 0) {
         return res.status(400).json({
           success: false,
-          message: `No se puede eliminar la categoría porque tiene ${camisetasAsociadas} camisetas asociadas`
+          message: `No se pudo eliminar categoría: tiene ${camisetasAsociadas} camisetas asociadas.`,
+          error: 'Categoría con camisetas asociadas',
+          code: 'HAS_ASSOCIATED_ITEMS'
         });
       }
 
@@ -214,14 +238,15 @@ export class CategoriaController {
 
       res.json({
         success: true,
-        message: 'Categoría eliminada correctamente'
+        message: 'Operación delete realizada correctamente.'
       });
     } catch (error) {
       console.error('Error en delete categoria:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al eliminar categoría',
-        error: error instanceof Error ? error.message : String(error)
+        message: 'No se pudo eliminar categoría: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'DELETE_ERROR'
       });
     }
   }

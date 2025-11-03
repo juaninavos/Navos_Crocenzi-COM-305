@@ -65,8 +65,8 @@ export interface Usuario {
   email: string;
   email_normalized: string;
   contrasena?: string;  // Solo para backend, nunca se envía al frontend
-  direccion?: string;   // ✅ CAMBIAR: hacerla opcional
-  telefono?: string;    // ✅ CAMBIAR: hacerla opcional
+  direccion: string;
+  telefono: string;
   rol: UsuarioRol;
   activo: boolean;
   fechaRegistro: Date;
@@ -239,10 +239,10 @@ export interface CamisetaFiltro {
   precioMax?: string | number;
   esSubasta?: boolean;
   search?: string;
-  vendedorId?: number;
   page?: number;
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
+  usuarioId?: number; // Permite filtrar por usuario (vendedor)
 }
 
 // =========================
@@ -272,56 +272,16 @@ export interface DashboardData {
 // =========================
 
 export interface CartItem {
-  id: number;                    // ✅ ID del item en el carrito
-  camiseta: Camiseta;           // ✅ Información completa de la camiseta
-  quantity: number;             // ✅ Cantidad seleccionada
-  subtotal?: number;            // ✅ Opcional: subtotal calculado
+  id: number;
+  camiseta: Camiseta;
+  quantity: number;
+  subtotal: number;
 }
 
 export interface Cart {
   items: CartItem[];
   total: number;
   count: number;
-}
-
-// =========================
-// 🔨 TIPOS AUXILIARES PARA SUBASTAS
-// =========================
-
-export interface CreateSubastaData {
-  fechaInicio: Date | string;
-  fechaFin: Date | string;
-  camisetaId: number;
-  precioInicial?: number;
-}
-
-export interface CreateOfertaData {
-  monto: number;
-  usuarioId: number;
-  subastaId: number;
-}
-
-export interface SubastaFiltro {
-  activas?: boolean;
-  camisetaId?: number;
-  page?: number;
-  limit?: number;
-}
-
-// =========================
-// 📊 ESTADÍSTICAS DE SUBASTA
-// =========================
-
-export interface SubastaStats {
-  tiempoRestante: {
-    dias: number;
-    horas: number;
-    minutos: number;
-    segundos: number;
-    total: number; // milisegundos
-  };
-  finalizada: boolean;
-  puedeOfertar: boolean;
 }
 
 // =========================

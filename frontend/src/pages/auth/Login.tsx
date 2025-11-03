@@ -11,6 +11,8 @@ export const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; contrasena?: string }>({});
+  const [success, setSuccess] = useState('');
   
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -19,18 +21,40 @@ export const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+    setFieldErrors({});
+    // Validación frontend
+    let valid = true;
+    const newFieldErrors: { email?: string; contrasena?: string } = {};
+    if (!formData.email.trim()) {
+      newFieldErrors.email = 'El email es obligatorio';
+      valid = false;
+    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
+      newFieldErrors.email = 'El formato de email no es válido';
+      valid = false;
+    }
+    if (!formData.contrasena.trim()) {
+      newFieldErrors.contrasena = 'La contraseña es obligatoria';
+      valid = false;
+    }
+    setFieldErrors(newFieldErrors);
+    if (!valid) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      // ✅ MANTENER: authService.login devuelve directamente { usuario, token }
       const authResponse = await authService.login(formData);
-      
-      // ✅ MANTENER: Ya no hay .success o .data, es directo
       login(authResponse.usuario, authResponse.token);
-      
-      navigate('/');
-    } catch (error: any) {
-      console.error('Error en login:', error);
-      setError(error.message || 'Error de conexión');
+      setSuccess('¡Ingreso exitoso! Redirigiendo...');
+      setTimeout(() => {
+        setSuccess('');
+        navigate('/');
+      }, 1500);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message || 'Error de conexión');
+      } else {
+        setError('Error de conexión');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -60,6 +84,11 @@ export const Login = () => {
                   {error}
                 </div>
               )}
+              {success && (
+                <div className="alert alert-success" role="alert">
+                  {success}
+                </div>
+              )}
 
               {/* Formulario */}
               <form onSubmit={handleSubmit}>
@@ -67,26 +96,32 @@ export const Login = () => {
                   <label htmlFor="email" className="form-label">Email</label>
                   <input
                     type="email"
-                    className="form-control"
+                    className={`form-control${fieldErrors.email ? ' is-invalid' : ''}`}
                     id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
                   />
+                  {fieldErrors.email && (
+                    <div className="invalid-feedback">{fieldErrors.email}</div>
+                  )}
                 </div>
 
                 <div className="mb-3">
                   <label htmlFor="contrasena" className="form-label">Contraseña</label>
                   <input
                     type="password"
-                    className="form-control"
+                    className={`form-control${fieldErrors.contrasena ? ' is-invalid' : ''}`}
                     id="contrasena"
                     name="contrasena"
                     value={formData.contrasena}
                     onChange={handleChange}
                     required
                   />
+                  {fieldErrors.contrasena && (
+                    <div className="invalid-feedback">{fieldErrors.contrasena}</div>
+                  )}
                 </div>
 
                 <button

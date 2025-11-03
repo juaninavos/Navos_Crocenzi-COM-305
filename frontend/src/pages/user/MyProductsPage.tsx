@@ -9,6 +9,10 @@ export const MyProductsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [formError, setFormError] = useState<string>('');
+  const [formSuccess, setFormSuccess] = useState<string>('');
+  const [editError, setEditError] = useState<string>('');
+  const [editSuccess, setEditSuccess] = useState<string>('');
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ titulo: string; precioInicial: number; stock: number }>({ titulo: '', precioInicial: 0, stock: 1 });
@@ -62,7 +66,7 @@ export const MyProductsPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const { data } = await camisetaService.getAll({ vendedorId: usuario.id, limit: 100 });
+  const { data } = await camisetaService.getAll({ usuarioId: usuario.id, limit: 100 });
       setCamisetas(data);
     } catch (e) {
       console.error('Error cargando mis camisetas', e);
@@ -82,7 +86,12 @@ export const MyProductsPage: React.FC = () => {
 
   const crearPublicacion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canCreate) return;
+    setFormError('');
+    setFormSuccess('');
+    if (!canCreate) {
+      setFormError('Completa todos los campos obligatorios correctamente.');
+      return;
+    }
     try {
       setCreating(true);
       const payload: Partial<Camiseta> & { precioInicial: number; esSubasta?: boolean; stock?: number; categoriaId?: number } = {
@@ -98,11 +107,13 @@ export const MyProductsPage: React.FC = () => {
         stock: form.stock,
       };
       await camisetaService.publicar(payload);
+      setFormSuccess('✅ Publicación creada con éxito');
+      setTimeout(() => setFormSuccess(''), 2000);
       setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false });
       await fetchMine();
     } catch (e) {
       console.error('Error creando publicación', e);
-      alert('No se pudo crear la publicación');
+      setFormError('No se pudo crear la publicación');
     } finally {
       setCreating(false);
     }
@@ -118,17 +129,25 @@ export const MyProductsPage: React.FC = () => {
   };
 
   const saveEdit = async (id: number) => {
+    setEditError('');
+    setEditSuccess('');
+    if (!editForm.titulo.trim() || Number(editForm.precioInicial) <= 0 || Number(editForm.stock) < 0) {
+      setEditError('Completa los campos correctamente.');
+      return;
+    }
     try {
       await camisetaService.update(id, {
         titulo: editForm.titulo.trim(),
         precioInicial: Number(editForm.precioInicial),
         stock: Number(editForm.stock),
       });
+      setEditSuccess('✅ Cambios guardados con éxito');
+      setTimeout(() => setEditSuccess(''), 2000);
       setEditingId(null);
       await fetchMine();
     } catch (e) {
       console.error('Error guardando cambios', e);
-      alert('No se pudo guardar la edición');
+      setEditError('No se pudo guardar la edición');
     }
   };
 
@@ -190,6 +209,18 @@ export const MyProductsPage: React.FC = () => {
       <div className="card mb-4">
         <div className="card-header bg-light"><h5 className="mb-0">➕ Crear nueva publicación</h5></div>
         <div className="card-body">
+          {formError && (
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              {formError}
+              <button type="button" className="btn-close" onClick={() => setFormError('')} aria-label="Close"></button>
+            </div>
+          )}
+          {formSuccess && (
+            <div className="alert alert-success alert-dismissible fade show" role="alert">
+              {formSuccess}
+              <button type="button" className="btn-close" onClick={() => setFormSuccess('')} aria-label="Close"></button>
+            </div>
+          )}
           <form onSubmit={crearPublicacion}>
             <div className="row g-3">
               <div className="col-12 col-md-6">
@@ -274,6 +305,18 @@ export const MyProductsPage: React.FC = () => {
                 <div className="card-body d-flex flex-column">
                   {editingId === c.id ? (
                     <>
+                      {editError && (
+                        <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                          {editError}
+                          <button type="button" className="btn-close" onClick={() => setEditError('')} aria-label="Close"></button>
+                        </div>
+                      )}
+                      {editSuccess && (
+                        <div className="alert alert-success alert-dismissible fade show" role="alert">
+                          {editSuccess}
+                          <button type="button" className="btn-close" onClick={() => setEditSuccess('')} aria-label="Close"></button>
+                        </div>
+                      )}
                       <input className="form-control mb-2" value={editForm.titulo} onChange={e => setEditForm(f => ({ ...f, titulo: e.target.value }))} />
                       <div className="row g-2">
                         <div className="col-6">

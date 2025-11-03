@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, ManyToOne } from '@mikro-orm/core';
+import { Entity, PrimaryKey, ManyToOne, Property } from '@mikro-orm/core';
 import { Compra } from './Compra';
 import { Camiseta } from './Camiseta';
 
@@ -14,8 +14,5 @@ export class CompraItem {
   camiseta!: Camiseta;
 
   @Property()
-  cantidad!: number;
-
-  @Property({ onCreate: () => new Date() })
-  fechaCreacion: Date = new Date();
+  cantidad: number = 1;
 }

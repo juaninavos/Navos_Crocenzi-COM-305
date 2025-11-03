@@ -1,4 +1,4 @@
-import roleGuard from '../src/middleware/roleGuard';
+import roleGuard from '../middleware/roleGuard';
 
 describe('roleGuard middleware (unit)', () => {
   test('allows when role matches', () => {

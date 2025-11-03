@@ -15,13 +15,15 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["jest"]
   },
   "ts-node": {
     "esm": false // ✅ AGREGAR: Forzar CommonJS en ts-node
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "src/tests/**/*"
   ],
   "exclude": [
     "node_modules",

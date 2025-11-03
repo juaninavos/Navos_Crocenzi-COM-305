@@ -31,16 +31,17 @@ export class OfertaController {
       
       res.json({
         success: true,
+        message: 'Operación getAll realizada correctamente.',
         data: ofertas,
-        count: ofertas.length,
-        message: 'Ofertas obtenidas correctamente'
+        count: ofertas.length
       });
     } catch (error) {
       console.error('❌ Error en getAll ofertas:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener ofertas',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener ofertas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETALL_ERROR'
       });
     }
   }
@@ -59,21 +60,23 @@ export class OfertaController {
       if (!oferta) {
         return res.status(404).json({
           success: false,
-          message: 'Oferta no encontrada'
+          message: 'No se pudo obtener oferta: oferta no encontrada.',
+          error: 'Oferta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
-
       res.json({
         success: true,
-        data: oferta,
-        message: 'Oferta obtenida correctamente'
+        message: 'Operación getById realizada correctamente.',
+        data: oferta
       });
     } catch (error) {
       console.error('❌ Error en getById oferta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al obtener oferta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo obtener oferta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYID_ERROR'
       });
     }
   }
@@ -87,21 +90,25 @@ export class OfertaController {
       if (!monto || monto <= 0) {
         return res.status(400).json({
           success: false,
-          message: 'El monto debe ser mayor a 0'
+          message: 'No se pudo crear oferta: el monto debe ser mayor a 0.',
+          error: 'Monto inválido',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!usuarioId) {
         return res.status(400).json({
           success: false,
-          message: 'El usuario es obligatorio'
+          message: 'No se pudo crear oferta: el usuario es obligatorio.',
+          error: 'Usuario obligatorio',
+          code: 'INVALID_DATA'
         });
       }
-      
       if (!subastaId) {
         return res.status(400).json({
           success: false,
-          message: 'La subasta es obligatoria'
+          message: 'No se pudo crear oferta: la subasta es obligatoria.',
+          error: 'Subasta obligatoria',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -113,7 +120,9 @@ export class OfertaController {
       if (!usuario) {
         return res.status(404).json({
           success: false,
-          message: 'Usuario no encontrado'
+          message: 'No se pudo crear oferta: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
         });
       }
       
@@ -122,14 +131,18 @@ export class OfertaController {
       if (!subasta) {
         return res.status(404).json({
           success: false,
-          message: 'Subasta no encontrada'
+          message: 'No se pudo crear oferta: subasta no encontrada.',
+          error: 'Subasta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
       
       if (subasta.fechaFin < new Date()) {
         return res.status(400).json({
           success: false,
-          message: 'La subasta ya ha finalizado'
+          message: 'No se pudo crear oferta: la subasta ya ha finalizado.',
+          error: 'Subasta finalizada',
+          code: 'INVALID_STATE'
         });
       }
 
@@ -137,7 +150,9 @@ export class OfertaController {
       if (monto <= subasta.precioActual) {
         return res.status(400).json({
           success: false,
-          message: `La oferta debe ser mayor al precio actual ($${subasta.precioActual})`
+          message: `No se pudo crear oferta: la oferta debe ser mayor al precio actual ($${subasta.precioActual}).`,
+          error: 'Monto insuficiente',
+          code: 'INVALID_DATA'
         });
       }
 
@@ -153,15 +168,16 @@ export class OfertaController {
 
       res.status(201).json({
         success: true,
-        data: nuevaOferta,
-        message: 'Oferta creada correctamente'
+        message: 'Operación create realizada correctamente.',
+        data: nuevaOferta
       });
     } catch (error) {
       console.error('❌ Error en create oferta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al crear oferta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo crear oferta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'CREATE_ERROR'
       });
     }
   }
@@ -180,7 +196,9 @@ export class OfertaController {
       if (!oferta) {
         return res.status(404).json({
           success: false,
-          message: 'Oferta no encontrada'
+          message: 'No se pudo actualizar oferta: oferta no encontrada.',
+          error: 'Oferta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -192,15 +210,16 @@ export class OfertaController {
 
       res.json({
         success: true,
-        data: oferta,
-        message: 'Oferta actualizada correctamente'
+        message: 'Operación update realizada correctamente.',
+        data: oferta
       });
     } catch (error) {
       console.error('❌ Error en update oferta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al actualizar oferta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo actualizar oferta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'UPDATE_ERROR'
       });
     }
   }
@@ -217,7 +236,9 @@ export class OfertaController {
       if (!oferta) {
         return res.status(404).json({
           success: false,
-          message: 'Oferta no encontrada'
+          message: 'No se pudo eliminar oferta: oferta no encontrada.',
+          error: 'Oferta no encontrada',
+          code: 'NOT_FOUND'
         });
       }
 
@@ -225,14 +246,15 @@ export class OfertaController {
 
       res.json({
         success: true,
-        message: 'Oferta eliminada correctamente'
+        message: 'Operación delete realizada correctamente.'
       });
     } catch (error) {
       console.error('❌ Error en delete oferta:', error);
       res.status(500).json({
         success: false,
-        message: 'Error al eliminar oferta',
-        error: error instanceof Error ? error.message : 'Error desconocido'
+        message: 'No se pudo eliminar oferta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'DELETE_ERROR'
       });
     }
   }
