@@ -9,14 +9,14 @@ CREATE TABLE IF NOT EXISTS usuario (
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
-    email_normalized VARCHAR(150) UNIQUE NOT NULL,  -- ✅ AGREGAR ESTA LÍNEA
+    email_normalized VARCHAR(150) UNIQUE NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
     direccion VARCHAR(255) NOT NULL,
     telefono VARCHAR(20) NOT NULL,
     rol ENUM('usuario', 'administrador') DEFAULT 'usuario',
     activo BOOLEAN DEFAULT true,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_email_normalized (email_normalized)  -- ✅ AGREGAR ÍNDICE
+    INDEX idx_email_normalized (email_normalized)
 );
 
 -- Tabla Categoria
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS camiseta (
     stock INT DEFAULT 1,
     es_subasta BOOLEAN DEFAULT false,
     estado ENUM('disponible', 'vendida', 'en_subasta', 'inactiva') DEFAULT 'disponible',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- ✅ ESTA LÍNEA
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     vendedor_id INT NOT NULL,
     categoria_id INT,
@@ -85,18 +85,18 @@ CREATE TABLE IF NOT EXISTS metodo_pago (
 -- Tabla Compra
 CREATE TABLE IF NOT EXISTS compra (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    total DECIMAL(10,2) NOT NULL,  -- ✅ CAMBIAR de precio_final a total
+    total DECIMAL(10,2) NOT NULL,
     cantidad INT DEFAULT 1,
-    estado ENUM('pendiente', 'confirmada', 'pagada', 'enviada', 'entregada', 'cancelada') DEFAULT 'pendiente',  -- ✅ AJUSTAR
+    estado ENUM('pendiente', 'confirmada', 'pagada', 'enviada', 'entregada', 'cancelada') DEFAULT 'pendiente',
     fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    direccion_envio TEXT,  -- ✅ AGREGAR
-    notas TEXT,  -- ✅ AGREGAR
+    direccion_envio TEXT,
+    notas TEXT,
     camiseta_id INT NOT NULL,
-    comprador_id INT NOT NULL,  -- ✅ Cambiar de comprador_id a mantener consistencia
-    metodo_pago_id INT NOT NULL,  -- ✅ AGREGAR
+    comprador_id INT NOT NULL,
+    metodo_pago_id INT NOT NULL,
     FOREIGN KEY (camiseta_id) REFERENCES camiseta(id),
     FOREIGN KEY (comprador_id) REFERENCES usuario(id),
-    FOREIGN KEY (metodo_pago_id) REFERENCES metodo_pago(id)  -- ✅ AGREGAR FK
+    FOREIGN KEY (metodo_pago_id) REFERENCES metodo_pago(id)
 );
 
 -- Tabla CompraItem
@@ -116,17 +116,17 @@ CREATE TABLE IF NOT EXISTS compra_item (
 CREATE TABLE IF NOT EXISTS pago (
     id INT AUTO_INCREMENT PRIMARY KEY,
     monto DECIMAL(10,2) NOT NULL,
-    estado ENUM('pendiente', 'procesando', 'completado', 'fallido', 'cancelado') DEFAULT 'pendiente',  -- ✅ AJUSTAR
+    estado ENUM('pendiente', 'procesando', 'completado', 'fallido', 'cancelado') DEFAULT 'pendiente',
     fecha_pago TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    numero_transaccion VARCHAR(255),  -- ✅ CAMBIAR de transaccion_id
-    notas TEXT,  -- ✅ CAMBIAR de detalles
+    numero_transaccion VARCHAR(255),
+    notas TEXT,
     compra_id INT NOT NULL,
     metodo_pago_id INT NOT NULL,
     FOREIGN KEY (compra_id) REFERENCES compra(id),
     FOREIGN KEY (metodo_pago_id) REFERENCES metodo_pago(id)
 );
 
--- Tabla Descuento
+-- ✅ Tabla Descuento (CON LAS NUEVAS COLUMNAS)
 CREATE TABLE IF NOT EXISTS descuento (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
@@ -135,13 +135,28 @@ CREATE TABLE IF NOT EXISTS descuento (
     fecha_inicio DATETIME NOT NULL,
     fecha_fin DATETIME NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
-    usos_maximos INT,
-    usos_actuales INT DEFAULT 0,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- ✅ NUEVAS COLUMNAS
+    tipo_aplicacion ENUM('TODAS', 'CATEGORIA', 'ESPECIFICAS') NOT NULL DEFAULT 'TODAS',
+    categoria_id INT NULL,
     CONSTRAINT chk_descuento_fechas CHECK (fecha_fin > fecha_inicio),
+    FOREIGN KEY (categoria_id) REFERENCES categoria(id) ON DELETE SET NULL,
     INDEX idx_descuento_codigo (codigo),
-    INDEX idx_descuento_activo (activo)
+    INDEX idx_descuento_activo (activo),
+    INDEX idx_descuento_tipo (tipo_aplicacion),
+    INDEX idx_descuento_categoria (categoria_id)
 );
+
+-- ✅ Tabla intermedia para la relación ManyToMany (descuento -> camisetas específicas)
+CREATE TABLE IF NOT EXISTS descuento_camisetas_especificas (
+    descuento_id INT NOT NULL,
+    camiseta_id INT NOT NULL,
+    PRIMARY KEY (descuento_id, camiseta_id),
+    FOREIGN KEY (descuento_id) REFERENCES descuento(id) ON DELETE CASCADE,
+    FOREIGN KEY (camiseta_id) REFERENCES camiseta(id) ON DELETE CASCADE,
+    INDEX idx_descuento_camisetas_descuento (descuento_id),
+    INDEX idx_descuento_camisetas_camiseta (camiseta_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Insertar datos iniciales
 
@@ -162,7 +177,8 @@ INSERT INTO metodo_pago (nombre, descripcion) VALUES
 ('Efectivo', 'Pago en efectivo al momento de la entrega');
 
 -- Usuario administrador inicial (contraseña: admin123)
-INSERT INTO usuario (nombre, apellido, email, contrasena, direccion, telefono, rol) VALUES
-('Admin', 'Sistema', 'admin@tiendaretro.com', '$2b$10$hash_aqui', 'Dirección Admin', '1234567890', 'administrador');
+-- Nota: Este hash es de ejemplo, debes generar uno real con bcrypt
+INSERT INTO usuario (nombre, apellido, email, email_normalized, contrasena, direccion, telefono, rol) VALUES
+('Juan', 'Pérez', 'admin@tiendaretro.com', 'admin@tiendaretro.com', '$2b$10$YourRealHashHere', 'Dirección Admin', '1234567890', 'administrador');
 
 SELECT 'Base de datos inicializada correctamente' as mensaje;

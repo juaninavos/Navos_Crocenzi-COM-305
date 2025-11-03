@@ -1,4 +1,11 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, ManyToMany, Collection, Enum } from '@mikro-orm/core';
+import { Camiseta } from './Camiseta';
+
+export enum TipoAplicacionDescuento {
+  TODAS = 'TODAS',
+  CATEGORIA = 'CATEGORIA',
+  ESPECIFICAS = 'ESPECIFICAS'
+}
 
 @Entity()
 export class Descuento {
@@ -26,13 +33,25 @@ export class Descuento {
   @Property()
   fechaCreacion: Date = new Date();
 
+  // ✅ NUEVOS CAMPOS
+  @Enum(() => TipoAplicacionDescuento)
+  tipoAplicacion: TipoAplicacionDescuento = TipoAplicacionDescuento.TODAS;
+
+  @Property({ nullable: true })
+  categoriaId?: number; // ID de la categoría (si tipoAplicacion = CATEGORIA)
+
+  @ManyToMany(() => Camiseta, undefined, { nullable: true })
+  camisetasEspecificas = new Collection<Camiseta>(this);
+
   constructor(
     codigo: string,
     descripcion: string,
     porcentaje: number,
     fechaInicio: Date,
     fechaFin: Date,
-    activo: boolean = true
+    activo: boolean = true,
+    tipoAplicacion: TipoAplicacionDescuento = TipoAplicacionDescuento.TODAS,
+    categoriaId?: number
   ) {
     this.codigo = codigo;
     this.descripcion = descripcion;
@@ -40,5 +59,7 @@ export class Descuento {
     this.fechaInicio = fechaInicio;
     this.fechaFin = fechaFin;
     this.activo = activo;
+    this.tipoAplicacion = tipoAplicacion;
+    this.categoriaId = categoriaId;
   }
 }

@@ -11,7 +11,18 @@ export class AdminController {
   static async getDashboard(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
 
+      // ✅ VERIFICAR que req.user exista
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado - Usuario no encontrado en token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
+      // ✅ VERIFICAR que sea administrador
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -22,22 +33,20 @@ export class AdminController {
       }
 
       // Estadísticas generales
-      const totalUsuarios = await orm.em.count(Usuario, { activo: true, rol: UsuarioRol.USUARIO });
-      const totalCamisetas = await orm.em.count(Camiseta, {});
-      const totalCompras = await orm.em.count(Compra, {});
-      const totalSubastas = await orm.em.count(Subasta, { activa: true });
+      const totalUsuarios = await em.count(Usuario, { activo: true, rol: UsuarioRol.USUARIO });
+      const totalCamisetas = await em.count(Camiseta, {});
+      const totalCompras = await em.count(Compra, {});
+      const totalSubastas = await em.count(Subasta, { activa: true });
 
-      // ✅ CORREGIDO: Tipar parámetros del reduce
-      const compras = await orm.em.find(Compra, {});
+      const compras = await em.find(Compra, {});
       const ingresosTotales = compras.reduce((suma: number, compra: Compra) => suma + Number(compra.total), 0);
 
       // Top 5 camisetas más vendidas
-      const camisetas = await orm.em.find(Camiseta, {}, {
+      const camisetas = await em.find(Camiseta, {}, {
         populate: ['compras'],
         orderBy: { fechaCreacion: 'DESC' }
       });
 
-      // ✅ CORREGIDO: Tipar parámetros del map y sort
       const camisetasMasVendidas = camisetas
         .map((camiseta: Camiseta) => ({
           ...camiseta,
@@ -50,11 +59,10 @@ export class AdminController {
       const seisMesesAtras = new Date();
       seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6);
       
-      const comprasRecientes = await orm.em.find(Compra, {
+      const comprasRecientes = await em.find(Compra, {
         fechaCompra: { $gte: seisMesesAtras }
       });
 
-      // ✅ CORREGIDO: Tipar parámetros del reduce
       const ventasPorMes = comprasRecientes.reduce((acc: Record<string, any>, compra: Compra) => {
         const fecha = compra.fechaCompra;
         const key = `${fecha.getFullYear()}-${fecha.getMonth() + 1}`;
@@ -85,7 +93,7 @@ export class AdminController {
         }
       });
     } catch (error) {
-      console.error('Error en getDashboard:', error);
+      console.error('❌ Error en getDashboard:', error);
       res.status(500).json({
         success: false,
         message: 'No se pudo obtener dashboard: error interno.',
@@ -99,6 +107,16 @@ export class AdminController {
   static async gestionarUsuarios(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      
+      // ✅ AGREGAR ESTA VERIFICACIÓN
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado - Usuario no encontrado en token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
       
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
@@ -109,7 +127,7 @@ export class AdminController {
         });
       }
 
-      const usuarios = await orm.em.find(Usuario, 
+      const usuarios = await em.find(Usuario, 
         { rol: UsuarioRol.USUARIO }, 
         { 
           populate: ['camisetasVendidas', 'compras'],
@@ -155,6 +173,16 @@ export class AdminController {
       const { id } = req.params;
       const { motivo } = req.body;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      
+      // ✅ AGREGAR ESTA VERIFICACIÓN
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado - Usuario no encontrado en token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
       
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
@@ -165,7 +193,7 @@ export class AdminController {
         });
       }
 
-      const usuario = await orm.em.findOne(Usuario, { id: parseInt(id), rol: UsuarioRol.USUARIO });
+      const usuario = await em.findOne(Usuario, { id: parseInt(id), rol: UsuarioRol.USUARIO });
       
       if (!usuario) {
         return res.status(404).json({
@@ -188,7 +216,7 @@ export class AdminController {
       const estadoAnterior = usuario.activo;
       usuario.activo = !usuario.activo;
 
-      await orm.em.persistAndFlush(usuario);
+      await em.persistAndFlush(usuario);
 
       res.json({
         success: true,
@@ -212,6 +240,16 @@ export class AdminController {
     try {
       const { fechaInicio, fechaFin } = req.query;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      
+      // ✅ AGREGAR ESTA VERIFICACIÓN
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No autorizado - Usuario no encontrado en token',
+          code: 'USER_NOT_FOUND'
+        });
+      }
       
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
@@ -231,12 +269,11 @@ export class AdminController {
         };
       }
 
-      const compras = await orm.em.find(Compra, filtros, {
+      const compras = await em.find(Compra, filtros, {
         populate: ['camiseta', 'camiseta.vendedor', 'comprador'],
         orderBy: { fechaCompra: 'DESC' }
       });
 
-      // ✅ CORREGIDO: Tipar parámetros del reduce
       const ingresosTotales = compras.reduce((suma: number, compra: Compra) => suma + Number(compra.total), 0);
       const promedioVenta = compras.length > 0 ? ingresosTotales / compras.length : 0;
       

@@ -7,7 +7,8 @@ const router: Router = express.Router();
 
 // 🎯 CRUD básico + filtros para REGULARIDAD
 router.get('/', CamisetaController.getAll);
-router.get('/stats', CamisetaController.stats); // ✅ AGREGAR antes de /:id
+router.get('/stats', CamisetaController.stats);
+router.get('/seleccion', authMiddleware, CamisetaController.getSeleccion); // ✅ MOVER AQUÍ (ANTES de /:id)
 router.get('/:id', CamisetaController.getOne);
 router.post('/', CamisetaController.create);
 router.put('/:id', CamisetaController.update);

@@ -170,8 +170,10 @@ export default function authRouter(orm: MikroORM): Router {
       return res.status(201).json({
         success: true,
         message: 'Registro realizado correctamente.',
-        user: safeUser,
-        token
+        data: {  // ✅ AGREGAR: envolver en 'data'
+          usuario: safeUser,  // ✅ CAMBIAR: 'user' → 'usuario'
+          token
+        }
       });
     } catch (err) {
       console.error('POST /auth/register error:', err);
@@ -240,8 +242,10 @@ export default function authRouter(orm: MikroORM): Router {
       return res.json({
         success: true,
         message: 'Inicio de sesión realizado correctamente.',
-        user: safeUser,
-        token
+        data: {  // ✅ AGREGAR: envolver en 'data'
+          usuario: safeUser,  // ✅ CAMBIAR: 'user' → 'usuario'
+          token
+        }
       });
     } catch (err) {
       console.error('POST /auth/login error:', err);

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { Descuento } from '../entities/Descuento';
+import { Descuento, TipoAplicacionDescuento } from '../entities/Descuento';
+import { Camiseta } from '../entities/Camiseta';
 import { UsuarioRol } from '../entities/Usuario';
 
 export class DescuentoController {
@@ -7,16 +8,15 @@ export class DescuentoController {
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       const { activos, vigentes } = req.query;
       
       let filtros: any = {};
       
-      // Filtro para descuentos activos
       if (activos === 'true') {
         filtros.activo = true;
       }
       
-      // Filtro para descuentos vigentes (dentro del rango de fechas)
       if (vigentes === 'true') {
         const ahora = new Date();
         filtros.fechaInicio = { $lte: ahora };
@@ -24,7 +24,9 @@ export class DescuentoController {
         filtros.activo = true;
       }
       
-      const descuentos = await orm.em.find(Descuento, filtros);
+      const descuentos = await em.find(Descuento, filtros, {
+        populate: ['camisetasEspecificas'] // ✅ Popular camisetas específicas
+      });
       
       res.json({
         success: true,
@@ -48,8 +50,11 @@ export class DescuentoController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const descuento = await orm.em.findOne(Descuento, { id: parseInt(id) });
+      const descuento = await em.findOne(Descuento, { id: parseInt(id) }, {
+        populate: ['camisetasEspecificas']
+      });
       
       if (!descuento) {
         return res.status(404).json({
@@ -79,13 +84,16 @@ export class DescuentoController {
   static async validarCodigo(req: Request, res: Response) {
     try {
       const { codigo } = req.params;
-      const { montoCompra } = req.query;
+      const { montoCompra, camisetaId } = req.query;
       
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const descuento = await orm.em.findOne(Descuento, { 
+      const descuento = await em.findOne(Descuento, {
         codigo: codigo.toUpperCase(),
         activo: true 
+      }, {
+        populate: ['camisetasEspecificas']
       });
       
       if (!descuento) {
@@ -98,7 +106,6 @@ export class DescuentoController {
         });
       }
 
-      // Verificar si está vigente
       const ahora = new Date();
       const vigente = descuento.fechaInicio <= ahora && descuento.fechaFin >= ahora;
       
@@ -113,7 +120,38 @@ export class DescuentoController {
         });
       }
 
-      // Calcular descuento usando el porcentaje
+      // ✅ VALIDAR SI APLICA A LA CAMISETA
+      let aplicaACamiseta = true;
+      if (camisetaId) {
+        const camiseta = await em.findOne(Camiseta, { id: parseInt(camisetaId as string) }, {
+          populate: ['categoria']
+        });
+
+        if (camiseta) {
+          switch (descuento.tipoAplicacion) {
+            case TipoAplicacionDescuento.CATEGORIA:
+              aplicaACamiseta = camiseta.categoria?.id === descuento.categoriaId;
+              break;
+            case TipoAplicacionDescuento.ESPECIFICAS:
+              aplicaACamiseta = descuento.camisetasEspecificas.getItems().some((c: Camiseta) => c.id === camiseta.id); // ✅ AGREGAR TIPO
+              break;
+            case TipoAplicacionDescuento.TODAS:
+            default:
+              aplicaACamiseta = true;
+          }
+        }
+      }
+
+      if (!aplicaACamiseta) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo validar código: este descuento no aplica a la camiseta seleccionada.',
+          error: 'Descuento no aplicable',
+          code: 'NOT_APPLICABLE',
+          valido: false
+        });
+      }
+
       let montoDescuento = 0;
       if (montoCompra) {
         const monto = parseFloat(montoCompra as string);
@@ -129,7 +167,8 @@ export class DescuentoController {
           codigo: descuento.codigo,
           descripcion: descuento.descripcion,
           porcentaje: descuento.porcentaje,
-          fechaVencimiento: descuento.fechaFin
+          fechaVencimiento: descuento.fechaFin,
+          tipoAplicacion: descuento.tipoAplicacion
         },
         montoDescuento: montoDescuento || null
       });
@@ -147,7 +186,6 @@ export class DescuentoController {
   // POST /api/descuentos
   static async create(req: Request, res: Response) {
     try {
-      // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -165,7 +203,7 @@ export class DescuentoController {
         });
       }
 
-      const { codigo, descripcion, porcentaje, fechaInicio, fechaFin } = req.body;
+      const { codigo, descripcion, porcentaje, fechaInicio, fechaFin, tipoAplicacion, categoriaId, camisetaIds } = req.body;
       
       // Validaciones básicas
       if (!codigo) {
@@ -202,9 +240,9 @@ export class DescuentoController {
       }
 
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      // Verificar que el código no exista
-      const codigoExistente = await orm.em.findOne(Descuento, { 
+      const codigoExistente = await em.findOne(Descuento, { 
         codigo: codigo.toUpperCase() 
       });
       
@@ -217,7 +255,6 @@ export class DescuentoController {
         });
       }
 
-      // Validar fechas
       const inicio = new Date(fechaInicio);
       const fin = new Date(fechaFin);
       
@@ -239,15 +276,14 @@ export class DescuentoController {
         });
       }
 
-      const ahora = new Date();
-      const unAnioAtras = new Date();
-      unAnioAtras.setFullYear(ahora.getFullYear() - 1);
-      
-      if (inicio < unAnioAtras) {
+      const tipoAplicacionEnum = tipoAplicacion || TipoAplicacionDescuento.TODAS;
+
+      // ✅ VALIDAR categoriaId si tipoAplicacion es CATEGORIA
+      if (tipoAplicacionEnum === TipoAplicacionDescuento.CATEGORIA && !categoriaId) {
         return res.status(400).json({
           success: false,
-          message: 'No se pudo crear descuento: la fecha de inicio no puede ser más de un año en el pasado.',
-          error: 'Fecha de inicio fuera de rango',
+          message: 'No se pudo crear descuento: debe especificar una categoría.',
+          error: 'Categoría obligatoria',
           code: 'INVALID_DATA'
         });
       }
@@ -258,10 +294,18 @@ export class DescuentoController {
         porcentaje,
         inicio,
         fin,
-        true
+        true,
+        tipoAplicacionEnum,
+        categoriaId
       );
 
-      await orm.em.persistAndFlush(nuevoDescuento);
+      // ✅ AGREGAR CAMISETAS ESPECÍFICAS
+      if (tipoAplicacionEnum === TipoAplicacionDescuento.ESPECIFICAS && camisetaIds && Array.isArray(camisetaIds)) {
+        const camisetas = await em.find(Camiseta, { id: { $in: camisetaIds } });
+        nuevoDescuento.camisetasEspecificas.set(camisetas);
+      }
+
+      await em.persistAndFlush(nuevoDescuento);
 
       res.status(201).json({
         success: true,
@@ -282,7 +326,6 @@ export class DescuentoController {
   // PUT /api/descuentos/:id
   static async update(req: Request, res: Response) {
     try {
-      // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -301,10 +344,13 @@ export class DescuentoController {
       }
 
       const { id } = req.params;
-      const { descripcion, porcentaje, fechaInicio, fechaFin, activo } = req.body;
+      const { descripcion, porcentaje, fechaInicio, fechaFin, activo, tipoAplicacion, categoriaId, camisetaIds } = req.body;
       
       const orm = req.app.locals.orm;
-      const descuento = await orm.em.findOne(Descuento, { id: parseInt(id) });
+      const em = orm.em.fork();
+      const descuento = await em.findOne(Descuento, { id: parseInt(id) }, {
+        populate: ['camisetasEspecificas']
+      });
       
       if (!descuento) {
         return res.status(404).json({
@@ -332,6 +378,8 @@ export class DescuentoController {
       if (fechaInicio !== undefined) descuento.fechaInicio = new Date(fechaInicio);
       if (fechaFin !== undefined) descuento.fechaFin = new Date(fechaFin);
       if (activo !== undefined) descuento.activo = activo;
+      if (tipoAplicacion !== undefined) descuento.tipoAplicacion = tipoAplicacion;
+      if (categoriaId !== undefined) descuento.categoriaId = categoriaId;
 
       if (descuento.fechaFin <= descuento.fechaInicio) {
         return res.status(400).json({
@@ -342,7 +390,15 @@ export class DescuentoController {
         });
       }
 
-      await orm.em.persistAndFlush(descuento);
+      // ✅ ACTUALIZAR CAMISETAS ESPECÍFICAS
+      if (tipoAplicacion === TipoAplicacionDescuento.ESPECIFICAS && camisetaIds && Array.isArray(camisetaIds)) {
+        const camisetas = await em.find(Camiseta, { id: { $in: camisetaIds } });
+        descuento.camisetasEspecificas.set(camisetas);
+      } else if (tipoAplicacion !== TipoAplicacionDescuento.ESPECIFICAS) {
+        descuento.camisetasEspecificas.removeAll();
+      }
+
+      await em.persistAndFlush(descuento);
 
       res.json({
         success: true,
@@ -365,8 +421,9 @@ export class DescuentoController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       
-      const descuento = await orm.em.findOne(Descuento, { id: parseInt(id) });
+      const descuento = await em.findOne(Descuento, { id: parseInt(id) });
       
       if (!descuento) {
         return res.status(404).json({
@@ -378,7 +435,7 @@ export class DescuentoController {
       }
 
       descuento.activo = false;
-      await orm.em.persistAndFlush(descuento);
+      await em.persistAndFlush(descuento);
 
       res.json({
         success: true,

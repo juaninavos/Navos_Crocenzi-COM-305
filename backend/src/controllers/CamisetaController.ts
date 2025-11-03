@@ -466,4 +466,48 @@ export class CamisetaController {
       });
     }
   }
+
+  // GET /api/camisetas/seleccion - Para formularios de descuentos
+  static async getSeleccion(req: Request, res: Response) {
+    try {
+      const orm = req.app.locals.orm as MikroORM;
+      const em = orm.em.fork();
+
+      const camisetas = await em.find(
+        Camiseta, 
+        { estado: EstadoCamiseta.DISPONIBLE },
+        { 
+          populate: ['categoria', 'vendedor'],
+          orderBy: { titulo: 'ASC' }
+        }
+      );
+
+      const seleccion = camisetas.map(c => ({
+        id: c.id,
+        titulo: c.titulo,
+        equipo: c.equipo,
+        temporada: c.temporada,
+        precio: c.precioInicial,
+        imagen: c.imagen,
+        categoria: c.categoria ? {
+          id: c.categoria.id,
+          nombre: c.categoria.nombre
+        } : null
+      }));
+
+      res.json({
+        success: true,
+        message: 'Operación getSeleccion realizada correctamente.',
+        data: seleccion
+      });
+    } catch (error) {
+      console.error('Error en getSeleccion camisetas:', error);
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo obtener selección de camisetas: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETSELECCION_ERROR'
+      });
+    }
+  }
 }
