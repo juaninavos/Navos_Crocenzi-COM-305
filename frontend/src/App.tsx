@@ -10,7 +10,8 @@ import { Home } from './pages/user/Home';
 import { Catalog } from './pages/user/Catalog';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import UsersManagement from './pages/admin/UsersManagement';
-import CategoriesManagement from './pages/admin/CategoriesManagement'; // ✅ AGREGAR
+import CategoriesManagement from './pages/admin/CategoriesManagement';
+import DiscountsManagement from './pages/admin/DiscountsManagement'; // ✅ AGREGAR
 
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<UsersManagement />} />
                 <Route path="/admin/categories" element={<CategoriesManagement />} /> {/* ✅ AGREGAR */}
+                <Route path="/admin/discounts" element={<DiscountsManagement />} /> {/* ✅ AGREGAR */}
 
                 {/* ✅ RUTAS DE SUBASTAS */}
                 <Route path="/auctions" element={<AuctionsPage />} />

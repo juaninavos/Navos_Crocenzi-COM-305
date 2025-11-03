@@ -11,7 +11,6 @@ export const Login = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; contrasena?: string }>({});
   const [success, setSuccess] = useState('');
   
   const navigate = useNavigate();
@@ -19,31 +18,16 @@ export const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
-    setFieldErrors({});
-    // Validación frontend
-    let valid = true;
-    const newFieldErrors: { email?: string; contrasena?: string } = {};
-    if (!formData.email.trim()) {
-      newFieldErrors.email = 'El email es obligatorio';
-      valid = false;
-    } else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(formData.email)) {
-      newFieldErrors.email = 'El formato de email no es válido';
-      valid = false;
-    }
-    if (!formData.contrasena.trim()) {
-      newFieldErrors.contrasena = 'La contraseña es obligatoria';
-      valid = false;
-    }
-    setFieldErrors(newFieldErrors);
-    if (!valid) {
-      setIsLoading(false);
-      return;
-    }
+    setSuccess('');
+    setIsLoading(true);
+
     try {
       const authResponse = await authService.login(formData);
+      
+      // ✅ Llamar al login del contexto para guardar en localStorage
       login(authResponse.usuario, authResponse.token);
+      
       setSuccess('¡Ingreso exitoso! Redirigiendo...');
       setTimeout(() => {
         setSuccess('');
@@ -51,9 +35,9 @@ export const Login = () => {
       }, 1500);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        setError(error.message || 'Error de conexión');
+        setError(error.message || 'Error al iniciar sesión');
       } else {
-        setError('Error de conexión');
+        setError('Error desconocido');
       }
     } finally {
       setIsLoading(false);
@@ -68,7 +52,6 @@ export const Login = () => {
   };
 
   return (
-    // ✅ USAR Bootstrap (versión de tu compañero) pero mantener la lógica nuestra
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-12 col-md-6 col-lg-4">
@@ -78,7 +61,6 @@ export const Login = () => {
             </div>
             <div className="card-body">
               
-              {/* Mostrar error si existe */}
               {error && (
                 <div className="alert alert-danger" role="alert">
                   {error}
@@ -90,38 +72,31 @@ export const Login = () => {
                 </div>
               )}
 
-              {/* Formulario */}
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label">Email</label>
                   <input
                     type="email"
-                    className={`form-control${fieldErrors.email ? ' is-invalid' : ''}`}
+                    className="form-control"
                     id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
                   />
-                  {fieldErrors.email && (
-                    <div className="invalid-feedback">{fieldErrors.email}</div>
-                  )}
                 </div>
 
                 <div className="mb-3">
                   <label htmlFor="contrasena" className="form-label">Contraseña</label>
                   <input
                     type="password"
-                    className={`form-control${fieldErrors.contrasena ? ' is-invalid' : ''}`}
+                    className="form-control"
                     id="contrasena"
                     name="contrasena"
                     value={formData.contrasena}
                     onChange={handleChange}
                     required
                   />
-                  {fieldErrors.contrasena && (
-                    <div className="invalid-feedback">{fieldErrors.contrasena}</div>
-                  )}
                 </div>
 
                 <button

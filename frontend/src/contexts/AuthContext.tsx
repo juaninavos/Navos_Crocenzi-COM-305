@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (userData: Usuario, token: string) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean; // ✅ AGREGAR
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // ✅ AGREGAR
 
   // ✅ CARGAR DATOS AL INICIAR
   useEffect(() => {
@@ -38,9 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('❌ Error parsing user data:', error);
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('usuario');
       }
     }
+
+    setIsLoading(false); // ✅ MARCAR COMO CARGADO
   }, []);
 
   const login = (userData: Usuario, authToken: string) => {
@@ -61,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = !!usuario && !!token;
 
   return (
-    <AuthContext.Provider value={{ usuario, token, login, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ usuario, token, login, logout, isAuthenticated, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

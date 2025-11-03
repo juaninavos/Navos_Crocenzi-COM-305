@@ -17,7 +17,9 @@ import type {
   CreateSubastaData,
   CreateOfertaData,
   SubastaFiltro,
-  Categoria
+  Categoria,
+  Descuento,
+  CamisetaSeleccion // ✅ AGREGAR ESTE IMPORT
 } from '../types';
 
 export class ApiAuthError extends Error {
@@ -35,9 +37,7 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ✅ SIN INTERCEPTOR DE TOKEN (comentado para desarrollo)
-// En producción, descomentar esto:
-/*
+// ✅ INTERCEPTOR DE TOKEN - ACTIVADO
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -45,7 +45,6 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-*/
 
 // =========================
 // ⚠️ Interceptor de respuestas (manejo global de errores)
@@ -158,6 +157,14 @@ export const camisetaService = {
   publicar: async (data: Partial<Camiseta> & { precioInicial: number; esSubasta?: boolean; stock?: number; categoriaId?: number }): Promise<Camiseta> => {
     const response = await api.post<ApiResponse<Camiseta>>('/camisetas/publicar', data);
     return response.data.data;
+  },
+
+  // ✅ AGREGAR ESTE MÉTODO
+  getSeleccion: async (): Promise<{ data: CamisetaSeleccion[] }> => {
+    const response = await api.get<ApiResponse<CamisetaSeleccion[]>>('/camisetas/seleccion');
+    return {
+      data: response.data.data
+    };
   }
 };
 
@@ -304,6 +311,75 @@ export const categoriaService = {
   },
 };
 
+// =========================
+// 💰 Servicios de descuentos
+// =========================
+export const descuentoService = {
+  getAll: async (params?: { activos?: boolean; vigentes?: boolean }): Promise<{ data: Descuento[]; count: number }> => {
+    const response = await api.get<ApiResponse<Descuento[]>>('/descuentos', { params });
+    return {
+      data: response.data.data,
+      count: response.data.count ?? response.data.data.length
+    };
+  },
+
+  getById: async (id: number): Promise<Descuento> => {
+    const response = await api.get<ApiResponse<Descuento>>(`/descuentos/${id}`);
+    return response.data.data;
+  },
+
+  validarCodigo: async (codigo: string, montoCompra?: number): Promise<{
+    valido: boolean;
+    descuento?: {
+      id: number;
+      codigo: string;
+      descripcion: string;
+      porcentaje: number;
+      fechaVencimiento: Date;
+    };
+    montoDescuento?: number;
+  }> => {
+    const params = montoCompra ? { montoCompra } : {};
+    const response = await api.get(`/descuentos/validar/${codigo}`, { params });
+    return response.data;
+  },
+
+  // ✅ ACTUALIZAR ESTE MÉTODO
+  create: async (data: {
+    codigo: string;
+    descripcion: string;
+    porcentaje: number;
+    fechaInicio: string | Date;
+    fechaFin: string | Date;
+    tipoAplicacion?: string; // ✅ AGREGAR
+    categoriaId?: number;    // ✅ AGREGAR
+    camisetaIds?: number[];  // ✅ AGREGAR
+  }): Promise<Descuento> => {
+    const response = await api.post<ApiResponse<Descuento>>('/descuentos', data);
+    return response.data.data;
+  },
+
+  // ✅ ACTUALIZAR ESTE MÉTODO
+  update: async (id: number, data: {
+    descripcion?: string;
+    porcentaje?: number;
+    fechaInicio?: string | Date;
+    fechaFin?: string | Date;
+    activo?: boolean;
+    tipoAplicacion?: string; // ✅ AGREGAR
+    categoriaId?: number;    // ✅ AGREGAR
+    camisetaIds?: number[];  // ✅ AGREGAR
+  }): Promise<Descuento> => {
+    const response = await api.put<ApiResponse<Descuento>>(`/descuentos/${id}`, data);
+    return response.data.data;
+  },
+
+  delete: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/descuentos/${id}`);
+    return response.data.data;
+  },
+};
+
 export const services = {
   auth: authService,
   camiseta: camisetaService,
@@ -311,6 +387,7 @@ export const services = {
   subasta: subastaService,
   oferta: ofertaService,
   categoria: categoriaService, // ✅ AGREGAR
+  descuento: descuentoService, // ✅ AGREGAR
 };
 
 export default api;

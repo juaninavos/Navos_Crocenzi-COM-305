@@ -159,17 +159,6 @@ export interface Pago {
   metodoPago: MetodoPago;
 }
 
-export interface Descuento {
-  id: number;
-  codigo: string;
-  descripcion: string;
-  porcentaje: number;
-  fechaInicio: Date;
-  fechaFin: Date;
-  activo: boolean;
-  fechaCreacion: Date;
-}
-
 // =========================
 // 📡 RESPUESTAS DE API
 // =========================
@@ -296,3 +285,71 @@ export type UsuarioRolType = UsuarioRol;
 
 // ✅ AGREGAR User para compatibilidad (alias de Usuario)
 export type User = Usuario;
+
+// =========================
+// 🔨 Tipos para Subastas
+// =========================
+export interface CreateSubastaData {
+  camisetaId: number;
+  precioInicial: number;
+  fechaInicio: Date | string;
+  fechaFin: Date | string;
+}
+
+export interface SubastaFiltro {
+  activas?: boolean;
+  vendedorId?: number;
+  estado?: 'activa' | 'finalizada' | 'cancelada';
+  camisetaId?: number;
+}
+
+// =========================
+// 💰 Tipos para Ofertas
+// =========================
+export interface CreateOfertaData {
+  subastaId: number;
+  usuarioId: number;
+  monto: number;
+}
+
+// ✅ AGREGAR AL FINAL DEL ARCHIVO
+export const TipoAplicacionDescuento = {
+  TODAS: 'TODAS',
+  CATEGORIA: 'CATEGORIA',
+  ESPECIFICAS: 'ESPECIFICAS'
+} as const;
+export type TipoAplicacionDescuento = typeof TipoAplicacionDescuento[keyof typeof TipoAplicacionDescuento];
+
+export interface Descuento {
+  id: number;
+  codigo: string;
+  descripcion: string;
+  porcentaje: number;
+  fechaInicio: Date | string;
+  fechaFin: Date | string;
+  activo: boolean;
+  fechaCreacion: Date | string;
+  tipoAplicacion: TipoAplicacionDescuento;
+  categoriaId?: number;
+  camisetasEspecificas?: Camiseta[];
+}
+
+export interface Categoria {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  activa: boolean;
+}
+
+export interface CamisetaSeleccion {
+  id: number;
+  titulo: string;
+  equipo: string;
+  temporada: string;
+  precio: number;
+  imagen?: string;
+  categoria: {
+    id: number;
+    nombre: string;
+  } | null;
+}
