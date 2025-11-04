@@ -38,7 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('❌ Error parsing user data:', error);
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // corregir clave: eliminar 'usuario' en caso de datos corruptos
+        localStorage.removeItem('usuario');
       }
     }
   }, []);

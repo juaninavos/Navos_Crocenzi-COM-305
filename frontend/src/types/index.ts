@@ -283,7 +283,10 @@ export interface CamisetaFiltro {
   page?: number;
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
-  usuarioId?: number; // Permite filtrar por usuario (vendedor)
+  // Compatibilidad: el backend espera vendedorId
+  vendedorId?: number; // filtra por vendedor (usuario dueño de la publicación)
+  // Alias legacy (algunas vistas antiguas pueden seguir usando este nombre)
+  usuarioId?: number;
 }
 
 // =========================

@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import useToast from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { camisetaService } from '../../services/api';
-import type { Camiseta, Talle, CondicionCamiseta } from '../../types';
+import { camisetaService, categoriaService, ApiAuthError } from '../../services/api';
+import type { Camiseta, Talle, CondicionCamiseta, Categoria } from '../../types';
 
 export const MyProductsPage: React.FC = () => {
   const { usuario, isAuthenticated } = useAuth();
@@ -19,6 +20,7 @@ export const MyProductsPage: React.FC = () => {
   const [editForm, setEditForm] = useState<{ titulo: string; precioInicial: number; stock: number }>({ titulo: '', precioInicial: 0, stock: 1 });
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const { showToast } = useToast();
+  const canPublish = usuario?.rol === 'usuario';
 
   // Métricas simples (cliente)
   const metrics = useMemo(() => {
@@ -32,6 +34,8 @@ export const MyProductsPage: React.FC = () => {
 
   // Form publicación rápida
   const [creating, setCreating] = useState(false);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [loadingCategorias, setLoadingCategorias] = useState(false);
   const [form, setForm] = useState<{
     titulo: string;
     equipo: string;
@@ -39,8 +43,9 @@ export const MyProductsPage: React.FC = () => {
     talle: Talle;
     condicion: CondicionCamiseta;
     imagen: string;
-    precioInicial: number;
-    stock: number;
+    precioInicialInput: string; // mantener como string para evitar bugs al tipear
+    stockInput: string; // idem
+    categoriaIdInput?: string; // id seleccionada como string
     esSubasta: boolean;
   }>({
     titulo: '',
@@ -49,18 +54,21 @@ export const MyProductsPage: React.FC = () => {
     talle: 'M' as Talle,
     condicion: 'Nueva' as CondicionCamiseta,
     imagen: '',
-    precioInicial: 0,
-    stock: 1,
+    precioInicialInput: '',
+    stockInput: '1',
+    categoriaIdInput: '',
     esSubasta: false,
   });
 
   const canCreate = useMemo(() => {
+    const precio = Number(form.precioInicialInput);
+    const stock = Number(form.stockInput);
     return (
       form.titulo.trim().length >= 2 &&
       form.equipo.trim().length >= 2 &&
       form.temporada.trim().length >= 2 &&
-      Number(form.precioInicial) > 0 &&
-      form.stock > 0
+      !Number.isNaN(precio) && precio > 0 &&
+      !Number.isNaN(stock) && stock > 0
     );
   }, [form]);
 
@@ -69,7 +77,7 @@ export const MyProductsPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-  const { data } = await camisetaService.getAll({ usuarioId: usuario.id, limit: 100 });
+      const { data } = await camisetaService.getAll({ vendedorId: usuario.id, limit: 100 });
       setCamisetas(data);
     } catch (e) {
       console.error('Error cargando mis camisetas', e);
@@ -85,12 +93,29 @@ export const MyProductsPage: React.FC = () => {
       return;
     }
     fetchMine();
+    // cargar categorías activas
+    (async () => {
+      try {
+        setLoadingCategorias(true);
+  const { data } = await categoriaService.getAll();
+  setCategorias(data.filter((c: Categoria) => c.activa !== false));
+      } catch (err) {
+        console.error('Error cargando categorías', err);
+      } finally {
+        setLoadingCategorias(false);
+      }
+    })();
   }, [isAuthenticated, usuario, fetchMine, navigate]);
 
   const crearPublicacion = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
+    if (!canPublish) {
+      setFormError('Tu rol no permite publicar productos. Inicia sesión con una cuenta de usuario.');
+      showToast('Tu rol no permite publicar productos', { variant: 'warning' });
+      return;
+    }
     if (!canCreate) {
       setFormError('Completa todos los campos obligatorios correctamente.');
       return;
@@ -105,19 +130,64 @@ export const MyProductsPage: React.FC = () => {
         talle: form.talle,
         condicion: form.condicion,
         imagen: form.imagen || undefined,
-        precioInicial: Number(form.precioInicial),
+        precioInicial: Number(form.precioInicialInput),
         esSubasta: form.esSubasta,
-        stock: form.stock,
+        stock: Number(form.stockInput),
       };
+      const catId = form.categoriaIdInput ? Number(form.categoriaIdInput) : undefined;
+      if (catId && !Number.isNaN(catId)) {
+        payload.categoriaId = catId;
+      }
       await camisetaService.publicar(payload);
   setFormSuccess('✅ Publicación creada con éxito');
   showToast('Publicación creada con éxito', { variant: 'success' });
       setTimeout(() => setFormSuccess(''), 2000);
-      setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false });
+      setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicialInput: '', stockInput: '1', categoriaIdInput: '', esSubasta: false });
       await fetchMine();
     } catch (e) {
       console.error('Error creando publicación', e);
-      setFormError('No se pudo crear la publicación');
+      if (e instanceof ApiAuthError) {
+        setFormError('Sesión expirada o no autenticada. Volvé a iniciar sesión.');
+        showToast('Sesión expirada. Iniciá sesión nuevamente.', { variant: 'warning' });
+        // Opcional: redirigir al login después de un breve delay
+        setTimeout(() => navigate('/login'), 800);
+      } else if (axios.isAxiosError(e)) {
+        const status = e.response?.status;
+        const data = e.response?.data as unknown;
+        let message: string | undefined;
+        let code: string | undefined;
+        let details: unknown;
+        if (data && typeof data === 'object') {
+          const d = data as { message?: string; code?: string; details?: unknown };
+          message = d.message;
+          code = d.code;
+          details = d.details;
+        }
+        if (status === 401) {
+          setFormError('No estás autenticado. Volvé a iniciar sesión.');
+        } else if (status === 403) {
+          setFormError(message || 'No tenés permisos para publicar.');
+        } else if (status === 400) {
+          // Si hay detalles de Zod, mostrar el primero
+          let zodMsg: string | undefined;
+          if (Array.isArray(details) && details.length > 0) {
+            const first = details[0] as { message?: string; path?: (string|number)[] };
+            if (first?.message) {
+              zodMsg = first.message;
+            }
+          }
+          setFormError(zodMsg || message || 'Datos inválidos. Revisá los campos.');
+        } else if (status === 404) {
+          setFormError(message || 'No se encontró el vendedor o está inactivo. Verificá que tu cuenta esté activa.');
+        } else if (status === 500) {
+          setFormError(message || 'Error interno del servidor al publicar.');
+        } else {
+          setFormError(message || 'No se pudo crear la publicación');
+        }
+        console.error('❌ Publicar error:', { status, code, message, details });
+      } else {
+        setFormError('No se pudo crear la publicación');
+      }
     } finally {
       setCreating(false);
     }
@@ -216,6 +286,11 @@ export const MyProductsPage: React.FC = () => {
       <div className="card mb-4">
         <div className="card-header bg-light"><h5 className="mb-0">➕ Crear nueva publicación</h5></div>
         <div className="card-body">
+          {!canPublish && (
+            <div className="alert alert-warning" role="alert">
+              Estás autenticado como administrador. Para publicar productos, iniciá sesión con una cuenta de usuario.
+            </div>
+          )}
           {formError && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               {formError}
@@ -254,13 +329,54 @@ export const MyProductsPage: React.FC = () => {
                   {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+              <div className="col-12 col-md-6">
+                <label className="form-label">Categoría</label>
+                <select
+                  className="form-select"
+                  value={form.categoriaIdInput}
+                  onChange={e => setForm(f => ({ ...f, categoriaIdInput: e.target.value }))}
+                  disabled={loadingCategorias}
+                >
+                  <option value="">Sin categoría</option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  ))}
+                </select>
+              </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Precio Inicial ($)</label>
-                <input type="number" min={1} className="form-control" value={form.precioInicial} onChange={e => setForm(f => ({ ...f, precioInicial: Number(e.target.value) }))} required />
+                <input
+                  type="number"
+                  min={1}
+                  step="1"
+                  className="form-control"
+                  value={form.precioInicialInput}
+                  onChange={e => {
+                    const v = e.target.value;
+                    // permitir vacío temporalmente mientras escribe
+                    if (v === '' || /^\d+$/.test(v)) {
+                      setForm(f => ({ ...f, precioInicialInput: v }));
+                    }
+                  }}
+                  required
+                />
               </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Stock</label>
-                <input type="number" min={1} className="form-control" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))} required />
+                <input
+                  type="number"
+                  min={1}
+                  step="1"
+                  className="form-control"
+                  value={form.stockInput}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === '' || /^\d+$/.test(v)) {
+                      setForm(f => ({ ...f, stockInput: v }));
+                    }
+                  }}
+                  required
+                />
               </div>
               <div className="col-12 col-md-6">
                 <label className="form-label">URL de Imagen</label>
@@ -274,10 +390,10 @@ export const MyProductsPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-3 d-flex gap-2">
-              <button className="btn btn-primary" type="submit" disabled={!canCreate || creating}>
+              <button className="btn btn-primary" type="submit" disabled={!canCreate || creating || !canPublish}>
                 {creating ? (<><span className="spinner-border spinner-border-sm me-2"></span> Publicando...</>) : 'Publicar'}
               </button>
-              <button className="btn btn-outline-secondary" type="button" onClick={() => setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false })}>Limpiar</button>
+              <button className="btn btn-outline-secondary" type="button" onClick={() => setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicialInput: '', stockInput: '1', categoriaIdInput: '', esSubasta: false })}>Limpiar</button>
             </div>
           </form>
         </div>

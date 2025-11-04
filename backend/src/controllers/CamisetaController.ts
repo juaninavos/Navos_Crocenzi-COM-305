@@ -332,6 +332,8 @@ export class CamisetaController {
   // POST /api/camisetas/publicar
   static async publicarParaVenta(req: Request, res: Response) {
     try {
+      console.log('📝 publicarParaVenta -> req.user:', req.user);
+      console.log('🧾 publicarParaVenta -> body:', req.body);
       // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
         return res.status(401).json({
@@ -370,6 +372,7 @@ export class CamisetaController {
 
       const parseResult = publicarSchema.safeParse(req.body);
       if (!parseResult.success) {
+        console.error('❌ publicarParaVenta -> datos inválidos:', parseResult.error.issues);
         return res.status(400).json({
           success: false,
           message: 'No se pudo publicar camiseta: datos inválidos.',

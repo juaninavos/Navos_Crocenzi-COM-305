@@ -42,6 +42,12 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers = config.headers || {};
       (config.headers as Record<string, unknown>).Authorization = `Bearer ${token}`;
+      if (import.meta.env.MODE === 'development') {
+        // No logueamos el token, solo indicamos que se adjuntó
+        console.debug('[api] Authorization adjuntado');
+      }
+    } else if (import.meta.env.MODE === 'development') {
+      console.debug('[api] Sin token en localStorage');
     }
   } catch {
     // Ignorar errores de localStorage
