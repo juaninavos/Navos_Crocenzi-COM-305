@@ -35,17 +35,19 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ✅ SIN INTERCEPTOR DE TOKEN (comentado para desarrollo)
-// En producción, descomentar esto:
-/*
+// ✅ Interceptor de token: adjunta Authorization a todas las requests cuando hay token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as Record<string, unknown>).Authorization = `Bearer ${token}`;
+    }
+  } catch {
+    // Ignorar errores de localStorage
   }
   return config;
 });
-*/
 
 // =========================
 // ⚠️ Interceptor de respuestas (manejo global de errores)
@@ -61,6 +63,15 @@ api.interceptors.response.use(
       return Promise.reject(new ApiAuthError());
     }
 
+    // Error de red (sin respuesta): mostrar mensaje claro
+    if (!error.response) {
+      const networkErr = new Error('No se pudo conectar con el servidor. Verifica que el backend esté corriendo.');
+      if (import.meta.env.MODE === 'development') {
+        console.error('❌ Error de red en API:', error.message);
+      }
+      return Promise.reject(networkErr);
+    }
+
     if (import.meta.env.MODE === 'development') {
       console.error('❌ Error en API:', error.response || error.message);
     }
@@ -74,13 +85,40 @@ api.interceptors.response.use(
 // =========================
 export const authService = {
   login: async (data: LoginData): Promise<AuthResponse> => {
-    const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
-    return response.data.data;
+    const response = await api.post('/auth/login', data);
+    const payload = response.data as unknown;
+    // Soportar ambas formas: { data: { usuario, token } } o { user, token }
+    if (payload && typeof payload === 'object') {
+      const p = payload as { data?: unknown; user?: unknown; token?: unknown };
+      if (p.data && typeof p.data === 'object') {
+        const d = p.data as { usuario?: unknown; token?: unknown };
+        if (d.usuario && typeof d.token === 'string') {
+          return { usuario: d.usuario as Usuario, token: d.token } as AuthResponse;
+        }
+      }
+      if (p.user && typeof p.token === 'string') {
+        return { usuario: p.user as Usuario, token: p.token } as AuthResponse;
+      }
+    }
+    throw new Error('Respuesta de login inválida');
   },
 
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post<ApiResponse<AuthResponse>>('/auth/register', data);
-    return response.data.data;
+    const response = await api.post('/auth/register', data);
+    const payload = response.data as unknown;
+    if (payload && typeof payload === 'object') {
+      const p = payload as { data?: unknown; user?: unknown; token?: unknown };
+      if (p.data && typeof p.data === 'object') {
+        const d = p.data as { usuario?: unknown; token?: unknown };
+        if (d.usuario && typeof d.token === 'string') {
+          return { usuario: d.usuario as Usuario, token: d.token } as AuthResponse;
+        }
+      }
+      if (p.user && typeof p.token === 'string') {
+        return { usuario: p.user as Usuario, token: p.token } as AuthResponse;
+      }
+    }
+    throw new Error('Respuesta de registro inválida');
   },
 
   // ✅ AGREGAR ESTE MÉTODO
@@ -215,6 +253,12 @@ export const subastaService = {
 
   getById: async (id: number): Promise<Subasta> => {
     const response = await api.get<ApiResponse<Subasta>>(`/subastas/${id}`);
+    return response.data.data;
+  },
+
+  // ✅ Obtener subasta por camiseta
+  getByCamiseta: async (camisetaId: number): Promise<Subasta> => {
+    const response = await api.get<ApiResponse<Subasta>>(`/subastas/camiseta/${camisetaId}`);
     return response.data.data;
   },
 

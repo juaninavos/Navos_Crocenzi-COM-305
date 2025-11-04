@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import useToast from '../../hooks/useToast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
@@ -16,6 +17,8 @@ export const MyProductsPage: React.FC = () => {
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ titulo: string; precioInicial: number; stock: number }>({ titulo: '', precioInicial: 0, stock: 1 });
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const { showToast } = useToast();
 
   // Métricas simples (cliente)
   const metrics = useMemo(() => {
@@ -107,7 +110,8 @@ export const MyProductsPage: React.FC = () => {
         stock: form.stock,
       };
       await camisetaService.publicar(payload);
-      setFormSuccess('✅ Publicación creada con éxito');
+  setFormSuccess('✅ Publicación creada con éxito');
+  showToast('Publicación creada con éxito', { variant: 'success' });
       setTimeout(() => setFormSuccess(''), 2000);
       setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false });
       await fetchMine();
@@ -141,7 +145,8 @@ export const MyProductsPage: React.FC = () => {
         precioInicial: Number(editForm.precioInicial),
         stock: Number(editForm.stock),
       });
-      setEditSuccess('✅ Cambios guardados con éxito');
+  setEditSuccess('✅ Cambios guardados con éxito');
+  showToast('Cambios guardados con éxito', { variant: 'success' });
       setTimeout(() => setEditSuccess(''), 2000);
       setEditingId(null);
       await fetchMine();
@@ -151,14 +156,16 @@ export const MyProductsPage: React.FC = () => {
     }
   };
 
-  const deleteItem = async (id: number) => {
-    if (!confirm('¿Seguro que deseas eliminar esta publicación?')) return;
+  const confirmDelete = async (id: number) => {
     try {
       await camisetaService.delete(id);
       setCamisetas(prev => prev.filter(c => c.id !== id));
+      showToast('Publicación eliminada', { variant: 'success' });
     } catch (e) {
       console.error('Error eliminando publicación', e);
-      alert('No se pudo eliminar la publicación');
+      showToast('No se pudo eliminar la publicación', { variant: 'danger' });
+    } finally {
+      setPendingDeleteId(null);
     }
   };
 
@@ -349,7 +356,14 @@ export const MyProductsPage: React.FC = () => {
                         <button className="btn btn-outline-primary" onClick={() => navigate(`/product/${c.id}`)} type="button">Ver</button>
                         <div className="d-flex gap-2">
                           <button className="btn btn-outline-warning w-50" type="button" onClick={() => startEdit(c)}>Editar</button>
-                          <button className="btn btn-outline-danger w-50" type="button" onClick={() => deleteItem(c.id)}>Eliminar</button>
+                          {pendingDeleteId === c.id ? (
+                            <div className="d-flex gap-2 w-50">
+                              <button className="btn btn-danger w-50" type="button" onClick={() => confirmDelete(c.id)}>Confirmar</button>
+                              <button className="btn btn-secondary w-50" type="button" onClick={() => setPendingDeleteId(null)}>Cancelar</button>
+                            </div>
+                          ) : (
+                            <button className="btn btn-outline-danger w-50" type="button" onClick={() => setPendingDeleteId(c.id)}>Eliminar</button>
+                          )}
                         </div>
                       </>
                     )}

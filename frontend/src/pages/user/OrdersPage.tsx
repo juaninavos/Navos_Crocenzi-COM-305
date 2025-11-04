@@ -1,6 +1,6 @@
 // src/pages/user/OrdersPage.tsx - HISTORIAL DE COMPRAS
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
@@ -15,15 +15,7 @@ export const OrdersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!usuario) { // ✅ CAMBIAR: currentUser → usuario
-      navigate('/login');
-      return;
-    }
-    loadCompras();
-  }, [usuario, navigate]); // ✅ CAMBIAR: currentUser → usuario
-
-  const loadCompras = async () => {
+  const loadCompras = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -40,20 +32,35 @@ export const OrdersPage: React.FC = () => {
       } else {
         setCompras([]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading orders:', error);
       
       // ✅ DISTINGUIR ENTRE ERROR REAL Y LISTA VACÍA
-      if (error.response?.status === 404 || error.response?.data?.count === 0) {
+      if (axios.isAxiosError(error)) {
+        const status404 = error.response?.status === 404;
+        const data = error.response?.data as unknown;
+        const noItems = !!(data && typeof data === 'object' && 'count' in data && typeof (data as { count?: unknown }).count === 'number' && (data as { count: number }).count === 0);
+        if (status404 || noItems) {
         // No es un error, simplemente no hay compras
         setCompras([]);
+        } else {
+          setError('Error al cargar las compras');
+        }
       } else {
         setError('Error al cargar las compras');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [usuario]);
+
+  useEffect(() => {
+    if (!usuario) { // ✅ CAMBIAR: currentUser → usuario
+      navigate('/login');
+      return;
+    }
+    loadCompras();
+  }, [usuario, navigate, loadCompras]); // ✅ CAMBIAR: currentUser → usuario
 
   const getEstadoBadge = (estado: EstadoCompra): string => {
     const badges: Record<string, string> = {

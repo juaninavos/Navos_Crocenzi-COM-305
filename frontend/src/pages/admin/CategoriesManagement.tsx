@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { categoriaService } from '../../services/api';
 import type { Categoria } from '../../types';
+import useToast from '../../hooks/useToast';
 
 export const CategoriesManagement: React.FC = () => {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const { showToast } = useToast();
   
   // Estados para el formulario
   const [showForm, setShowForm] = useState(false);
@@ -35,12 +38,12 @@ export const CategoriesManagement: React.FC = () => {
     e.preventDefault();
     
     if (!formData.nombre.trim()) {
-      alert('El nombre es obligatorio');
+      showToast('El nombre es obligatorio', { variant: 'warning' });
       return;
     }
 
     if (formData.nombre.trim().length < 2) {
-      alert('El nombre debe tener al menos 2 caracteres');
+      showToast('El nombre debe tener al menos 2 caracteres', { variant: 'warning' });
       return;
     }
 
@@ -52,24 +55,35 @@ export const CategoriesManagement: React.FC = () => {
           nombre: formData.nombre.trim(),
           descripcion: formData.descripcion.trim() || undefined
         });
-        alert('✅ Categoría actualizada correctamente');
+        showToast('Categoría actualizada correctamente', { variant: 'success' });
       } else {
         // Crear
         await categoriaService.create({
           nombre: formData.nombre.trim(),
           descripcion: formData.descripcion.trim() || undefined
         });
-        alert('✅ Categoría creada correctamente');
+        showToast('Categoría creada correctamente', { variant: 'success' });
       }
       
       setShowForm(false);
       setEditingId(null);
       setFormData({ nombre: '', descripcion: '' });
       loadCategorias();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al guardar categoría:', err);
-      const message = err.response?.data?.message || 'Error al guardar la categoría';
-      alert(`❌ ${message}`);
+      const message = axios.isAxiosError(err)
+        ? (() => {
+            const data = err.response?.data as unknown;
+            if (data && typeof data === 'object' && 'message' in data) {
+              const m = (data as { message?: unknown }).message;
+              return typeof m === 'string' && m.trim().length > 0 ? m : err.message;
+            }
+            return err.message;
+          })()
+        : err instanceof Error
+          ? err.message
+          : 'Error al guardar la categoría';
+      showToast(message, { variant: 'danger' });
     } finally {
       setSubmitting(false);
     }
@@ -91,12 +105,23 @@ export const CategoriesManagement: React.FC = () => {
 
     try {
       await categoriaService.delete(id);
-      alert('✅ Categoría eliminada correctamente');
+      showToast('Categoría eliminada correctamente', { variant: 'success' });
       loadCategorias();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al eliminar categoría:', err);
-      const message = err.response?.data?.message || 'Error al eliminar la categoría';
-      alert(`❌ ${message}`);
+      const message = axios.isAxiosError(err)
+        ? (() => {
+            const data = err.response?.data as unknown;
+            if (data && typeof data === 'object' && 'message' in data) {
+              const m = (data as { message?: unknown }).message;
+              return typeof m === 'string' && m.trim().length > 0 ? m : err.message;
+            }
+            return err.message;
+          })()
+        : err instanceof Error
+          ? err.message
+          : 'Error al eliminar la categoría';
+      showToast(message, { variant: 'danger' });
     }
   };
 

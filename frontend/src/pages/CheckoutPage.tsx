@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/useCart';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
 import type { MetodoPago } from '../types';
+import useToast from '../hooks/useToast';
 
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { items, total, clearCart } = useCart();
   const { usuario } = useAuth();
+  const { showToast } = useToast();
 
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [loading, setLoading] = useState(false);
@@ -23,15 +25,7 @@ export const CheckoutPage: React.FC = () => {
     notas: ''
   });
 
-  useEffect(() => {
-    if (!usuario) {
-      navigate('/login');
-      return;
-    }
-    loadMetodosPago();
-  }, [usuario, navigate]);
-
-  const loadMetodosPago = async () => {
+  const loadMetodosPago = useCallback(async () => {
     try {
       setLoadingMetodos(true);
       const token = localStorage.getItem('token');
@@ -46,10 +40,19 @@ export const CheckoutPage: React.FC = () => {
     } catch (error: unknown) {
       console.error('Error loading payment methods:', error);
       setError('Error al cargar métodos de pago. Intenta nuevamente.');
+      showToast('Error al cargar métodos de pago', { variant: 'danger' });
     } finally {
       setLoadingMetodos(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    if (!usuario) {
+      navigate('/login');
+      return;
+    }
+    loadMetodosPago();
+  }, [usuario, navigate, loadMetodosPago]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,20 +60,24 @@ export const CheckoutPage: React.FC = () => {
     // Validaciones
     if (items.length === 0) {
       setError('El carrito está vacío');
+      showToast('El carrito está vacío', { variant: 'warning' });
       return;
     }
     if (!formData.metodoPagoId) {
       setError('Selecciona un método de pago');
+      showToast('Selecciona un método de pago', { variant: 'warning' });
       return;
     }
     if (!formData.direccionEnvio.trim()) {
       setError('La dirección de envío es obligatoria');
+      showToast('La dirección de envío es obligatoria', { variant: 'warning' });
       return;
     }
     // Validar stock de todos los items antes de proceder
     const sinStock = items.find(i => i.cantidad > (i.producto?.stock ?? 0));
     if (sinStock) {
       setError(`No hay stock suficiente para "${sinStock.producto.titulo}"`);
+      showToast(`No hay stock suficiente para "${sinStock.producto.titulo}"`, { variant: 'danger' });
       return;
     }
 
@@ -101,6 +108,7 @@ export const CheckoutPage: React.FC = () => {
 
       clearCart();
       setSuccess(`✅ ¡Compra realizada con éxito! Total pagado: $${total.toLocaleString()}`);
+      showToast('¡Compra realizada con éxito!', { variant: 'success' });
       setTimeout(() => {
         setSuccess('');
         navigate('/orders');
@@ -115,6 +123,7 @@ export const CheckoutPage: React.FC = () => {
         errorMsg = error.message || errorMsg;
       }
       setError(errorMsg);
+      showToast(errorMsg, { variant: 'danger' });
       
       // Si el error es de stock, mostrar mensaje visual
     } finally {

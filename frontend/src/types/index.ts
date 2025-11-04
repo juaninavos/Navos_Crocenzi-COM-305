@@ -129,6 +129,37 @@ export interface Oferta {
   usuario: Usuario;
 }
 
+// =========================
+// 🎯 SUBASTAS: DTOs y tipos auxiliares
+// =========================
+
+// Filtros aceptados por GET /subastas
+export interface SubastaFiltro {
+  activas?: boolean; // true = solo activas (fechaFin > ahora)
+  vendedorId?: number; // filtra por vendedor de la camiseta
+}
+
+// Datos para crear una subasta (POST /subastas)
+export interface CreateSubastaData {
+  fechaInicio: Date | string;
+  fechaFin: Date | string;
+  camisetaId: number;
+  precioInicial?: number;
+}
+
+// Estadísticas temporales para el timer de subastas
+export interface SubastaStats {
+  tiempoRestante: {
+    dias: number;
+    horas: number;
+    minutos: number;
+    segundos: number;
+    total: number; // ms restantes
+  };
+  finalizada: boolean;
+  puedeOfertar: boolean;
+}
+
 export interface Compra {
   id: number;
   total: number;
@@ -168,6 +199,16 @@ export interface Descuento {
   fechaFin: Date;
   activo: boolean;
   fechaCreacion: Date;
+}
+
+// =========================
+// 💰 OFERTAS: DTOs
+// =========================
+
+export interface CreateOfertaData {
+  monto: number;
+  usuarioId: number;
+  subastaId: number;
 }
 
 // =========================

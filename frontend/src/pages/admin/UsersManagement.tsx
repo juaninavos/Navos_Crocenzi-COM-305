@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import useToast from '../../hooks/useToast';
 import { adminService } from '../../services/api';
 import type { Usuario } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -11,6 +12,7 @@ const UsersManagement: React.FC = () => {
   const [error, setError] = useState('');
   const [users, setUsers] = useState<Usuario[]>([]);
   const [selected, setSelected] = useState<Usuario | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -43,9 +45,10 @@ const UsersManagement: React.FC = () => {
     try {
       await adminService.toggleEstadoUsuario(id);
       setUsers(prev => prev.map(u => u.id === id ? { ...u, activo: !u.activo } : u));
+      showToast('Estado de usuario actualizado', { variant: 'success' });
     } catch (e) {
       console.error('Error al cambiar estado', e);
-      alert('No se pudo cambiar el estado del usuario');
+      showToast('No se pudo cambiar el estado del usuario', { variant: 'danger' });
     }
   };
 

@@ -3,15 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
+import useToast from '../../hooks/useToast';
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { showToast } = useToast();
   const [camiseta, setCamiseta] = useState<Camiseta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
 
   useEffect(() => {
     const load = async () => {
@@ -23,18 +24,18 @@ export const ProductDetailPage: React.FC = () => {
       } catch (e) {
         console.error('Error cargando producto', e);
         setError('No se pudo cargar el producto');
+        showToast('No se pudo cargar el producto', { variant: 'danger' });
       } finally {
         setLoading(false);
       }
     };
     if (id) load();
-  }, [id]);
+  }, [id, showToast]);
 
   const handleAddToCart = () => {
-  if (!camiseta) return;
-  addToCart(camiseta, 1);
-  setSuccess(`✅ ${camiseta.titulo} agregado al carrito`);
-  setTimeout(() => setSuccess(''), 2000);
+    if (!camiseta) return;
+    addToCart(camiseta, 1);
+    showToast(`${camiseta.titulo} agregado al carrito`, { variant: 'success' });
   };
 
   if (loading) {
@@ -60,12 +61,6 @@ export const ProductDetailPage: React.FC = () => {
 
   return (
     <div className="container mt-4 mb-5">
-      {success && (
-        <div className="alert alert-success alert-dismissible fade show" role="alert">
-          {success}
-          <button type="button" className="btn-close" onClick={() => setSuccess('')} aria-label="Close"></button>
-        </div>
-      )}
       <div className="d-flex align-items-center mb-3">
         <button className="btn btn-outline-secondary me-3" onClick={() => navigate(-1)} type="button">← Volver</button>
         <h1 className="mb-0">{camiseta.titulo}</h1>

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import axios from 'axios';
 import { ofertaService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { CreateOfertaData, Oferta } from '../types';
@@ -32,13 +33,22 @@ export const useBids = (subastaId?: number) => {
       console.log('✅ Oferta creada exitosamente:', oferta);
       
       return oferta;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Error al crear oferta:', err);
       
       // Manejar errores específicos del backend
-      const mensaje = err.response?.data?.message || 
-                     err.message || 
-                     'Error al realizar la oferta';
+      const mensaje = axios.isAxiosError(err)
+        ? (() => {
+            const data = err.response?.data as unknown;
+            if (data && typeof data === 'object' && 'message' in data) {
+              const m = (data as { message?: unknown }).message;
+              return typeof m === 'string' && m.trim().length > 0 ? m : err.message;
+            }
+            return err.message;
+          })()
+        : err instanceof Error
+          ? err.message
+          : 'Error al realizar la oferta';
       
       setError(mensaje);
       return null;

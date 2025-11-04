@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
 import { subastaService } from '../../services/api';
+import useToast from '../../hooks/useToast';
 
 interface ProductCardProps {
   camiseta: Camiseta;
@@ -19,6 +20,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   // ✅ FUNCIÓN CORREGIDA CON PARÁMETRO e
   const handleVerSubasta = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -35,31 +37,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     try {
       setLoading(true);
       
-      console.log('🌐 Llamando a subastaService.getAll...');
-      
-      const result = await subastaService.getAll({ 
-        camisetaId: camiseta.id 
-      });
-      
-      console.log('📊 Respuesta:', {
-        cantidad: result.data.length,
-        total: result.count
-      });
+      console.log('🌐 Llamando a subastaService.getByCamiseta...');
 
-      if (result.data && result.data.length > 0) {
-        const subasta = result.data[0];
-        console.log('✅ SUBASTA ENCONTRADA:', {
-          id: subasta.id,
-          precio: subasta.precioActual
-        });
-        
-        console.log('🚀 Navegando a /auctions/' + subasta.id);
-        navigate(`/auctions/${subasta.id}`);
-        
-      } else {
-        console.warn('⚠️ NO SE ENCONTRÓ SUBASTA');
-        alert('❌ No se encontró una subasta activa para esta camiseta.');
-      }
+      const subasta = await subastaService.getByCamiseta(camiseta.id);
+      console.log('✅ SUBASTA ENCONTRADA:', {
+        id: subasta.id,
+        precio: subasta.precioActual
+      });
+      console.log('🚀 Navegando a /auctions/' + subasta.id);
+      navigate(`/auctions/${subasta.id}`);
       
     } catch (error) {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -74,7 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
         });
       }
       
-      alert(`❌ Error al cargar la subasta.\n\n${error instanceof Error ? error.message : 'Error desconocido'}`);
+  showToast(error instanceof Error ? error.message : 'Error al cargar la subasta', { variant: 'danger' });
       
     } finally {
       setLoading(false);
@@ -91,11 +77,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     } else {
       addToCart(camiseta, 1);
     }
-    alert(`✅ ${camiseta.titulo} agregado al carrito`);
+    showToast(`${camiseta.titulo} agregado al carrito`, { variant: 'success' });
   };
 
   return (
-    <div className="card h-100 shadow-sm hover:shadow-lg transition-shadow">
+    <div className="card card-camiseta h-100">
       {/* Imagen */}
       <div className="position-relative">
         {camiseta.imagen ? (

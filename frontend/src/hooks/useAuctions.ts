@@ -23,7 +23,7 @@ export const useAuctions = (filtros: SubastaFiltro = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(filtros)]); // ✅ Dependencia serializada
+  }, [filtros]);
 
   useEffect(() => {
     fetchSubastas();

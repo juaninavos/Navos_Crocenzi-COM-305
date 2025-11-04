@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Navigation } from './components/common/Navigation';
+import { ToastProvider } from './providers/ToastProvider';
 
 // Pages
 import { Login } from './pages/auth/Login';
@@ -31,6 +32,7 @@ function App() {
     <Router>
       <AuthProvider>
         <CartProvider>
+          <ToastProvider>
           <div className="min-h-screen bg-gray-50">
             <Navigation />
             <main>
@@ -56,6 +58,7 @@ function App() {
               </Routes>
             </main>
           </div>
+          </ToastProvider>
         </CartProvider>
       </AuthProvider>
     </Router>

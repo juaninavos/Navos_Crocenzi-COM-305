@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { authService } from '../../services/api';
+import { authService, ApiAuthError } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import type { LoginData } from '../../types';
+import useToast from '../../hooks/useToast';
 
 export const Login = () => {
   const [formData, setFormData] = useState<LoginData>({
@@ -16,6 +18,7 @@ export const Login = () => {
   
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,15 +48,24 @@ export const Login = () => {
       const authResponse = await authService.login(formData);
       login(authResponse.usuario, authResponse.token);
       setSuccess('¡Ingreso exitoso! Redirigiendo...');
+      showToast('Bienvenido/a', { variant: 'success' });
       setTimeout(() => {
         setSuccess('');
         navigate('/');
       }, 1500);
     } catch (error: unknown) {
-      if (error instanceof Error) {
+      if (error instanceof ApiAuthError) {
+        setError('Email o contraseña incorrectos');
+        showToast('Email o contraseña incorrectos', { variant: 'danger' });
+      } else if (axios.isAxiosError(error) && error.response?.status === 401) {
+        setError('Email o contraseña incorrectos');
+        showToast('Email o contraseña incorrectos', { variant: 'danger' });
+      } else if (error instanceof Error) {
         setError(error.message || 'Error de conexión');
+        showToast(error.message || 'Error de conexión', { variant: 'danger' });
       } else {
         setError('Error de conexión');
+        showToast('Error de conexión', { variant: 'danger' });
       }
     } finally {
       setIsLoading(false);

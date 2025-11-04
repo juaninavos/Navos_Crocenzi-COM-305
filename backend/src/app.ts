@@ -113,7 +113,7 @@ export async function createApp() {
 if (require.main === module) {
   (async () => {
     const app = await createApp();
-    const PORT = Number(process.env.PORT) || 3001;
+  const PORT = Number(process.env.PORT) || 3000;
     const HOST = process.env.HOST || '0.0.0.0';
     app.listen(PORT, HOST, () => {
       console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);

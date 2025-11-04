@@ -3,7 +3,7 @@ import { CompraController } from '../controllers/CompraController';
 import authMiddleware from '../middleware/auth';
 import roleGuard from '../middleware/roleGuard';
 
-const router = Router();
+const router: Router = Router();
 
 router.get('/', authMiddleware, roleGuard(['administrador']), CompraController.getAll);
 router.get('/:id', authMiddleware, CompraController.getById);
