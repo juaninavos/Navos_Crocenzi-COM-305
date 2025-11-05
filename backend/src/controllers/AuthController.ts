@@ -254,5 +254,25 @@ export default function authRouter(orm: MikroORM): Router {
     }
   });
 
+  // Perfil del usuario autenticado (debug/diagnóstico)
+  router.get('/me', authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const em = orm.em.fork();
+      const user = await em.findOne(Usuario, { id: req.user.id });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado',
+          code: 'NOT_FOUND',
+        });
+      }
+      const safeUser = wrap(user).toObject();
+      delete (safeUser as any).contrasena;
+      return res.json({ success: true, message: 'Usuario autenticado', data: { usuario: safeUser } });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: 'Error interno', error: (err as Error).message });
+    }
+  });
+
   return router;
 }

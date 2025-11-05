@@ -30,7 +30,8 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
     req.user = { id, rol: payload.rol, email: payload.email || '' } as any;
     return next();
   } catch (err) {
-    console.warn('🔐 authMiddleware: token inválido:', (err as Error)?.message);
+    const msg = (err as Error)?.message;
+    console.warn('🔐 authMiddleware: token inválido:', msg);
     return res.status(401).json({
       success: false,
       message: 'No autorizado: token inválido.',
