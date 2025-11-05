@@ -64,8 +64,17 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('usuario');
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+      } catch (e) {
+        // almacenamiento podría estar inaccesible en algún entorno (p. ej. SSR/test)
+        if (typeof console !== 'undefined' && typeof console.debug === 'function') {
+          console.debug('auth 401: error limpiando storage', e);
+        }
+      }
+      // Emitir un evento global para UX coherente
+      window.dispatchEvent(new CustomEvent('app:auth-401'));
       return Promise.reject(new ApiAuthError());
     }
 

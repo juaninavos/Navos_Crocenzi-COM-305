@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { Navigation } from './components/common/Navigation';
 import { ToastProvider } from './providers/ToastProvider';
+import { Auth401Listener } from './components/common/Auth401Listener';
 
 // Pages
 import { Login } from './pages/auth/Login';
@@ -33,6 +34,7 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <ToastProvider>
+          <Auth401Listener />
           <div className="min-h-screen bg-gray-50">
             <Navigation />
             <main>
