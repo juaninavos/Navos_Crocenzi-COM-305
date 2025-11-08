@@ -177,13 +177,27 @@ export const adminService = {
     return response.data.data;
   },
 
+  // ✅ CORREGIR: Cambiar de /admin/usuarios a /usuarios
   getUsuarios: async (): Promise<Usuario[]> => {
-    const response = await api.get<ApiResponse<Usuario[]>>('/admin/usuarios');
+    const response = await api.get<ApiResponse<Usuario[]>>('/usuarios');
     return response.data.data;
   },
 
-  toggleEstadoUsuario: async (id: number): Promise<{ message: string }> => {
-    const response = await api.put<ApiResponse<{ message: string }>>(`/admin/usuarios/${id}/toggle-estado`);
+  // ✅ AGREGAR: Método para cambiar estado de usuario
+  toggleEstadoUsuario: async (id: number): Promise<Usuario> => {
+    const response = await api.put<ApiResponse<Usuario>>(`/usuarios/${id}/toggle-estado`);
+    return response.data.data;
+  },
+
+  // ✅ AGREGAR: Método para actualizar usuario
+  updateUsuario: async (id: number, data: Partial<Usuario>): Promise<Usuario> => {
+    const response = await api.put<ApiResponse<Usuario>>(`/usuarios/${id}`, data);
+    return response.data.data;
+  },
+
+  // ✅ AGREGAR: Método para eliminar usuario
+  deleteUsuario: async (id: number): Promise<{ message: string }> => {
+    const response = await api.delete<ApiResponse<{ message: string }>>(`/usuarios/${id}`);
     return response.data.data;
   },
 };

@@ -1,4 +1,4 @@
- import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,9 +26,12 @@ export const Register = () => {
     setIsLoading(true);
     setError('');
     setFieldErrors({});
+    setSuccess('');
+
     // Validación frontend
     let valid = true;
     const newFieldErrors: Partial<RegisterData> = {};
+    
     if (!formData.nombre.trim()) {
       newFieldErrors.nombre = 'El nombre es obligatorio';
       valid = false;
@@ -59,14 +62,17 @@ export const Register = () => {
       newFieldErrors.telefono = 'El teléfono es obligatorio';
       valid = false;
     } else if (!/^\d{7,15}$/.test(formData.telefono)) {
-      newFieldErrors.telefono = 'El teléfono debe ser numérico y válido';
+      newFieldErrors.telefono = 'El teléfono debe ser numérico (7-15 dígitos)';
       valid = false;
     }
+
     setFieldErrors(newFieldErrors);
+
     if (!valid) {
       setIsLoading(false);
       return;
     }
+
     try {
       const authResponse = await authService.register(formData);
       login(authResponse.usuario, authResponse.token);
@@ -78,9 +84,9 @@ export const Register = () => {
     } catch (error: unknown) {
       console.error('Error en registro:', error);
       if (error instanceof Error) {
-        setError(error.message || 'Error de conexión');
+        setError(error.message || 'Error al crear la cuenta');
       } else {
-        setError('Error de conexión');
+        setError('Error al crear la cuenta');
       }
     } finally {
       setIsLoading(false);
@@ -95,126 +101,167 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Crear Cuenta
-          </h2>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-12 col-md-8 col-lg-6">
+          <div className="card">
+            <div className="card-header">
+              <h3 className="text-center">📝 Crear Cuenta</h3>
+            </div>
+            <div className="card-body">
+              
+              {error && (
+                <div className="alert alert-danger" role="alert">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="alert alert-success" role="alert">
+                  {success}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                {/* Nombre y Apellido en fila */}
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label htmlFor="nombre" className="form-label">Nombre *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${fieldErrors.nombre ? 'is-invalid' : ''}`}
+                      id="nombre"
+                      name="nombre"
+                      value={formData.nombre}
+                      onChange={handleChange}
+                      required
+                    />
+                    {fieldErrors.nombre && (
+                      <div className="invalid-feedback">
+                        {fieldErrors.nombre}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="col-md-6">
+                    <label htmlFor="apellido" className="form-label">Apellido *</label>
+                    <input
+                      type="text"
+                      className={`form-control ${fieldErrors.apellido ? 'is-invalid' : ''}`}
+                      id="apellido"
+                      name="apellido"
+                      value={formData.apellido}
+                      onChange={handleChange}
+                      required
+                    />
+                    {fieldErrors.apellido && (
+                      <div className="invalid-feedback">
+                        {fieldErrors.apellido}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">Email *</label>
+                  <input
+                    type="email"
+                    className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                  />
+                  {fieldErrors.email && (
+                    <div className="invalid-feedback">
+                      {fieldErrors.email}
+                    </div>
+                  )}
+                </div>
+
+                {/* Contraseña */}
+                <div className="mb-3">
+                  <label htmlFor="contrasena" className="form-label">Contraseña *</label>
+                  <input
+                    type="password"
+                    className={`form-control ${fieldErrors.contrasena ? 'is-invalid' : ''}`}
+                    id="contrasena"
+                    name="contrasena"
+                    value={formData.contrasena}
+                    onChange={handleChange}
+                    required
+                  />
+                  {fieldErrors.contrasena && (
+                    <div className="invalid-feedback">
+                      {fieldErrors.contrasena}
+                    </div>
+                  )}
+                  <div className="form-text">La contraseña debe tener al menos 6 caracteres</div>
+                </div>
+
+                {/* Dirección */}
+                <div className="mb-3">
+                  <label htmlFor="direccion" className="form-label">Dirección *</label>
+                  <input
+                    type="text"
+                    className={`form-control ${fieldErrors.direccion ? 'is-invalid' : ''}`}
+                    id="direccion"
+                    name="direccion"
+                    value={formData.direccion}
+                    onChange={handleChange}
+                    required
+                  />
+                  {fieldErrors.direccion && (
+                    <div className="invalid-feedback">
+                      {fieldErrors.direccion}
+                    </div>
+                  )}
+                </div>
+
+                {/* Teléfono */}
+                <div className="mb-3">
+                  <label htmlFor="telefono" className="form-label">Teléfono *</label>
+                  <input
+                    type="tel"
+                    className={`form-control ${fieldErrors.telefono ? 'is-invalid' : ''}`}
+                    id="telefono"
+                    name="telefono"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    required
+                  />
+                  {fieldErrors.telefono && (
+                    <div className="invalid-feedback">
+                      {fieldErrors.telefono}
+                    </div>
+                  )}
+                  <div className="form-text">Solo números, entre 7 y 15 dígitos</div>
+                </div>
+
+                {/* Botón Submit */}
+                <button
+                  type="submit"
+                  className="btn btn-primary w-100"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Creando cuenta...
+                    </>
+                  ) : (
+                    'Crear Cuenta'
+                  )}
+                </button>
+              </form>
+
+              <div className="text-center mt-3">
+                <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión aquí</Link></p>
+              </div>
+            </div>
+          </div>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-              {success}
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            <div className="flex space-x-2">
-              <div className="w-1/2">
-                <input
-                  name="nombre"
-                  type="text"
-                  required
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.nombre ? ' border-red-500' : ' border-gray-300'}`}
-                  placeholder="Nombre"
-                  value={formData.nombre}
-                  onChange={handleChange}
-                />
-                {fieldErrors.nombre && (
-                  <div className="text-red-600 text-xs mt-1">{fieldErrors.nombre}</div>
-                )}
-              </div>
-              <div className="w-1/2">
-                <input
-                  name="apellido"
-                  type="text"
-                  required
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.apellido ? ' border-red-500' : ' border-gray-300'}`}
-                  placeholder="Apellido"
-                  value={formData.apellido}
-                  onChange={handleChange}
-                />
-                {fieldErrors.apellido && (
-                  <div className="text-red-600 text-xs mt-1">{fieldErrors.apellido}</div>
-                )}
-              </div>
-            </div>
-            
-            <input
-              name="email"
-              type="email"
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.email ? ' border-red-500' : ' border-gray-300'}`}
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-            {fieldErrors.email && (
-              <div className="text-red-600 text-xs mt-1">{fieldErrors.email}</div>
-            )}
-            
-            <input
-              name="contrasena"
-              type="password"
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.contrasena ? ' border-red-500' : ' border-gray-300'}`}
-              placeholder="Contraseña"
-              value={formData.contrasena}
-              onChange={handleChange}
-            />
-            {fieldErrors.contrasena && (
-              <div className="text-red-600 text-xs mt-1">{fieldErrors.contrasena}</div>
-            )}
-            
-            <input
-              name="direccion"
-              type="text"
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.direccion ? ' border-red-500' : ' border-gray-300'}`}
-              placeholder="Dirección"
-              value={formData.direccion}
-              onChange={handleChange}
-            />
-            {fieldErrors.direccion && (
-              <div className="text-red-600 text-xs mt-1">{fieldErrors.direccion}</div>
-            )}
-            
-            <input
-              name="telefono"
-              type="tel"
-              required
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500${fieldErrors.telefono ? ' border-red-500' : ' border-gray-300'}`}
-              placeholder="Teléfono"
-              value={formData.telefono}
-              onChange={handleChange}
-            />
-            {fieldErrors.telefono && (
-              <div className="text-red-600 text-xs mt-1">{fieldErrors.telefono}</div>
-            )}
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
-            </button>
-          </div>
-
-          <div className="text-center">
-            <Link to="/login" className="text-indigo-600 hover:text-indigo-500">
-              ¿Ya tienes cuenta? Inicia sesión
-            </Link>
-          </div>
-        </form>
       </div>
     </div>
   );

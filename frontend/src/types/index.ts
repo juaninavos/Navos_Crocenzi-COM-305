@@ -82,19 +82,18 @@ export interface Categoria {
 export interface Camiseta {
   id: number;
   titulo: string;
-  descripcion?: string;  // ✅ CORREGIR: es opcional en backend
+  descripcion?: string;
   equipo: string;
   temporada: string;
-  talle: Talle;         // ✅ CORREGIR: usar enum, no string
-  condicion: CondicionCamiseta;  // ✅ CORREGIR: usar enum, no string
-  imagen?: string;      // ✅ CORREGIR: es opcional en backend
+  talle: Talle;
+  condicion: CondicionCamiseta;
+  imagen?: string;
   precioInicial: number;
   esSubasta: boolean;
   stock: number;
   estado: EstadoCamiseta;
   fechaCreacion: Date;
   fechaPublicacion: Date;
-  // Relaciones populadas
   vendedor: {
     id: number;
     nombre: string;
@@ -108,6 +107,19 @@ export interface Camiseta {
     descripcion?: string;
     activa?: boolean;
   };
+  vendedorId?: number;
+  categoriaId?: number;
+  // ✅ ACTUALIZAR CAMPOS DE DESCUENTO (ahora es array)
+  tieneDescuento?: boolean;
+  descuentos?: Array<{
+    id: number;
+    codigo: string;
+    porcentaje: number;
+    descripcion: string;
+  }>;
+  precioOriginal?: number;
+  precioConDescuento?: number;
+  porcentajeTotal?: number; // Porcentaje total acumulado
 }
 
 export interface Subasta {
@@ -232,6 +244,8 @@ export interface CamisetaFiltro {
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
   usuarioId?: number; // Permite filtrar por usuario (vendedor)
+  vendedorId?: number; // ✅ AGREGAR ESTA LÍNEA (alias de usuarioId)
+  categoriaId?: number; // ✅ AGREGAR ESTA LÍNEA TAMBIÉN
 }
 
 // =========================

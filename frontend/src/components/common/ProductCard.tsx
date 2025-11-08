@@ -1,11 +1,9 @@
 // src/components/common/ProductCard.tsx
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
-import { subastaService } from '../../services/api';
 
 interface ProductCardProps {
   camiseta: Camiseta;
@@ -20,72 +18,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
   const { addToCart } = useCart();
   const [loading, setLoading] = useState(false);
 
-  // ✅ FUNCIÓN CORREGIDA CON PARÁMETRO e
   const handleVerSubasta = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔍 INICIO: Buscando subasta');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📦 Camiseta ID:', camiseta.id);
-    console.log('👕 Título:', camiseta.titulo);
-    console.log('🔨 Es subasta:', camiseta.esSubasta);
-    
     try {
       setLoading(true);
       
-      console.log('🌐 Llamando a subastaService.getAll...');
+      // ✅ CORREGIR: Usar el endpoint correcto
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/subastas/camiseta/${camiseta.id}`);
       
-      const result = await subastaService.getAll({ 
-        camisetaId: camiseta.id 
-      });
+      if (!response.ok) {
+        throw new Error('No se encontró subasta');
+      }
       
-      console.log('📊 Respuesta:', {
-        cantidad: result.data.length,
-        total: result.count
-      });
-
-      if (result.data && result.data.length > 0) {
-        const subasta = result.data[0];
-        console.log('✅ SUBASTA ENCONTRADA:', {
-          id: subasta.id,
-          precio: subasta.precioActual
-        });
-        
-        console.log('🚀 Navegando a /auctions/' + subasta.id);
-        navigate(`/auctions/${subasta.id}`);
-        
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        navigate(`/auctions/${data.data.id}`);
       } else {
-        console.warn('⚠️ NO SE ENCONTRÓ SUBASTA');
         alert('❌ No se encontró una subasta activa para esta camiseta.');
       }
-      
     } catch (error) {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('❌ ERROR AL BUSCAR SUBASTA');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('Error completo:', error);
-      
-      if (axios.isAxiosError(error) && error.response) {
-        console.error('📡 Response:', {
-          status: error.response.status,
-          data: error.response.data
-        });
-      }
-      
-      alert(`❌ Error al cargar la subasta.\n\n${error instanceof Error ? error.message : 'Error desconocido'}`);
-      
+      console.error('Error al buscar subasta:', error);
+      alert(`❌ Error al cargar la subasta. Esta camiseta aún no tiene una subasta creada.`);
     } finally {
       setLoading(false);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('🏁 FIN');
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
   };
 
   const handleAgregarAlCarrito = () => {
-    console.log('🛒 Agregando al carrito:', camiseta);
     if (onAddToCart) {
       onAddToCart(camiseta);
     } else {
@@ -94,8 +56,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     alert(`✅ ${camiseta.titulo} agregado al carrito`);
   };
 
+  // ✅ CALCULAR PRECIO A MOSTRAR
+  const precioFinal = camiseta.tieneDescuento && camiseta.precioConDescuento 
+    ? camiseta.precioConDescuento 
+    : camiseta.precioInicial;
+
   return (
-    <div className="card h-100 shadow-sm hover:shadow-lg transition-shadow">
+    <div className="card h-100 shadow-sm">
       {/* Imagen */}
       <div className="position-relative">
         {camiseta.imagen ? (
@@ -116,11 +83,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
 
         {/* Badge de SUBASTA */}
         {camiseta.esSubasta && (
-          <span
-            className="position-absolute top-0 end-0 m-2 badge bg-danger"
-            style={{ fontSize: '0.9rem' }}
-          >
+          <span className="position-absolute top-0 end-0 m-2 badge bg-danger">
             🔨 EN SUBASTA
+          </span>
+        )}
+
+        {/* ✅ Badge de DESCUENTO (mostrar porcentaje total) */}
+        {camiseta.tieneDescuento && camiseta.porcentajeTotal && (
+          <span className="position-absolute top-0 start-0 m-2 badge bg-success">
+            🏷️ -{camiseta.porcentajeTotal.toFixed(0)}% OFF
           </span>
         )}
       </div>
@@ -138,18 +109,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
           <span className="badge bg-info">{camiseta.condicion}</span>
         </div>
 
+        {/* ✅ MOSTRAR PRECIO CON/SIN DESCUENTO */}
         <div className="mb-3">
-          <span className="fs-5 fw-bold text-success">
-            ${camiseta.precioInicial.toLocaleString()}
-          </span>
+          {camiseta.tieneDescuento && camiseta.precioConDescuento ? (
+            <>
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-decoration-line-through text-muted">
+                  ${camiseta.precioInicial.toLocaleString()}
+                </span>
+                <span className="fs-5 fw-bold text-success">
+                  ${precioFinal.toLocaleString()}
+                </span>
+              </div>
+              {/* ✅ Mostrar todos los descuentos aplicados */}
+              {camiseta.descuentos && camiseta.descuentos.length > 0 && (
+                <small className="text-success d-block">
+                  {camiseta.descuentos.length === 1 
+                    ? `✅ ${camiseta.descuentos[0].descripcion}`
+                    : `✅ ${camiseta.descuentos.length} descuentos acumulados`
+                  }
+                </small>
+              )}
+            </>
+          ) : (
+            <span className="fs-5 fw-bold text-success">
+              ${precioFinal.toLocaleString()}
+            </span>
+          )}
           {camiseta.esSubasta && (
-            <span className="text-muted ms-2">
+            <span className="text-muted ms-2 d-block">
               <small>Precio inicial</small>
             </span>
           )}
         </div>
 
-  {/* BOTONES */}
+        {/* BOTONES */}
         <div className="mt-auto">
           {camiseta.esSubasta ? (
             <button

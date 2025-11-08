@@ -320,4 +320,42 @@ export class UsuarioController {
       });
     }
   }
+
+  // ✅ AGREGAR: Método para toggle estado (activar/desactivar)
+  static async toggleEstado(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const orm = req.app.locals.orm as MikroORM;
+      const em = orm.em.fork();
+      
+      const usuario = await em.findOne(Usuario, { id: parseInt(id) });
+      
+      if (!usuario) {
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo cambiar estado: usuario no encontrado.',
+          error: 'Usuario no encontrado',
+          code: 'NOT_FOUND'
+        });
+      }
+
+      // Toggle del estado
+      usuario.activo = !usuario.activo;
+      await em.flush();
+
+      res.json({
+        success: true,
+        message: `Usuario ${usuario.activo ? 'activado' : 'desactivado'} correctamente.`,
+        data: usuario
+      });
+    } catch (error) {
+      console.error('Error en toggleEstado usuario:', error);
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo cambiar estado del usuario: error interno.',
+        error: error instanceof Error ? error.message : String(error),
+        code: 'TOGGLE_ERROR'
+      });
+    }
+  }
 }

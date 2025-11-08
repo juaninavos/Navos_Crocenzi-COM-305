@@ -14,18 +14,16 @@ export const MyProductsPage: React.FC = () => {
   const [editError, setEditError] = useState<string>('');
   const [editSuccess, setEditSuccess] = useState<string>('');
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
+  const [todasLasCamisetas, setTodasLasCamisetas] = useState<Camiseta[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ titulo: string; precioInicial: number; stock: number }>({ titulo: '', precioInicial: 0, stock: 1 });
 
-  // Métricas simples (cliente)
-  const metrics = useMemo(() => {
-    const total = camisetas.length;
-    const subastas = camisetas.filter(c => c.esSubasta).length;
-    const venta = total - subastas;
-    const stockTotal = camisetas.reduce((sum, c) => sum + (c.stock || 0), 0);
-    const valorPublicado = camisetas.reduce((sum, c) => sum + (c.precioInicial * (c.stock || 0)), 0);
-    return { total, subastas, venta, stockTotal, valorPublicado };
-  }, [camisetas]);
+  // ✅ MOVER isAdmin aquí para que sea reactivo
+  const isAdmin = useMemo(() => {
+    const result = usuario?.rol === 'administrador';
+    console.log('🔍 isAdmin calculado:', result, '| Usuario:', usuario?.email, '| Rol:', usuario?.rol);
+    return result;
+  }, [usuario]);
 
   // Form publicación rápida
   const [creating, setCreating] = useState(false);
@@ -39,6 +37,7 @@ export const MyProductsPage: React.FC = () => {
     precioInicial: number;
     stock: number;
     esSubasta: boolean;
+    fechaFinSubasta?: string;
   }>({
     titulo: '',
     equipo: '',
@@ -49,16 +48,22 @@ export const MyProductsPage: React.FC = () => {
     precioInicial: 0,
     stock: 1,
     esSubasta: false,
+    fechaFinSubasta: undefined,
   });
 
   const canCreate = useMemo(() => {
-    return (
+    const basicValidation = 
       form.titulo.trim().length >= 2 &&
       form.equipo.trim().length >= 2 &&
       form.temporada.trim().length >= 2 &&
       Number(form.precioInicial) > 0 &&
-      form.stock > 0
-    );
+      form.stock > 0;
+    
+    if (form.esSubasta) {
+      return basicValidation && !!form.fechaFinSubasta;
+    }
+    
+    return basicValidation;
   }, [form]);
 
   const fetchMine = useCallback(async () => {
@@ -66,15 +71,32 @@ export const MyProductsPage: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-  const { data } = await camisetaService.getAll({ usuarioId: usuario.id, limit: 100 });
+      
+      console.log('📊 fetchMine - isAdmin:', isAdmin, '| Usuario:', usuario.email);
+      
+      // ✅ Si es admin, cargar TODAS las camisetas para estadísticas
+      if (isAdmin) {
+        console.log('👑 Cargando TODAS las camisetas (admin)...');
+        const { data: todas } = await camisetaService.getAll({ limit: 1000 });
+        console.log('✅ Camisetas totales cargadas:', todas.length);
+        setTodasLasCamisetas(todas);
+      } else {
+        console.log('👤 Usuario normal, NO cargando todas las camisetas');
+        setTodasLasCamisetas([]); // ✅ LIMPIAR si no es admin
+      }
+      
+      // Cargar publicaciones del usuario actual
+      console.log('📦 Cargando mis publicaciones para usuario:', usuario.id);
+      const { data } = await camisetaService.getAll({ usuarioId: usuario.id, limit: 100 });
+      console.log('✅ Mis publicaciones cargadas:', data.length);
       setCamisetas(data);
     } catch (e) {
-      console.error('Error cargando mis camisetas', e);
+      console.error('❌ Error cargando mis camisetas', e);
       setError('No se pudo cargar tus publicaciones');
     } finally {
       setLoading(false);
     }
-  }, [usuario]);
+  }, [usuario, isAdmin]);
 
   useEffect(() => {
     if (!isAuthenticated || !usuario) {
@@ -88,13 +110,20 @@ export const MyProductsPage: React.FC = () => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
+    
     if (!canCreate) {
       setFormError('Completa todos los campos obligatorios correctamente.');
       return;
     }
+    
+    if (form.esSubasta && !form.fechaFinSubasta) {
+      setFormError('Debes seleccionar una fecha de fin para la subasta.');
+      return;
+    }
+    
     try {
       setCreating(true);
-      const payload: Partial<Camiseta> & { precioInicial: number; esSubasta?: boolean; stock?: number; categoriaId?: number } = {
+      const payload: any = {
         titulo: form.titulo.trim(),
         descripcion: `${form.equipo} ${form.temporada}`,
         equipo: form.equipo.trim(),
@@ -106,14 +135,32 @@ export const MyProductsPage: React.FC = () => {
         esSubasta: form.esSubasta,
         stock: form.stock,
       };
+      
+      if (form.esSubasta && form.fechaFinSubasta) {
+        payload.fechaFinSubasta = form.fechaFinSubasta;
+      }
+      
+      console.log('📤 Enviando payload:', payload);
+      
       await camisetaService.publicar(payload);
       setFormSuccess('✅ Publicación creada con éxito');
-      setTimeout(() => setFormSuccess(''), 2000);
-      setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false });
+      setTimeout(() => setFormSuccess(''), 3000);
+      setForm({ 
+        titulo: '', 
+        equipo: '', 
+        temporada: '', 
+        talle: 'M' as Talle, 
+        condicion: 'Nueva' as CondicionCamiseta, 
+        imagen: '', 
+        precioInicial: 0, 
+        stock: 1, 
+        esSubasta: false,
+        fechaFinSubasta: undefined
+      });
       await fetchMine();
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error creando publicación', e);
-      setFormError('No se pudo crear la publicación');
+      setFormError(e.response?.data?.message || 'No se pudo crear la publicación');
     } finally {
       setCreating(false);
     }
@@ -156,54 +203,126 @@ export const MyProductsPage: React.FC = () => {
     try {
       await camisetaService.delete(id);
       setCamisetas(prev => prev.filter(c => c.id !== id));
+      if (isAdmin) {
+        setTodasLasCamisetas(prev => prev.filter(c => c.id !== id));
+      }
     } catch (e) {
       console.error('Error eliminando publicación', e);
       alert('No se pudo eliminar la publicación');
     }
   };
 
+  // ✅ ESTADÍSTICAS GLOBALES (solo para admin)
+  const estadisticasGlobales = useMemo(() => {
+    console.log('📊 Calculando estadísticas globales - isAdmin:', isAdmin, '| Total camisetas:', todasLasCamisetas.length);
+    
+    if (!isAdmin) {
+      console.log('❌ NO es admin, retornando null');
+      return null;
+    }
+    
+    const total = todasLasCamisetas.length;
+    const disponibles = todasLasCamisetas.filter(c => c.estado === 'disponible').length;
+    const enSubasta = todasLasCamisetas.filter(c => c.esSubasta).length;
+    const vendidas = todasLasCamisetas.filter(c => c.estado === 'vendida').length;
+    const stockTotal = todasLasCamisetas.reduce((sum, c) => sum + c.stock, 0);
+    
+    const stats = { total, disponibles, enSubasta, vendidas, stockTotal };
+    console.log('✅ Estadísticas globales calculadas:', stats);
+    return stats;
+  }, [isAdmin, todasLasCamisetas]);
+
+  // ✅ ESTADÍSTICAS DEL USUARIO (para usuarios normales)
+  const estadisticasUsuario = useMemo(() => {
+    console.log('📊 Calculando estadísticas usuario - Mis publicaciones:', camisetas.length);
+    
+    const misPublicaciones = camisetas.length;
+    const misSubastas = camisetas.filter(c => c.esSubasta).length;
+    const misVendidas = camisetas.filter(c => c.estado === 'vendida').length;
+    
+    const stats = { misPublicaciones, misSubastas, misVendidas };
+    console.log('✅ Estadísticas usuario calculadas:', stats);
+    return stats;
+  }, [camisetas]);
+
+  console.log('🎨 RENDER - isAdmin:', isAdmin, '| estadisticasGlobales:', estadisticasGlobales ? 'SI' : 'NO');
+
   return (
     <div className="container mt-4 mb-5">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="mb-0">👕 Mis Publicaciones</h1>
+        <h1 className="mb-0">
+          {isAdmin ? '👑 Gestión de Camisetas (Admin)' : '👕 Mis Publicaciones'}
+        </h1>
         <button className="btn btn-outline-secondary" onClick={fetchMine} type="button">🔄 Actualizar</button>
       </div>
 
-      {/* Métricas */}
-      <div className="row g-3 mb-4">
-        <div className="col-6 col-lg-3">
-          <div className="card text-center h-100">
-            <div className="card-body">
-              <div className="text-muted small">Publicaciones</div>
-              <div className="fs-4 fw-bold">{metrics.total}</div>
+      {/* ✅ ESTADÍSTICAS GLOBALES (solo admin) */}
+      {isAdmin && estadisticasGlobales && (
+        <div className="row g-3 mb-4">
+          <div className="col-md-3">
+            <div className="card text-white bg-primary">
+              <div className="card-body">
+                <h6 className="card-title">Total Camisetas</h6>
+                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.total}</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-white bg-success">
+              <div className="card-body">
+                <h6 className="card-title">Disponibles</h6>
+                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.disponibles}</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-white bg-warning">
+              <div className="card-body">
+                <h6 className="card-title">En Subasta</h6>
+                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.enSubasta}</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-3">
+            <div className="card text-white bg-info">
+              <div className="card-body">
+                <h6 className="card-title">Stock Total</h6>
+                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.stockTotal}</p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card text-center h-100">
-            <div className="card-body">
-              <div className="text-muted small">En subasta</div>
-              <div className="fs-4 fw-bold text-danger">{metrics.subastas}</div>
+      )}
+
+      {/* ✅ ESTADÍSTICAS USUARIO (solo usuarios normales) */}
+      {!isAdmin && (
+        <div className="row g-3 mb-4">
+          <div className="col-md-4">
+            <div className="card border-primary">
+              <div className="card-body text-center">
+                <h6 className="text-muted">Mis Publicaciones</h6>
+                <p className="fs-3 fw-bold text-primary">{estadisticasUsuario.misPublicaciones}</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card border-warning">
+              <div className="card-body text-center">
+                <h6 className="text-muted">En Subasta</h6>
+                <p className="fs-3 fw-bold text-warning">{estadisticasUsuario.misSubastas}</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="card border-success">
+              <div className="card-body text-center">
+                <h6 className="text-muted">Vendidas</h6>
+                <p className="fs-3 fw-bold text-success">{estadisticasUsuario.misVendidas}</p>
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-6 col-lg-3">
-          <div className="card text-center h-100">
-            <div className="card-body">
-              <div className="text-muted small">Venta directa</div>
-              <div className="fs-4 fw-bold text-success">{metrics.venta}</div>
-            </div>
-          </div>
-        </div>
-        <div className="col-6 col-lg-3">
-          <div className="card text-center h-100">
-            <div className="card-body">
-              <div className="text-muted small">Valor publicado</div>
-              <div className="fs-4 fw-bold">${metrics.valorPublicado.toLocaleString()}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Form publicación rápida */}
       <div className="card mb-4">
@@ -224,35 +343,35 @@ export const MyProductsPage: React.FC = () => {
           <form onSubmit={crearPublicacion}>
             <div className="row g-3">
               <div className="col-12 col-md-6">
-                <label className="form-label">Título</label>
+                <label className="form-label">Título *</label>
                 <input className="form-control" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} required />
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Equipo</label>
+                <label className="form-label">Equipo *</label>
                 <input className="form-control" value={form.equipo} onChange={e => setForm(f => ({ ...f, equipo: e.target.value }))} required />
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Temporada</label>
+                <label className="form-label">Temporada *</label>
                 <input className="form-control" value={form.temporada} onChange={e => setForm(f => ({ ...f, temporada: e.target.value }))} required />
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Talle</label>
+                <label className="form-label">Talle *</label>
                 <select className="form-select" value={form.talle} onChange={e => setForm(f => ({ ...f, talle: e.target.value as Talle }))}>
                   {['XS','S','M','L','XL','XXL'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Condición</label>
+                <label className="form-label">Condición *</label>
                 <select className="form-select" value={form.condicion} onChange={e => setForm(f => ({ ...f, condicion: e.target.value as CondicionCamiseta }))}>
                   {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Precio Inicial ($)</label>
+                <label className="form-label">Precio Inicial ($) *</label>
                 <input type="number" min={1} className="form-control" value={form.precioInicial} onChange={e => setForm(f => ({ ...f, precioInicial: Number(e.target.value) }))} required />
               </div>
               <div className="col-6 col-md-3">
-                <label className="form-label">Stock</label>
+                <label className="form-label">Stock *</label>
                 <input type="number" min={1} className="form-control" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))} required />
               </div>
               <div className="col-12 col-md-6">
@@ -261,16 +380,61 @@ export const MyProductsPage: React.FC = () => {
               </div>
               <div className="col-12">
                 <div className="form-check">
-                  <input id="esSub" className="form-check-input" type="checkbox" checked={form.esSubasta} onChange={e => setForm(f => ({ ...f, esSubasta: e.target.checked }))} />
+                  <input 
+                    id="esSub" 
+                    className="form-check-input" 
+                    type="checkbox" 
+                    checked={form.esSubasta} 
+                    onChange={e => setForm(f => ({ 
+                      ...f, 
+                      esSubasta: e.target.checked,
+                      fechaFinSubasta: undefined
+                    }))} 
+                  />
                   <label htmlFor="esSub" className="form-check-label">Publicar como subasta</label>
                 </div>
               </div>
+              
+              {/* ✅ AGREGAR: Campo de fecha cuando es subasta */}
+              {form.esSubasta && (
+                <div className="col-12">
+                  <label className="form-label">Fecha de fin de subasta *</label>
+                  <input 
+                    type="datetime-local" 
+                    className="form-control" 
+                    value={form.fechaFinSubasta || ''} 
+                    onChange={e => setForm(f => ({ ...f, fechaFinSubasta: e.target.value }))}
+                    min={new Date().toISOString().slice(0, 16)}
+                    required
+                  />
+                  <small className="text-muted">
+                    La subasta finalizará automáticamente en esta fecha
+                  </small>
+                </div>
+              )}
             </div>
             <div className="mt-3 d-flex gap-2">
               <button className="btn btn-primary" type="submit" disabled={!canCreate || creating}>
                 {creating ? (<><span className="spinner-border spinner-border-sm me-2"></span> Publicando...</>) : 'Publicar'}
               </button>
-              <button className="btn btn-outline-secondary" type="button" onClick={() => setForm({ titulo: '', equipo: '', temporada: '', talle: 'M' as Talle, condicion: 'Nueva' as CondicionCamiseta, imagen: '', precioInicial: 0, stock: 1, esSubasta: false })}>Limpiar</button>
+              <button 
+                className="btn btn-outline-secondary" 
+                type="button" 
+                onClick={() => setForm({ 
+                  titulo: '', 
+                  equipo: '', 
+                  temporada: '', 
+                  talle: 'M' as Talle, 
+                  condicion: 'Nueva' as CondicionCamiseta, 
+                  imagen: '', 
+                  precioInicial: 0, 
+                  stock: 1, 
+                  esSubasta: false,
+                  fechaFinSubasta: undefined 
+                })}
+              >
+                Limpiar
+              </button>
             </div>
           </form>
         </div>
@@ -284,7 +448,9 @@ export const MyProductsPage: React.FC = () => {
       ) : error ? (
         <div className="alert alert-danger">{error}</div>
       ) : camisetas.length === 0 ? (
-        <div className="alert alert-info">Aún no tienes publicaciones</div>
+        <div className="alert alert-info">
+          {isAdmin ? 'No hay camisetas en el sistema' : 'Aún no tienes publicaciones'}
+        </div>
       ) : (
         <div className="row">
           {camisetas.map((c) => (
@@ -299,7 +465,7 @@ export const MyProductsPage: React.FC = () => {
                     </div>
                   )}
                   <span className={`position-absolute top-0 end-0 m-2 badge ${c.esSubasta ? 'bg-danger' : 'bg-success'}`}>
-                    {c.esSubasta ? 'Subasta' : 'Venta'}
+                    {c.esSubasta ? '🔨 Subasta' : '💰 Venta'}
                   </span>
                 </div>
                 <div className="card-body d-flex flex-column">
@@ -346,7 +512,7 @@ export const MyProductsPage: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <button className="btn btn-outline-primary" onClick={() => navigate(`/product/${c.id}`)} type="button">Ver</button>
+                        <button className="btn btn-outline-primary" onClick={() => navigate(`/product/${c.id}`)} type="button">Ver Detalle</button>
                         <div className="d-flex gap-2">
                           <button className="btn btn-outline-warning w-50" type="button" onClick={() => startEdit(c)}>Editar</button>
                           <button className="btn btn-outline-danger w-50" type="button" onClick={() => deleteItem(c.id)}>Eliminar</button>

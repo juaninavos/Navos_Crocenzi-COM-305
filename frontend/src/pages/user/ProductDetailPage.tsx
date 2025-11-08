@@ -31,10 +31,10 @@ export const ProductDetailPage: React.FC = () => {
   }, [id]);
 
   const handleAddToCart = () => {
-  if (!camiseta) return;
-  addToCart(camiseta, 1);
-  setSuccess(`✅ ${camiseta.titulo} agregado al carrito`);
-  setTimeout(() => setSuccess(''), 2000);
+    if (!camiseta) return;
+    addToCart(camiseta, 1);
+    setSuccess(`✅ ${camiseta.titulo} agregado al carrito`);
+    setTimeout(() => setSuccess(''), 2000);
   };
 
   if (loading) {
@@ -58,6 +58,11 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
+  // ✅ CALCULAR PRECIO FINAL
+  const precioFinal = camiseta.tieneDescuento && camiseta.precioConDescuento
+    ? camiseta.precioConDescuento
+    : camiseta.precioInicial;
+
   return (
     <div className="container mt-4 mb-5">
       {success && (
@@ -66,6 +71,39 @@ export const ProductDetailPage: React.FC = () => {
           <button type="button" className="btn-close" onClick={() => setSuccess('')} aria-label="Close"></button>
         </div>
       )}
+
+      {/* ✅ MOSTRAR BANNER DE DESCUENTOS ACUMULADOS */}
+      {camiseta.tieneDescuento && camiseta.descuentos && camiseta.descuentos.length > 0 && (
+        <div className="alert alert-success mb-3">
+          <div className="d-flex align-items-start">
+            <span className="fs-4 me-2">🏷️</span>
+            <div className="flex-grow-1">
+              <strong className="d-block mb-2">
+                ¡{camiseta.porcentajeTotal?.toFixed(0)}% de descuento acumulado!
+              </strong>
+              {camiseta.descuentos.length === 1 ? (
+                <div>
+                  <span className="badge bg-success me-2">{camiseta.descuentos[0].porcentaje}%</span>
+                  {camiseta.descuentos[0].descripcion}
+                </div>
+              ) : (
+                <>
+                  <small className="d-block mb-2">Descuentos aplicados:</small>
+                  <ul className="mb-0 small">
+                    {camiseta.descuentos.map((desc, idx) => (
+                      <li key={idx}>
+                        <span className="badge bg-success me-2">{desc.porcentaje}%</span>
+                        {desc.descripcion}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="d-flex align-items-center mb-3">
         <button className="btn btn-outline-secondary me-3" onClick={() => navigate(-1)} type="button">← Volver</button>
         <h1 className="mb-0">{camiseta.titulo}</h1>
@@ -87,10 +125,33 @@ export const ProductDetailPage: React.FC = () => {
         <div className="col-12 col-lg-6">
           <div className="card mb-3">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="text-muted">Precio</span>
-                <span className="fs-3 fw-bold text-success">${camiseta.precioInicial.toLocaleString()}</span>
+              {/* ✅ MOSTRAR PRECIO CON/SIN DESCUENTO */}
+              <div className="mb-3">
+                <span className="text-muted d-block mb-1">Precio</span>
+                {camiseta.tieneDescuento && camiseta.precioConDescuento ? (
+                  <div>
+                    <div className="d-flex align-items-baseline gap-2">
+                      <span className="text-decoration-line-through text-muted fs-5">
+                        ${camiseta.precioInicial.toLocaleString()}
+                      </span>
+                      <span className="fs-2 fw-bold text-success">
+                        ${precioFinal.toLocaleString()}
+                      </span>
+                      <span className="badge bg-success fs-6">
+                        -{camiseta.porcentajeTotal?.toFixed(0)}% OFF
+                      </span>
+                    </div>
+                    <small className="text-success d-block mt-1">
+                      Ahorrás ${(camiseta.precioInicial - precioFinal).toLocaleString()}
+                    </small>
+                  </div>
+                ) : (
+                  <span className="fs-2 fw-bold text-success">
+                    ${precioFinal.toLocaleString()}
+                  </span>
+                )}
               </div>
+
               <div className="mb-2">
                 {camiseta.esSubasta ? (
                   <span className="badge bg-danger">En subasta</span>
@@ -136,12 +197,6 @@ export const ProductDetailPage: React.FC = () => {
           <div className="card-body"><p className="mb-0 text-muted">{camiseta.descripcion}</p></div>
         </div>
       )}
-
-      {/* Placeholder de reseñas/comentarios */}
-      <div className="card mt-4">
-        <div className="card-header bg-light"><h5 className="mb-0">Reseñas</h5></div>
-        <div className="card-body text-muted">Próximamente: reseñas y comentarios de compradores.</div>
-      </div>
     </div>
   );
 };

@@ -3,13 +3,105 @@ import { MikroORM } from '@mikro-orm/core';
 import { Camiseta, Talle, CondicionCamiseta, EstadoCamiseta } from '../entities/Camiseta';
 import { Usuario, UsuarioRol } from '../entities/Usuario';
 import { Categoria } from '../entities/Categoria';
-import '../types/auth'; // req.user tipado
+import { Descuento, TipoAplicacionDescuento } from '../entities/Descuento';
+import '../types/auth';
+import { Subasta } from '../entities/Subasta'; // ✅ AGREGAR IMPORT
 
 import { z } from 'zod';
 
 export class CamisetaController {
 
-  // ✅ Schemas centralizados
+  // ✅ FUNCIÓN AUXILIAR: Calcular TODOS los descuentos aplicables a una camiseta
+  private static async calcularDescuentoAplicable(em: any, camiseta: Camiseta): Promise<{
+    tieneDescuento: boolean;
+    descuentos?: Array<{
+      id: number;
+      codigo: string;
+      porcentaje: number;
+      descripcion: string;
+    }>;
+    precioOriginal: number;
+    precioConDescuento?: number;
+    porcentajeTotal?: number;
+  }> {
+    const ahora = new Date();
+    
+    // Buscar descuentos activos y vigentes
+    const descuentos = await em.find(Descuento, {
+      activo: true,
+      fechaInicio: { $lte: ahora },
+      fechaFin: { $gte: ahora }
+    }, {
+      populate: ['camisetasEspecificas']
+    });
+
+    // Encontrar TODOS los descuentos que aplican a esta camiseta
+    const descuentosAplicables: Array<{
+      id: number;
+      codigo: string;
+      porcentaje: number;
+      descripcion: string;
+    }> = [];
+
+    for (const descuento of descuentos) {
+      let aplica = false;
+
+      switch (descuento.tipoAplicacion) {
+        case TipoAplicacionDescuento.TODAS:
+          aplica = true;
+          break;
+
+        case TipoAplicacionDescuento.CATEGORIA:
+          if (camiseta.categoria && camiseta.categoria.id === descuento.categoriaId) {
+            aplica = true;
+          }
+          break;
+
+        case TipoAplicacionDescuento.ESPECIFICAS:
+          const camisetasEspecificas = descuento.camisetasEspecificas.getItems();
+          aplica = camisetasEspecificas.some((c: Camiseta) => c.id === camiseta.id);
+          break;
+      }
+
+      if (aplica) {
+        descuentosAplicables.push({
+          id: descuento.id,
+          codigo: descuento.codigo,
+          porcentaje: descuento.porcentaje,
+          descripcion: descuento.descripcion
+        });
+      }
+    }
+
+    // Si no hay descuentos, retornar sin descuento
+    if (descuentosAplicables.length === 0) {
+      return {
+        tieneDescuento: false,
+        precioOriginal: camiseta.precioInicial
+      };
+    }
+
+    // ✅ CALCULAR DESCUENTO ACUMULATIVO
+    // Fórmula: precio * (1 - desc1/100) * (1 - desc2/100) * ...
+    let precioFinal = camiseta.precioInicial;
+    let porcentajeTotal = 0;
+
+    for (const desc of descuentosAplicables) {
+      precioFinal = precioFinal * (1 - desc.porcentaje / 100);
+    }
+
+    // Calcular el porcentaje total equivalente
+    porcentajeTotal = ((camiseta.precioInicial - precioFinal) / camiseta.precioInicial) * 100;
+
+    return {
+      tieneDescuento: true,
+      descuentos: descuentosAplicables,
+      precioOriginal: camiseta.precioInicial,
+      precioConDescuento: Math.round(precioFinal * 100) / 100,
+      porcentajeTotal: Math.round(porcentajeTotal * 100) / 100
+    };
+  }
+
   private static TalleEnum = z.nativeEnum(Talle);
   private static CondicionEnum = z.nativeEnum(CondicionCamiseta);
   private static EstadoEnum = z.nativeEnum(EstadoCamiseta);
@@ -30,8 +122,7 @@ export class CamisetaController {
           if (val === 'true') return true;
           if (val === 'false') return false;
           return val;
-        }, z.boolean().optional())
-        ,
+        }, z.boolean().optional()),
         precioMin: z.preprocess((val) => {
           if (val === '' || val == null) return undefined;
           const n = Number(val);
@@ -41,8 +132,7 @@ export class CamisetaController {
           if (val === '' || val == null) return undefined;
           const n = Number(val);
           return Number.isNaN(n) ? undefined : n;
-        }, z.number().min(0).optional())
-        ,
+        }, z.number().min(0).optional()),
         page: z.preprocess((v) => {
           const n = Number(v);
           return Number.isNaN(n) ? undefined : Math.max(1, Math.trunc(n));
@@ -70,30 +160,19 @@ export class CamisetaController {
 
       const parsed = parseResult.data;
 
-      // Construir where dinámico para incluir rango de precio si está presente
       const where: any = { estado: { $ne: EstadoCamiseta.INACTIVA } };
       if (parsed.equipo) where.equipo = parsed.equipo;
       if (parsed.temporada) where.temporada = parsed.temporada;
       if (parsed.talle) where.talle = parsed.talle;
       if (parsed.condicion) where.condicion = parsed.condicion;
       if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
-  if (typeof parsed.vendedorId === 'number') where.vendedor = { id: parsed.vendedorId };
+      if (typeof parsed.vendedorId === 'number') where.vendedor = { id: parsed.vendedorId };
 
-      // Rango de precio
       const priceCond: any = {};
       if (typeof parsed.precioMin === 'number') priceCond.$gte = parsed.precioMin;
       if (typeof parsed.precioMax === 'number') priceCond.$lte = parsed.precioMax;
       if (Object.keys(priceCond).length > 0) where.precioInicial = priceCond;
 
-      // DEBUG: log parsed filtros and where to help tracing issues with price filters
-      console.log('Parsed filtros:', parsed);
-      try {
-        console.log('Constructed where for query:', JSON.stringify(where));
-      } catch (err) {
-        console.log('Constructed where (non-serializable):', where);
-      }
-
-      // Paginación y ordenamiento
       const page = parsed.page ?? 1;
       const limit = parsed.limit ?? 9;
       const offset = (page - 1) * limit;
@@ -119,10 +198,21 @@ export class CamisetaController {
         em.count(Camiseta, where)
       ]);
 
+      // ✅ AGREGAR DESCUENTOS A CADA CAMISETA
+      const camisetasConDescuentos = await Promise.all(
+        camisetasList.map(async (camiseta) => {
+          const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
+          return {
+            ...camiseta,
+            ...infoDescuento
+          };
+        })
+      );
+
       res.json({
         success: true,
         message: 'Operación getAll realizada correctamente.',
-        data: camisetasList,
+        data: camisetasConDescuentos,
         count: total,
         page,
         limit
@@ -153,10 +243,17 @@ export class CamisetaController {
           code: 'NOT_FOUND'
         });
       }
+
+      // ✅ AGREGAR DESCUENTO
+      const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
+
       res.json({
         success: true,
         message: 'Operación getOne realizada correctamente.',
-        data: camiseta
+        data: {
+          ...camiseta,
+          ...infoDescuento
+        }
       });
     } catch (error) {
       console.error('Error en getOne camiseta:', error);
@@ -172,7 +269,6 @@ export class CamisetaController {
   // POST /api/camisetas
   static async create(req: Request, res: Response) {
     try {
-      // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -332,7 +428,6 @@ export class CamisetaController {
   // POST /api/camisetas/publicar
   static async publicarParaVenta(req: Request, res: Response) {
     try {
-      // ✅ VALIDACIÓN AGREGADA
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -362,14 +457,16 @@ export class CamisetaController {
         esSubasta: z.boolean().optional(),
         stock: z.coerce.number().int().min(1).optional(),
         categoriaId: z.coerce.number().int().optional(),
-        fechaFinSubasta: z.coerce.date().optional().refine(
-          (date) => !date || date > new Date(),
-          { message: 'La fecha de fin de subasta debe ser futura' }
-        )
+        fechaFinSubasta: z.string().optional().transform((val) => val ? new Date(val) : undefined)
       });
 
       const parseResult = publicarSchema.safeParse(req.body);
+      
+      console.log('📊 Datos recibidos:', req.body);
+      console.log('📊 Resultado de validación:', parseResult);
+
       if (!parseResult.success) {
+        console.error('❌ Error de validación:', parseResult.error.issues);
         return res.status(400).json({
           success: false,
           message: 'No se pudo publicar camiseta: datos inválidos.',
@@ -381,16 +478,40 @@ export class CamisetaController {
 
       const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, esSubasta, stock, categoriaId, fechaFinSubasta } = parseResult.data;
 
+      // ✅ VALIDAR: Si es subasta, DEBE tener fecha fin
+      if (esSubasta && !fechaFinSubasta) {
+        console.error('❌ Subasta sin fecha fin');
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo publicar subasta: se requiere fecha de fin.',
+          error: 'Fecha de fin requerida',
+          code: 'MISSING_FECHA_FIN'
+        });
+      }
+
+      // ✅ VALIDAR: La fecha debe ser futura
+      if (esSubasta && fechaFinSubasta && fechaFinSubasta <= new Date()) {
+        console.error('❌ Fecha de fin en el pasado');
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo publicar subasta: la fecha de fin debe ser futura.',
+          error: 'Fecha inválida',
+          code: 'INVALID_DATE'
+        });
+      }
+
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
 
       const vendedor = await em.findOne(Usuario, { id: req.user.id, activo: true });
-      if (!vendedor) return res.status(404).json({
-        success: false,
-        message: 'No se pudo publicar camiseta: vendedor no encontrado o inactivo.',
-        error: 'Vendedor no encontrado o inactivo',
-        code: 'NOT_FOUND'
-      });
+      if (!vendedor) {
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo publicar camiseta: vendedor no encontrado o inactivo.',
+          error: 'Vendedor no encontrado o inactivo',
+          code: 'NOT_FOUND'
+        });
+      }
 
       const nuevaCamiseta = new Camiseta(
         titulo,
@@ -416,23 +537,57 @@ export class CamisetaController {
       em.persist(nuevaCamiseta);
       await em.flush();
 
-      const camisetaCompleta = await em.findOneOrFail(Camiseta, { id: nuevaCamiseta.id }, { populate: ['categoria', 'vendedor'] });
+      console.log('✅ Camiseta creada:', nuevaCamiseta.id, 'esSubasta:', esSubasta);
+
+      // ✅ SI ES SUBASTA, CREAR LA ENTIDAD SUBASTA
+      let subastaCreada = null;
+      if (esSubasta && fechaFinSubasta) {
+        console.log('🔨 Creando subasta con fechaFin:', fechaFinSubasta);
+        
+        const fechaInicio = new Date();
+        const nuevaSubasta = new Subasta(
+          fechaInicio,
+          fechaFinSubasta,
+          precioInicial,
+          nuevaCamiseta
+        );
+
+        em.persist(nuevaSubasta);
+        await em.flush();
+
+        // Popular la subasta para retornarla completa
+        subastaCreada = await em.findOne(Subasta, { id: nuevaSubasta.id }, {
+          populate: ['camiseta', 'camiseta.vendedor', 'camiseta.categoria']
+        });
+
+        console.log('✅ Subasta creada automáticamente:', subastaCreada?.id);
+      }
+
+      const camisetaCompleta = await em.findOneOrFail(Camiseta, { id: nuevaCamiseta.id }, { 
+        populate: ['categoria', 'vendedor'] 
+      });
 
       res.status(201).json({
         success: true,
         message: `Operación publicarParaVenta realizada correctamente.`,
         data: camisetaCompleta,
+        subasta: subastaCreada || undefined,
         detalles: {
           tipo_venta: esSubasta ? 'subasta' : 'precio_fijo',
           precio_inicial: precioInicial,
           stock: nuevaCamiseta.stock,
           estado: nuevaCamiseta.estado,
-          fecha_fin_subasta: fechaFinSubasta || null
+          fecha_fin_subasta: fechaFinSubasta || null,
+          subasta_id: subastaCreada?.id || null
         }
       });
     } catch (error) {
-      console.error('Error en publicarParaVenta:', error);
-      res.status(500).json({ success: false, message: 'Error al publicar camiseta' });
+      console.error('❌ Error en publicarParaVenta:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Error al publicar camiseta',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
     }
   }
 
