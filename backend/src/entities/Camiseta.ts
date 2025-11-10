@@ -2,7 +2,7 @@ import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } 
 import { Usuario } from './Usuario';  
 import { Categoria } from './Categoria';  
 import { Subasta } from './Subasta'; 
-import { Compra } from './Compra';  
+import { CompraItem } from './CompraItem'; 
 
 export enum Talle {
   XS = 'XS',
@@ -80,8 +80,8 @@ export class Camiseta {
   @OneToMany('Subasta', 'camiseta')
   subastas = new Collection<Subasta>(this);
 
-  @OneToMany('Compra', 'camiseta')  // ✅ AGREGAR: Relación con compras
-  compras = new Collection<Compra>(this);
+  @OneToMany(() => CompraItem, item => item.camiseta)
+  compraItems = new Collection<CompraItem>(this);
 
   constructor(
     titulo: string,

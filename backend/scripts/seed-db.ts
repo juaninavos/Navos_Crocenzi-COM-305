@@ -73,11 +73,18 @@ async function seedDatabase() {
 
     // 3. Crear métodos de pago
     const efectivo = new MetodoPago('Efectivo', 'Pago en efectivo contra entrega');
-    const tarjeta = new MetodoPago('Tarjeta de Crédito', 'Pago con tarjeta de crédito/débito');
-    const transferencia = new MetodoPago('Transferencia Bancaria', 'Transferencia bancaria');
-    const mercadoPago = new MetodoPago('Mercado Pago', 'Pago a través de Mercado Pago');
+    efectivo.activo = true; // ✅ Asegurar que esté activo
+    
+    const transferencia = new MetodoPago('Transferencia Bancaria', 'Transferencia bancaria - CBU: 0000003100010000000001 - Alias: TIENDA.RETRO');
+    transferencia.activo = true;
+    
+    const tarjeta = new MetodoPago('Tarjeta de Crédito', 'Pago con tarjeta (próximamente)');
+    tarjeta.activo = false; // ✅ Desactivar por ahora
+    
+    const mercadoPago = new MetodoPago('Mercado Pago', 'Pago a través de Mercado Pago (próximamente)');
+    mercadoPago.activo = false; // ✅ Desactivar por ahora
 
-    em.persist([efectivo, tarjeta, transferencia, mercadoPago]);
+    em.persist([efectivo, transferencia, tarjeta, mercadoPago]);
 
     // 4. Crear descuentos
     const descuento1 = new Descuento(

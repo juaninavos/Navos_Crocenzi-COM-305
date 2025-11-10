@@ -82,29 +82,28 @@ CREATE TABLE IF NOT EXISTS metodo_pago (
     activo BOOLEAN DEFAULT true
 );
 
--- Tabla Compra
+-- ✅ Tabla Compra - SIN camiseta_id
 CREATE TABLE IF NOT EXISTS compra (
     id INT AUTO_INCREMENT PRIMARY KEY,
     total DECIMAL(10,2) NOT NULL,
-    cantidad INT DEFAULT 1,
     estado ENUM('pendiente', 'confirmada', 'pagada', 'enviada', 'entregada', 'cancelada') DEFAULT 'pendiente',
     fecha_compra TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     direccion_envio TEXT,
     notas TEXT,
-    camiseta_id INT NOT NULL,
     comprador_id INT NOT NULL,
     metodo_pago_id INT NOT NULL,
-    FOREIGN KEY (camiseta_id) REFERENCES camiseta(id),
     FOREIGN KEY (comprador_id) REFERENCES usuario(id),
     FOREIGN KEY (metodo_pago_id) REFERENCES metodo_pago(id)
 );
 
--- Tabla CompraItem
+-- ✅ Tabla CompraItem - CORREGIDA (agregados precio_unitario y subtotal)
 CREATE TABLE IF NOT EXISTS compra_item (
     id INT AUTO_INCREMENT PRIMARY KEY,
     compra_id INT NOT NULL,
     camiseta_id INT NOT NULL,
     cantidad INT NOT NULL DEFAULT 1,
+    precio_unitario DECIMAL(10,2) NOT NULL, -- ✅ NUEVO CAMPO
+    subtotal DECIMAL(10,2) NOT NULL, -- ✅ NUEVO CAMPO
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (compra_id) REFERENCES compra(id) ON DELETE CASCADE,
     FOREIGN KEY (camiseta_id) REFERENCES camiseta(id) ON DELETE RESTRICT,
@@ -136,7 +135,6 @@ CREATE TABLE IF NOT EXISTS descuento (
     fecha_fin DATETIME NOT NULL,
     activo BOOLEAN DEFAULT TRUE,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- ✅ NUEVAS COLUMNAS
     tipo_aplicacion ENUM('TODAS', 'CATEGORIA', 'ESPECIFICAS') NOT NULL DEFAULT 'TODAS',
     categoria_id INT NULL,
     CONSTRAINT chk_descuento_fechas CHECK (fecha_fin > fecha_inicio),
@@ -169,16 +167,15 @@ INSERT INTO categoria (nombre, descripcion) VALUES
 ('Clásicas', 'Camisetas retro y vintage');
 
 -- Métodos de pago iniciales
-INSERT INTO metodo_pago (nombre, descripcion) VALUES
-('Tarjeta de Crédito', 'Pago con tarjeta de crédito VISA, MasterCard, etc.'),
-('Tarjeta de Débito', 'Pago con tarjeta de débito'),
-('Transferencia Bancaria', 'Pago por transferencia bancaria'),
-('MercadoPago', 'Pago a través de MercadoPago'),
-('Efectivo', 'Pago en efectivo al momento de la entrega');
+INSERT INTO metodo_pago (nombre, descripcion, activo) VALUES
+('Efectivo', 'Pago en efectivo contra entrega', true),
+('Transferencia Bancaria', 'Transferencia bancaria - CBU: 0000003100010000000001 - Alias: TIENDA.RETRO', true),
+('Tarjeta de Crédito', 'Pago con tarjeta de crédito (próximamente)', false),
+('MercadoPago', 'Pago a través de MercadoPago (próximamente)', false);
 
 -- Usuario administrador inicial (contraseña: admin123)
 -- Nota: Este hash es de ejemplo, debes generar uno real con bcrypt
 INSERT INTO usuario (nombre, apellido, email, email_normalized, contrasena, direccion, telefono, rol) VALUES
-('Juan', 'Pérez', 'admin@tiendaretro.com', 'admin@tiendaretro.com', '$2b$10$YourRealHashHere', 'Dirección Admin', '1234567890', 'administrador');
+('Admin', 'Sistema', 'admin@tiendaretro.com', 'admin@tiendaretro.com', '$2a$10$YourRealHashHere', 'Av. Corrientes 1234, Buenos Aires', '+54 11 1234-5678', 'administrador');
 
-SELECT 'Base de datos inicializada correctamente' as mensaje;
+SELECT 'Base de datos inicializada correctamente con los cambios aplicados' as mensaje;

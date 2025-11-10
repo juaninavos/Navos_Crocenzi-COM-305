@@ -97,41 +97,31 @@ export const authService = {
 // 👕 Servicios de camisetas
 // =========================
 export const camisetaService = {
-  getAll: async (filtros: CamisetaFiltro = {}): Promise<{ data: Camiseta[]; count: number; page?: number; limit?: number }> => {
-    const normalized: Record<string, unknown> = { ...filtros };
+  async getAll(filtros?: CamisetaFiltro) {
+    const params: Record<string, any> = {};
     
-    if (typeof filtros.precioMin === 'string' && filtros.precioMin.trim() !== '') {
-      const n = Number(filtros.precioMin);
-      if (!Number.isNaN(n) && n >= 0) {
-        normalized.precioMin = n;
-      } else {
-        delete normalized.precioMin;
-      }
-    }
+    if (filtros?.equipo) params.equipo = filtros.equipo;
+    if (filtros?.temporada) params.temporada = filtros.temporada;
+    if (filtros?.talle) params.talle = filtros.talle;
+    if (filtros?.condicion) params.condicion = filtros.condicion;
+    if (filtros?.estado) params.estado = filtros.estado;
+    if (filtros?.precioMin) params.precioMin = filtros.precioMin;
+    if (filtros?.precioMax) params.precioMax = filtros.precioMax;
+    if (typeof filtros?.esSubasta === 'boolean') params.esSubasta = filtros.esSubasta;
+    if (filtros?.search) params.search = filtros.search;
+    if (filtros?.page) params.page = filtros.page;
+    if (filtros?.limit) params.limit = filtros.limit;
+    if (filtros?.sort) params.sort = filtros.sort;
+    if (filtros?.categoriaId) params.categoriaId = filtros.categoriaId;
     
-    if (typeof filtros.precioMax === 'string' && filtros.precioMax.trim() !== '') {
-      const n = Number(filtros.precioMax);
-      if (!Number.isNaN(n) && n >= 0) {
-        normalized.precioMax = n;
-      } else {
-        delete normalized.precioMax;
-      }
-    }
+    // ✅ AGREGAR ESTE MAPEO
+    if (filtros?.usuarioId) params.vendedorId = filtros.usuarioId;
+    if (filtros?.vendedorId) params.vendedorId = filtros.vendedorId;
 
-    const params = Object.fromEntries(
-      Object.entries(normalized).filter(([, v]) => v !== '' && v !== undefined && v !== null)
-    );
-
-    console.log('camisetaService.getAll -> params:', params);
-
+    console.log('camisetaService.getAll -> params:', params); // ✅ DEBUG
+    
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
-    
-    return { 
-      data: response.data.data, 
-      count: response.data.count ?? response.data.data.length, 
-      page: typeof params.page === 'number' ? params.page : undefined, 
-      limit: typeof params.limit === 'number' ? params.limit : undefined 
-    };
+    return response.data;
   },
 
   getById: async (id: number): Promise<Camiseta> => {

@@ -15,4 +15,12 @@ export class CompraItem {
 
   @Property()
   cantidad: number = 1;
+
+  // ✅ AGREGAR: Precio unitario al momento de la compra
+  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  precioUnitario!: number;
+
+  // ✅ AGREGAR: Subtotal calculado
+  @Property({ type: 'decimal', precision: 10, scale: 2 })
+  subtotal!: number;
 }

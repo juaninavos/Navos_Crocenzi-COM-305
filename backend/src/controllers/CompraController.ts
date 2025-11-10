@@ -4,13 +4,15 @@ import { Usuario } from '../entities/Usuario';
 import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';   // ✅ AGREGAR EstadoCamiseta
 import { Descuento } from '../entities/Descuento';
 import { MetodoPago } from '../entities/MetodoPago';
+import { CompraItem } from '../entities/CompraItem';
 
 export class CompraController {
   // GET /api/compras
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const compras = await orm.em.find(Compra, {}, { 
+      const em = orm.em.fork(); // ✅ AGREGAR
+      const compras = await em.find(Compra, {}, { // ✅ CAMBIAR orm.em por em
         populate: ['comprador', 'camiseta', 'camiseta.categoria', 'metodoPago']
       });
       res.json({
@@ -34,7 +36,8 @@ export class CompraController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const compra = await orm.em.findOne(Compra, { id: parseInt(id) }, { 
+      const em = orm.em.fork(); // ✅ AGREGAR
+      const compra = await em.findOne(Compra, { id: parseInt(id) }, { // ✅ CAMBIAR
         populate: ['comprador', 'camiseta', 'camiseta.categoria', 'metodoPago', 'pagos']
       });
       if (!compra) {
@@ -66,7 +69,11 @@ export class CompraController {
     try {
       const { usuarioId } = req.params;
       const orm = req.app.locals.orm;
+      const em = orm.em.fork();
       const id = parseInt(usuarioId);
+      
+      console.log('🔍 getByUsuario - usuarioId:', id);
+      
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
@@ -75,10 +82,25 @@ export class CompraController {
           code: 'INVALID_USER_ID'
         });
       }
-      const compras = await orm.em.find(Compra, 
+      
+      // ✅ CORREGIR: Popular items y sus camisetas
+      const compras = await em.find(Compra, 
         { comprador: { id } },
-        { populate: ['camiseta', 'camiseta.categoria', 'metodoPago'] }
+        { 
+          populate: [
+            'comprador',
+            'metodoPago',
+            'items',                    // ✅ AGREGAR: Items de la compra
+            'items.camiseta',           // ✅ AGREGAR: Camiseta de cada item
+            'items.camiseta.categoria', // ✅ AGREGAR: Categoría de cada camiseta
+            'camiseta'                  // ⚠️ MANTENER: Para compatibilidad con compras viejas
+          ],
+          orderBy: { fechaCompra: 'DESC' }
+        }
       );
+      
+      console.log('✅ Compras encontradas:', compras.length);
+      
       res.json({
         success: true,
         message: compras.length > 0 
@@ -88,7 +110,8 @@ export class CompraController {
         count: compras.length
       });
     } catch (error) {
-      console.error('Error en getByUsuario compras:', error);
+      console.error('❌ Error en getByUsuario compras:', error);
+      console.error('❌ Stack:', error instanceof Error ? error.stack : 'N/A');
       res.status(500).json({
         success: false,
         message: 'No se pudo obtener compras: error interno.',
@@ -98,10 +121,14 @@ export class CompraController {
     }
   }
 
-  // POST /api/compras - CORREGIDO
+  // POST /api/compras - CORREGIDO COMPLETO
   static async create(req: Request, res: Response) {
     try {
-      const { usuarioId, direccionEnvio, metodoPagoId, items } = req.body;
+      const { usuarioId, direccionEnvio, metodoPagoId, items, notas } = req.body;
+      
+      console.log('📦 Datos recibidos:', { usuarioId, direccionEnvio, metodoPagoId, items: items?.length, notas }); // ✅ DEBUG
+      
+      // ✅ Validaciones
       if (!usuarioId) {
         return res.status(400).json({
           success: false,
@@ -110,6 +137,7 @@ export class CompraController {
           code: 'USER_REQUIRED'
         });
       }
+      
       if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({
           success: false,
@@ -118,8 +146,21 @@ export class CompraController {
           code: 'CART_EMPTY'
         });
       }
+      
+      if (!direccionEnvio?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo crear la compra: la dirección de envío es obligatoria.',
+          error: 'Dirección de envío requerida',
+          code: 'ADDRESS_REQUIRED'
+        });
+      }
+      
       const orm = req.app.locals.orm;
-      const usuario = await orm.em.findOne(Usuario, { id: usuarioId });
+      const em = orm.em.fork();
+      
+      // ✅ Buscar usuario
+      const usuario = await em.findOne(Usuario, { id: usuarioId });
       if (!usuario) {
         return res.status(404).json({
           success: false,
@@ -128,49 +169,121 @@ export class CompraController {
           code: 'USER_NOT_FOUND'
         });
       }
-      let metodoPago = metodoPagoId ? await orm.em.findOne(MetodoPago, { id: metodoPagoId }) : await orm.em.findOne(MetodoPago, { id: 1 });
+      
+      // ✅ Buscar o crear método de pago
+      let metodoPago = metodoPagoId 
+        ? await em.findOne(MetodoPago, { id: metodoPagoId }) 
+        : await em.findOne(MetodoPago, { nombre: 'Efectivo' });
+      
       if (!metodoPago) {
-        metodoPago = new MetodoPago('Efectivo', 'Pago en efectivo');
-        await orm.em.persistAndFlush(metodoPago);
+        metodoPago = new MetodoPago('Efectivo', 'Pago en efectivo contra entrega');
+        await em.persistAndFlush(metodoPago);
+        console.log('✅ Método de pago "Efectivo" creado');
       }
-      const nuevaCompra = orm.em.create(Compra, {
+      
+      // ✅ Crear la compra SIN camiseta (usamos items para carrito)
+      const nuevaCompra = em.create(Compra, {
         total: 0,
         comprador: usuario,
         metodoPago,
-        direccionEnvio,
-        estado: EstadoCompra.PENDIENTE
+        direccionEnvio: direccionEnvio.trim(),
+        estado: EstadoCompra.PENDIENTE,
+        notas: notas?.trim() || undefined
+        // ❌ NO incluir camiseta aquí
       });
+      
       let total = 0;
+      const itemsValidos: any[] = [];
+      const errores: string[] = [];
+      
+      // ✅ Procesar cada item del carrito
       for (const item of items) {
         if (!item.camisetaId || !item.cantidad || item.cantidad <= 0) {
+          console.warn('⚠️ Item inválido:', item);
+          errores.push(`Item con datos incompletos`);
           continue;
         }
-        const camiseta = await orm.em.findOne(Camiseta, { id: item.camisetaId });
+        
+        const camiseta = await em.findOne(Camiseta, { id: item.camisetaId });
         if (!camiseta) {
+          console.warn('⚠️ Camiseta no encontrada:', item.camisetaId);
+          errores.push(`Camiseta ID ${item.camisetaId} no encontrada`);
           continue;
         }
+        
         if (camiseta.estado !== EstadoCamiseta.DISPONIBLE) {
+          console.warn('⚠️ Camiseta no disponible:', camiseta.titulo, camiseta.estado);
+          errores.push(`"${camiseta.titulo}" no está disponible (estado: ${camiseta.estado})`);
           continue;
         }
-        const subtotal = camiseta.precioInicial * item.cantidad;
+        
+        if (camiseta.stock < item.cantidad) {
+          console.warn('⚠️ Stock insuficiente:', camiseta.titulo, 'Stock:', camiseta.stock, 'Solicitado:', item.cantidad);
+          errores.push(`Stock insuficiente para "${camiseta.titulo}" (disponible: ${camiseta.stock})`);
+          continue;
+        }
+        
+        const precioUnitario = camiseta.precioInicial;
+        const subtotal = precioUnitario * item.cantidad;
         total += subtotal;
-        const compraItem = orm.em.create('CompraItem', {
+        
+        // ✅ Crear CompraItem con precio y subtotal
+        const compraItem = em.create(CompraItem, {
           compra: nuevaCompra,
           camiseta,
-          cantidad: item.cantidad
+          cantidad: item.cantidad,
+          precioUnitario,
+          subtotal
         });
+        
         nuevaCompra.items.add(compraItem);
-        await orm.em.persistAndFlush(compraItem);
+        itemsValidos.push({ camiseta: camiseta.titulo, cantidad: item.cantidad, subtotal });
+        
+        // ✅ Reducir stock
+        camiseta.stock -= item.cantidad;
+        if (camiseta.stock === 0) {
+          camiseta.estado = EstadoCamiseta.VENDIDA;
+          console.log(`📦 "${camiseta.titulo}" marcada como VENDIDA (stock: 0)`);
+        }
       }
+      
+      // ✅ Validar que al menos 1 item sea válido
+      if (nuevaCompra.items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No se pudo crear la compra: ningún producto válido en el carrito.',
+          error: 'Carrito sin productos válidos',
+          errores,
+          code: 'NO_VALID_ITEMS'
+        });
+      }
+      
       nuevaCompra.total = total;
-      await orm.em.persistAndFlush(nuevaCompra);
+      
+      await em.persistAndFlush(nuevaCompra);
+      
+      console.log('✅ Compra creada:', {
+        id: nuevaCompra.id,
+        total,
+        items: itemsValidos.length,
+        usuario: usuario.email
+      });
+      
       res.status(201).json({
         success: true,
-        message: 'Operación create realizada correctamente.',
-        data: nuevaCompra
+        message: `Compra creada exitosamente. Total: $${total.toLocaleString()}`,
+        data: {
+          id: nuevaCompra.id,
+          total: nuevaCompra.total,
+          estado: nuevaCompra.estado,
+          fechaCompra: nuevaCompra.fechaCompra,
+          itemsCount: nuevaCompra.items.length,
+          items: itemsValidos
+        },
+        warnings: errores.length > 0 ? errores : undefined
       });
     } catch (error) {
-      console.error('Error en create compra:', error);
+      console.error('❌ Error en create compra:', error);
       res.status(500).json({
         success: false,
         message: 'No se pudo crear la compra: error interno.',
@@ -186,7 +299,8 @@ export class CompraController {
       const { id } = req.params;
       const { estado } = req.body;
       const orm = req.app.locals.orm;
-      const compra = await orm.em.findOne(Compra, { id: parseInt(id) });
+      const em = orm.em.fork(); // ✅ AGREGAR
+      const compra = await em.findOne(Compra, { id: parseInt(id) }); // ✅ CAMBIAR
       if (!compra) {
         return res.status(404).json({
           success: false,
@@ -206,7 +320,7 @@ export class CompraController {
       if (estado) {
         compra.estado = estado as EstadoCompra;
       }
-      await orm.em.persistAndFlush(compra);
+      await em.persistAndFlush(compra); // ✅ CAMBIAR
       res.json({
         success: true,
         message: 'Operación update realizada correctamente.',
@@ -228,7 +342,8 @@ export class CompraController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const compra = await orm.em.findOne(Compra, { id: parseInt(id) });
+      const em = orm.em.fork(); // ✅ AGREGAR
+      const compra = await em.findOne(Compra, { id: parseInt(id) }); // ✅ CAMBIAR
       if (!compra) {
         return res.status(404).json({
           success: false,
@@ -245,7 +360,7 @@ export class CompraController {
           code: 'INVALID_STATE'
         });
       }
-      await orm.em.removeAndFlush(compra);
+      await em.removeAndFlush(compra); // ✅ CAMBIAR
       res.json({
         success: true,
         message: 'Operación delete realizada correctamente.'
@@ -266,7 +381,8 @@ export class CompraController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const compra = await orm.em.findOne(Compra, { id: parseInt(id) }, {
+      const em = orm.em.fork(); // ✅ AGREGAR
+      const compra = await em.findOne(Compra, { id: parseInt(id) }, { // ✅ CAMBIAR
         populate: ['camiseta']
       });
       if (!compra) {
@@ -289,7 +405,7 @@ export class CompraController {
       if (compra.camiseta) {
         compra.camiseta.estado = EstadoCamiseta.VENDIDA;
       }
-      await orm.em.persistAndFlush([compra, compra.camiseta]);
+      await em.persistAndFlush([compra, compra.camiseta]); // ✅ CAMBIAR
       res.json({
         success: true,
         message: 'Operación confirmar realizada correctamente.',

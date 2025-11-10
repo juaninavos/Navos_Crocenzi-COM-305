@@ -18,14 +18,12 @@ export const MyProductsPage: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<{ titulo: string; precioInicial: number; stock: number }>({ titulo: '', precioInicial: 0, stock: 1 });
 
-  // ✅ MOVER isAdmin aquí para que sea reactivo
   const isAdmin = useMemo(() => {
     const result = usuario?.rol === 'administrador';
     console.log('🔍 isAdmin calculado:', result, '| Usuario:', usuario?.email, '| Rol:', usuario?.rol);
     return result;
   }, [usuario]);
 
-  // Form publicación rápida
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<{
     titulo: string;
@@ -74,7 +72,6 @@ export const MyProductsPage: React.FC = () => {
       
       console.log('📊 fetchMine - isAdmin:', isAdmin, '| Usuario:', usuario.email);
       
-      // ✅ Si es admin, cargar TODAS las camisetas para estadísticas
       if (isAdmin) {
         console.log('👑 Cargando TODAS las camisetas (admin)...');
         const { data: todas } = await camisetaService.getAll({ limit: 1000 });
@@ -82,10 +79,9 @@ export const MyProductsPage: React.FC = () => {
         setTodasLasCamisetas(todas);
       } else {
         console.log('👤 Usuario normal, NO cargando todas las camisetas');
-        setTodasLasCamisetas([]); // ✅ LIMPIAR si no es admin
+        setTodasLasCamisetas([]);
       }
       
-      // Cargar publicaciones del usuario actual
       console.log('📦 Cargando mis publicaciones para usuario:', usuario.id);
       const { data } = await camisetaService.getAll({ usuarioId: usuario.id, limit: 100 });
       console.log('✅ Mis publicaciones cargadas:', data.length);
@@ -212,7 +208,7 @@ export const MyProductsPage: React.FC = () => {
     }
   };
 
-  // ✅ ESTADÍSTICAS GLOBALES (solo para admin)
+  // ✅ ESTADÍSTICAS GLOBALES DEL SISTEMA (solo para admin)
   const estadisticasGlobales = useMemo(() => {
     console.log('📊 Calculando estadísticas globales - isAdmin:', isAdmin, '| Total camisetas:', todasLasCamisetas.length);
     
@@ -227,21 +223,34 @@ export const MyProductsPage: React.FC = () => {
     const vendidas = todasLasCamisetas.filter(c => c.estado === 'vendida').length;
     const stockTotal = todasLasCamisetas.reduce((sum, c) => sum + c.stock, 0);
     
-    const stats = { total, disponibles, enSubasta, vendidas, stockTotal };
+    // ✅ SEPARAR: camisetas publicadas por usuarios vs admin
+    const publicadasPorUsuarios = todasLasCamisetas.filter(c => c.vendedor?.rol === 'usuario').length;
+    const publicadasPorAdmin = todasLasCamisetas.filter(c => c.vendedor?.rol === 'administrador').length;
+    
+    const stats = { 
+      total, 
+      disponibles, 
+      enSubasta, 
+      vendidas, 
+      stockTotal,
+      publicadasPorUsuarios,
+      publicadasPorAdmin
+    };
     console.log('✅ Estadísticas globales calculadas:', stats);
     return stats;
   }, [isAdmin, todasLasCamisetas]);
 
-  // ✅ ESTADÍSTICAS DEL USUARIO (para usuarios normales)
-  const estadisticasUsuario = useMemo(() => {
-    console.log('📊 Calculando estadísticas usuario - Mis publicaciones:', camisetas.length);
+  // ✅ ESTADÍSTICAS PERSONALES (mis publicaciones)
+  const estadisticasPersonales = useMemo(() => {
+    console.log('📊 Calculando estadísticas personales - Mis publicaciones:', camisetas.length);
     
     const misPublicaciones = camisetas.length;
     const misSubastas = camisetas.filter(c => c.esSubasta).length;
     const misVendidas = camisetas.filter(c => c.estado === 'vendida').length;
+    const misDisponibles = camisetas.filter(c => c.estado === 'disponible').length;
     
-    const stats = { misPublicaciones, misSubastas, misVendidas };
-    console.log('✅ Estadísticas usuario calculadas:', stats);
+    const stats = { misPublicaciones, misSubastas, misVendidas, misDisponibles };
+    console.log('✅ Estadísticas personales calculadas:', stats);
     return stats;
   }, [camisetas]);
 
@@ -256,73 +265,106 @@ export const MyProductsPage: React.FC = () => {
         <button className="btn btn-outline-secondary" onClick={fetchMine} type="button">🔄 Actualizar</button>
       </div>
 
-      {/* ✅ ESTADÍSTICAS GLOBALES (solo admin) */}
+      {/* ✅ ESTADÍSTICAS GLOBALES DEL SISTEMA (solo admin) */}
       {isAdmin && estadisticasGlobales && (
-        <div className="row g-3 mb-4">
-          <div className="col-md-3">
-            <div className="card text-white bg-primary">
-              <div className="card-body">
-                <h6 className="card-title">Total Camisetas</h6>
-                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.total}</p>
+        <>
+          <div className="alert alert-info mb-3">
+            <strong>📊 Estadísticas Globales del Sistema</strong>
+          </div>
+          <div className="row g-3 mb-4">
+            <div className="col-md-2">
+              <div className="card text-white bg-primary">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small">Total Sistema</h6>
+                  <p className="card-text fs-4 fw-bold mb-0">{estadisticasGlobales.total}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-2">
+              <div className="card text-white bg-success">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small">Disponibles</h6>
+                  <p className="card-text fs-4 fw-bold mb-0">{estadisticasGlobales.disponibles}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-2">
+              <div className="card text-white bg-warning">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small">En Subasta</h6>
+                  <p className="card-text fs-4 fw-bold mb-0">{estadisticasGlobales.enSubasta}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-2">
+              <div className="card text-white bg-danger">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small">Vendidas</h6>
+                  <p className="card-text fs-4 fw-bold mb-0">{estadisticasGlobales.vendidas}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-2">
+              <div className="card text-white bg-info">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small">Stock Total</h6>
+                  <p className="card-text fs-4 fw-bold mb-0">{estadisticasGlobales.stockTotal}</p>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-2">
+              <div className="card border-dark">
+                <div className="card-body text-center p-3">
+                  <h6 className="card-title mb-1 small text-muted">Por Usuarios</h6>
+                  <p className="card-text fs-4 fw-bold mb-0 text-primary">{estadisticasGlobales.publicadasPorUsuarios}</p>
+                  <hr className="my-1" />
+                  <h6 className="card-title mb-1 small text-muted">Por Admin</h6>
+                  <p className="card-text fs-5 fw-bold mb-0 text-secondary">{estadisticasGlobales.publicadasPorAdmin}</p>
+                </div>
               </div>
             </div>
           </div>
-          <div className="col-md-3">
-            <div className="card text-white bg-success">
-              <div className="card-body">
-                <h6 className="card-title">Disponibles</h6>
-                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.disponibles}</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-white bg-warning">
-              <div className="card-body">
-                <h6 className="card-title">En Subasta</h6>
-                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.enSubasta}</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="card text-white bg-info">
-              <div className="card-body">
-                <h6 className="card-title">Stock Total</h6>
-                <p className="card-text fs-3 fw-bold">{estadisticasGlobales.stockTotal}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        </>
       )}
 
-      {/* ✅ ESTADÍSTICAS USUARIO (solo usuarios normales) */}
-      {!isAdmin && (
-        <div className="row g-3 mb-4">
-          <div className="col-md-4">
-            <div className="card border-primary">
-              <div className="card-body text-center">
-                <h6 className="text-muted">Mis Publicaciones</h6>
-                <p className="fs-3 fw-bold text-primary">{estadisticasUsuario.misPublicaciones}</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card border-warning">
-              <div className="card-body text-center">
-                <h6 className="text-muted">En Subasta</h6>
-                <p className="fs-3 fw-bold text-warning">{estadisticasUsuario.misSubastas}</p>
-              </div>
-            </div>
-          </div>
-          <div className="col-md-4">
-            <div className="card border-success">
-              <div className="card-body text-center">
-                <h6 className="text-muted">Vendidas</h6>
-                <p className="fs-3 fw-bold text-success">{estadisticasUsuario.misVendidas}</p>
-              </div>
+      {/* ✅ ESTADÍSTICAS PERSONALES (para todos) */}
+      <div className="alert alert-secondary mb-3">
+        <strong>{isAdmin ? '📝 Mis Publicaciones como Admin' : '📝 Mis Publicaciones'}</strong>
+      </div>
+      <div className="row g-3 mb-4">
+        <div className="col-md-3">
+          <div className="card border-primary">
+            <div className="card-body text-center">
+              <h6 className="text-muted">Publicadas</h6>
+              <p className="fs-3 fw-bold text-primary">{estadisticasPersonales.misPublicaciones}</p>
             </div>
           </div>
         </div>
-      )}
+        <div className="col-md-3">
+          <div className="card border-success">
+            <div className="card-body text-center">
+              <h6 className="text-muted">Disponibles</h6>
+              <p className="fs-3 fw-bold text-success">{estadisticasPersonales.misDisponibles}</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card border-warning">
+            <div className="card-body text-center">
+              <h6 className="text-muted">En Subasta</h6>
+              <p className="fs-3 fw-bold text-warning">{estadisticasPersonales.misSubastas}</p>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3">
+          <div className="card border-danger">
+            <div className="card-body text-center">
+              <h6 className="text-muted">Vendidas</h6>
+              <p className="fs-3 fw-bold text-danger">{estadisticasPersonales.misVendidas}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Form publicación rápida */}
       <div className="card mb-4">
@@ -449,7 +491,7 @@ export const MyProductsPage: React.FC = () => {
         <div className="alert alert-danger">{error}</div>
       ) : camisetas.length === 0 ? (
         <div className="alert alert-info">
-          {isAdmin ? 'No hay camisetas en el sistema' : 'Aún no tienes publicaciones'}
+          {isAdmin ? 'No has publicado ninguna camiseta como admin' : 'Aún no tienes publicaciones'}
         </div>
       ) : (
         <div className="row">

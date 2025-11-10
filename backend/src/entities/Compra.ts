@@ -1,6 +1,5 @@
 import { Entity, PrimaryKey, Property, ManyToOne, OneToMany, Collection, Enum } from '@mikro-orm/core';
 import { Usuario } from './Usuario';      
-import { Camiseta } from './Camiseta';     
 import { MetodoPago } from './MetodoPago'; 
 import { Pago } from './Pago';    
 import { CompraItem } from './CompraItem';
@@ -37,7 +36,8 @@ export class Compra {
   @ManyToOne('Usuario')
   comprador!: Usuario;
 
-  @OneToMany(() => CompraItem, item => item.compra)
+  // ✅ ITEMS: La forma correcta de manejar múltiples productos
+  @OneToMany(() => CompraItem, item => item.compra, { eager: true })
   items = new Collection<CompraItem>(this);
 
   @ManyToOne('MetodoPago')
@@ -46,19 +46,14 @@ export class Compra {
   @OneToMany(() => Pago, pago => pago.compra)
   pagos = new Collection<Pago>(this);
 
-  @ManyToOne('Camiseta')
-  camiseta!: Camiseta;
-
   constructor(
     total: number,
     comprador: Usuario,
-    camiseta: Camiseta,
     metodoPago: MetodoPago,
     direccionEnvio?: string
   ) {
     this.total = total;
     this.comprador = comprador;
-    this.camiseta = camiseta;
     this.metodoPago = metodoPago;
     this.direccionEnvio = direccionEnvio;
   }

@@ -50,7 +50,7 @@ export class AdminController {
       const camisetasMasVendidas = camisetas
         .map((camiseta: Camiseta) => ({
           ...camiseta,
-          totalVentas: camiseta.compras?.length || 0
+          totalVentas: camiseta.compraItems?.length || 0
         }))
         .sort((a: any, b: any) => b.totalVentas - a.totalVentas)
         .slice(0, 5);

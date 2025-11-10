@@ -141,6 +141,14 @@ export interface Oferta {
   usuario: Usuario;
 }
 
+export interface CompraItem {
+  id: number;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  camiseta: Camiseta;
+}
+
 export interface Compra {
   id: number;
   total: number;
@@ -149,7 +157,7 @@ export interface Compra {
   direccionEnvio?: string;
   notas?: string;
   comprador: Usuario;
-  camiseta: Camiseta;
+  items?: CompraItem[]; // ✅ AGREGAR: Array de items (compras nuevas)
   metodoPago: MetodoPago;
 }
 
