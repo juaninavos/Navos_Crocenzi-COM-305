@@ -1,6 +1,7 @@
 // src/pages/admin/Dashboard.tsx
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { adminService, camisetaService } from '../../services/api';
 import { ProductCard } from '../../components/common/ProductCard';
 // ✅ CAMBIAR: Importar tipos con 'type'
@@ -42,17 +43,17 @@ export const AdminDashboard: React.FC = () => {
       try {
         await camisetaService.delete(id);
         setCamisetas(camisetas.filter(c => c.id !== id));
-        alert('Camiseta eliminada exitosamente');
+        toast.success('Camiseta eliminada exitosamente');
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Error al eliminar';
-        alert(`Error al eliminar: ${msg}`);
+        toast.error(`Error al eliminar: ${msg}`);
       }
     }
   };
 
   const handleEdit = (id: number) => {
     // TODO: Implementar modal de edición
-    alert(`Funcionalidad de editar camiseta ${id} - Por implementar`);
+    toast.info(`Funcionalidad de editar camiseta ${id} - Por implementar`);
   };
 
   if (loading) {

@@ -13,6 +13,7 @@ exports.Camiseta = exports.EstadoCamiseta = exports.CondicionCamiseta = exports.
 const core_1 = require("@mikro-orm/core");
 const Usuario_1 = require("./Usuario");
 const Categoria_1 = require("./Categoria");
+const CompraItem_1 = require("./CompraItem");
 var Talle;
 (function (Talle) {
     Talle["XS"] = "XS";
@@ -43,7 +44,7 @@ let Camiseta = class Camiseta {
         this.fechaCreacion = new Date(); // ✅ AGREGAR: Para ordenamiento en AdminController
         this.fechaPublicacion = new Date();
         this.subastas = new core_1.Collection(this);
-        this.compras = new core_1.Collection(this);
+        this.compraItems = new core_1.Collection(this);
         this.titulo = titulo;
         this.descripcion = descripcion;
         this.equipo = equipo;
@@ -125,10 +126,9 @@ __decorate([
     __metadata("design:type", Object)
 ], Camiseta.prototype, "subastas", void 0);
 __decorate([
-    (0, core_1.OneToMany)('Compra', 'camiseta') // ✅ AGREGAR: Relación con compras
-    ,
+    (0, core_1.OneToMany)(() => CompraItem_1.CompraItem, item => item.camiseta),
     __metadata("design:type", Object)
-], Camiseta.prototype, "compras", void 0);
+], Camiseta.prototype, "compraItems", void 0);
 exports.Camiseta = Camiseta = __decorate([
     (0, core_1.Entity)(),
     __metadata("design:paramtypes", [String, String, String, String, String, String, String, Number, Usuario_1.Usuario])

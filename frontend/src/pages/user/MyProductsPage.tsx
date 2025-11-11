@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
@@ -119,7 +120,7 @@ export const MyProductsPage: React.FC = () => {
     
     try {
       setCreating(true);
-      const payload: any = {
+      const payload = {
         titulo: form.titulo.trim(),
         descripcion: `${form.equipo} ${form.temporada}`,
         equipo: form.equipo.trim(),
@@ -130,14 +131,9 @@ export const MyProductsPage: React.FC = () => {
         precioInicial: Number(form.precioInicial),
         esSubasta: form.esSubasta,
         stock: form.stock,
+        ...(form.esSubasta && form.fechaFinSubasta ? { fechaFinSubasta: form.fechaFinSubasta } : {})
       };
-      
-      if (form.esSubasta && form.fechaFinSubasta) {
-        payload.fechaFinSubasta = form.fechaFinSubasta;
-      }
-      
       console.log('📤 Enviando payload:', payload);
-      
       await camisetaService.publicar(payload);
       setFormSuccess('✅ Publicación creada con éxito');
       setTimeout(() => setFormSuccess(''), 3000);
@@ -154,9 +150,19 @@ export const MyProductsPage: React.FC = () => {
         fechaFinSubasta: undefined
       });
       await fetchMine();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Error creando publicación', e);
-      setFormError(e.response?.data?.message || 'No se pudo crear la publicación');
+      let msg = 'No se pudo crear la publicación';
+      if (
+        typeof e === 'object' &&
+        e !== null &&
+        'response' in e &&
+        typeof (e as { response?: unknown }).response === 'object' &&
+        (e as { response?: { data?: { message?: string } } }).response?.data?.message
+      ) {
+        msg = (e as { response: { data: { message: string } } }).response.data.message;
+      }
+      setFormError(msg);
     } finally {
       setCreating(false);
     }
@@ -204,7 +210,7 @@ export const MyProductsPage: React.FC = () => {
       }
     } catch (e) {
       console.error('Error eliminando publicación', e);
-      alert('No se pudo eliminar la publicación');
+      toast.error('No se pudo eliminar la publicación');
     }
   };
 

@@ -1,6 +1,7 @@
 // src/components/common/ProductCard.tsx
 
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
@@ -37,11 +38,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
       if (data.success && data.data) {
         navigate(`/auctions/${data.data.id}`);
       } else {
-        alert('❌ No se encontró una subasta activa para esta camiseta.');
+        toast.error('❌ No se encontró una subasta activa para esta camiseta.');
       }
     } catch (error) {
       console.error('Error al buscar subasta:', error);
-      alert(`❌ Error al cargar la subasta. Esta camiseta aún no tiene una subasta creada.`);
+      toast.error('❌ Error al cargar la subasta. Esta camiseta aún no tiene una subasta creada.');
     } finally {
       setLoading(false);
     }
@@ -49,11 +50,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
 
   const handleAgregarAlCarrito = () => {
     if (onAddToCart) {
-      onAddToCart(camiseta);
+      onAddToCart(camiseta); // El padre muestra la notificación
     } else {
       addToCart(camiseta, 1);
+      toast.success(`✅ ${camiseta.titulo} agregado al carrito`);
     }
-    alert(`✅ ${camiseta.titulo} agregado al carrito`);
   };
 
   // ✅ CALCULAR PRECIO A MOSTRAR

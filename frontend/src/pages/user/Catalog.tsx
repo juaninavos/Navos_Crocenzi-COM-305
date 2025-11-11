@@ -1,6 +1,7 @@
 // src/pages/user/Catalog.tsx
 
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { camisetaService } from '../../services/api';
 import { ProductCard } from '../../components/common/ProductCard';
 import { useCart } from '../../context/useCart'; // ✅ AGREGAR
@@ -32,11 +33,10 @@ export const Catalog: React.FC = () => {
   const handleAddToCart = (camiseta: Camiseta) => {
     try {
       addToCart(camiseta, 1);
-      // Opcional: usar una librería de notificaciones en lugar de alert
-      alert(`✅ ${camiseta.titulo} agregada al carrito`);
+      toast.success(`✅ ${camiseta.titulo} agregada al carrito`);
     } catch (error) {
       console.error('Error al agregar al carrito:', error);
-      alert('❌ Error al agregar al carrito');
+      toast.error('❌ Error al agregar al carrito');
     }
   };
 

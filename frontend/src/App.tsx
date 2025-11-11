@@ -24,8 +24,11 @@ import MyProductsPage from './pages/user/MyProductsPage';
 import { AuctionsPage } from './pages/auction/AuctionsPage';
 import { AuctionDetailPage } from './pages/auction/AuctionDetailPage';
 
+
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
@@ -57,6 +60,7 @@ function App() {
                 <Route path="/auctions/:id" element={<AuctionDetailPage />} />
               </Routes>
             </main>
+            <ToastContainer position="top-right" autoClose={2500} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="colored" aria-label="notificaciones" />
           </div>
         </CartProvider>
       </AuthProvider>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
 import { descuentoService, categoriaService, camisetaService } from '../../services/api';
 import type { Descuento, Categoria, CamisetaSeleccion, TipoAplicacionDescuento as TipoAplicacionType } from '../../types';
 import { TipoAplicacionDescuento } from '../../types';
@@ -86,28 +87,28 @@ export const DiscountsManagement: React.FC = () => {
     
     // Validaciones
     if (!formData.codigo.trim()) {
-      alert('El código es obligatorio');
+      toast.error('El código es obligatorio');
       return;
     }
 
     if (formData.codigo.trim().length < 3) {
-      alert('El código debe tener al menos 3 caracteres');
+      toast.error('El código debe tener al menos 3 caracteres');
       return;
     }
 
     if (!formData.descripcion.trim()) {
-      alert('La descripción es obligatoria');
+      toast.error('La descripción es obligatoria');
       return;
     }
 
     const porcentaje = parseFloat(formData.porcentaje);
     if (isNaN(porcentaje) || porcentaje <= 0 || porcentaje > 100) {
-      alert('El porcentaje debe estar entre 1 y 100');
+      toast.error('El porcentaje debe estar entre 1 y 100');
       return;
     }
 
     if (!formData.fechaInicio || !formData.fechaFin) {
-      alert('Las fechas de inicio y fin son obligatorias');
+      toast.error('Las fechas de inicio y fin son obligatorias');
       return;
     }
 
@@ -115,24 +116,25 @@ export const DiscountsManagement: React.FC = () => {
     const fin = new Date(formData.fechaFin);
 
     if (fin <= inicio) {
-      alert('La fecha de fin debe ser posterior a la fecha de inicio');
+      toast.error('La fecha de fin debe ser posterior a la fecha de inicio');
       return;
     }
 
     // ✅ VALIDAR SEGÚN TIPO DE APLICACIÓN
     if (formData.tipoAplicacion === TipoAplicacionDescuento.CATEGORIA && !formData.categoriaId) {
-      alert('Debe seleccionar una categoría');
+      toast.error('Debe seleccionar una categoría');
       return;
     }
 
     if (formData.tipoAplicacion === TipoAplicacionDescuento.ESPECIFICAS && formData.camisetaIds.length === 0) {
-      alert('Debe seleccionar al menos una camiseta');
+      toast.error('Debe seleccionar al menos una camiseta');
       return;
     }
 
     setSubmitting(true);
     try {
-      const dataToSend: any = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dataToSend: any = {
         codigo: formData.codigo.trim().toUpperCase(),
         descripcion: formData.descripcion.trim(),
         porcentaje: porcentaje,
@@ -152,21 +154,30 @@ export const DiscountsManagement: React.FC = () => {
         // Editar
         dataToSend.activo = formData.activo;
         await descuentoService.update(editingId, dataToSend);
-        alert('✅ Descuento actualizado correctamente');
+        toast.success('✅ Descuento actualizado correctamente');
       } else {
         // Crear
         await descuentoService.create(dataToSend);
-        alert('✅ Descuento creado correctamente');
+        toast.success('✅ Descuento creado correctamente');
       }
       
       setShowForm(false);
       setEditingId(null);
       resetForm();
       loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al guardar descuento:', err);
-      const message = err.response?.data?.message || 'Error al guardar el descuento';
-      alert(`❌ ${message}`);
+      let message = 'Error al guardar el descuento';
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: unknown }).response === 'object' &&
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      ) {
+        message = (err as { response: { data: { message: string } } }).response.data.message;
+      }
+      toast.error(`❌ ${message}`);
     } finally {
       setSubmitting(false);
     }
@@ -200,12 +211,21 @@ export const DiscountsManagement: React.FC = () => {
 
     try {
       await descuentoService.delete(id);
-      alert('✅ Descuento desactivado correctamente');
+      toast.success('✅ Descuento desactivado correctamente');
       loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error al desactivar descuento:', err);
-      const message = err.response?.data?.message || 'Error al desactivar el descuento';
-      alert(`❌ ${message}`);
+      let message = 'Error al desactivar el descuento';
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: unknown }).response === 'object' &&
+        (err as { response?: { data?: { message?: string } } }).response?.data?.message
+      ) {
+        message = (err as { response: { data: { message: string } } }).response.data.message;
+      }
+      toast.error(`❌ ${message}`);
     }
   };
 
@@ -260,9 +280,10 @@ export const DiscountsManagement: React.FC = () => {
     switch (descuento.tipoAplicacion) {
       case TipoAplicacionDescuento.TODAS:
         return '🌐 Todas las camisetas';
-      case TipoAplicacionDescuento.CATEGORIA:
+      case TipoAplicacionDescuento.CATEGORIA: {
         const cat = categorias.find(c => c.id === descuento.categoriaId);
         return `📁 Categoría: ${cat?.nombre || 'N/A'}`;
+      }
       case TipoAplicacionDescuento.ESPECIFICAS:
         return `👕 ${descuento.camisetasEspecificas?.length || 0} camisetas específicas`;
       default:

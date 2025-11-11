@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
 import { useCart } from '../../context/useCart';
@@ -117,8 +118,8 @@ export const Home = () => {
       if ('precioMax' in filtrosActivos && filtrosActivos.precioMax != null) params.precioMax = filtrosActivos.precioMax as string | number;
 
       const result = await camisetaService.getAll(params);
-      setCamisetas(result.data);
-      setTotalCount(result.count);
+  setCamisetas(result.data);
+  setTotalCount(result.count ?? 0);
 
       // ✅ CALCULAR precios visibles para los filtros
       if (result.data.length > 0) {
@@ -142,10 +143,10 @@ export const Home = () => {
   const handleAddToCart = (camiseta: Camiseta) => {
     try {
       addToCart(camiseta, 1);
-      alert(`✅ ${camiseta.titulo} agregada al carrito`);
+      toast.success(`✅ ${camiseta.titulo} agregada al carrito`);
     } catch (error) {
       console.error('Error al agregar al carrito:', error);
-      alert('❌ Error al agregar al carrito');
+      toast.error('❌ Error al agregar al carrito');
     }
   };
 
@@ -158,11 +159,11 @@ export const Home = () => {
       if (data.success && data.data) {
         navigate(`/auctions/${data.data.id}`);
       } else {
-        alert('No se encontró la subasta para esta camiseta');
+        toast.error('No se encontró la subasta para esta camiseta');
       }
     } catch (error) {
       console.error('Error al buscar subasta:', error);
-      alert('Error al buscar la subasta');
+      toast.error('Error al buscar la subasta');
     }
   };
 

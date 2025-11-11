@@ -90,10 +90,9 @@ export class CompraController {
           populate: [
             'comprador',
             'metodoPago',
-            'items',                    // ✅ AGREGAR: Items de la compra
-            'items.camiseta',           // ✅ AGREGAR: Camiseta de cada item
-            'items.camiseta.categoria', // ✅ AGREGAR: Categoría de cada camiseta
-            'camiseta'                  // ⚠️ MANTENER: Para compatibilidad con compras viejas
+            'items',
+            'items.camiseta',
+            'items.camiseta.categoria'
           ],
           orderBy: { fechaCompra: 'DESC' }
         }

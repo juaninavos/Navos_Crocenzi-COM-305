@@ -9,7 +9,8 @@ export class PagoController {
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const pagos = await orm.em.find(Pago, {}, { 
+  const em = orm.em.fork();
+  const pagos = await em.find(Pago, {}, { 
         populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  // CORREGIDO: 'comprador' no 'usuario'
       });
       
@@ -35,7 +36,8 @@ export class PagoController {
       const { id } = req.params;
       const orm = req.app.locals.orm;
       
-      const pago = await orm.em.findOne(Pago, { id: parseInt(id) }, { 
+  const em = orm.em.fork();
+  const pago = await em.findOne(Pago, { id: parseInt(id) }, { 
         populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  // CORREGIDO
       });
       
@@ -69,7 +71,8 @@ export class PagoController {
       const { compraId } = req.params;
       const orm = req.app.locals.orm;
       
-      const pagos = await orm.em.find(Pago, 
+  const em = orm.em.fork();
+  const pagos = await em.find(Pago, 
         { compra: { id: parseInt(compraId) } }, 
         { populate: ['metodoPago'] }
       );
@@ -125,7 +128,8 @@ export class PagoController {
       const orm = req.app.locals.orm;
       
       // Verificar que la compra existe
-      const compra = await orm.em.findOne(Compra, { id: compraId });
+  const em = orm.em.fork();
+  const compra = await em.findOne(Compra, { id: compraId });
       if (!compra) {
         return res.status(404).json({
           success: false,
@@ -146,7 +150,7 @@ export class PagoController {
       }
       
       // Verificar que el método de pago existe
-      const metodoPago = await orm.em.findOne(MetodoPago, { id: metodoPagoId });
+  const metodoPago = await em.findOne(MetodoPago, { id: metodoPagoId });
       if (!metodoPago) {
         return res.status(404).json({
           success: false,
@@ -194,12 +198,12 @@ export class PagoController {
       nuevoPago.metodoPago = metodoPago;
       nuevoPago.estado = estadoPago;  // ✅ CORREGIDO: Ya es enum, no necesita casting
 
-      await orm.em.persistAndFlush(nuevoPago);
+  await em.persistAndFlush(nuevoPago);
 
       // Si el pago fue exitoso, actualizar la compra
       if (estadoPago === EstadoPago.COMPLETADO) {  // ✅ CORREGIDO: Usar enum
         compra.estado = EstadoCompra.CONFIRMADA;   // ✅ CORREGIDO: Usar enum
-        await orm.em.persistAndFlush(compra);
+  await em.persistAndFlush(compra);
       }
 
       res.status(201).json({
@@ -230,7 +234,8 @@ export class PagoController {
       
       const orm = req.app.locals.orm;
       
-      const pago = await orm.em.findOne(Pago, { id: parseInt(id) }, {
+  const em = orm.em.fork();
+  const pago = await em.findOne(Pago, { id: parseInt(id) }, {
         populate: ['compra', 'compra.camiseta']
       });
       
@@ -272,7 +277,7 @@ export class PagoController {
         }
       }
 
-      await orm.em.persistAndFlush([pago, pago.compra, pago.compra?.camiseta].filter(Boolean));
+  await em.persistAndFlush([pago, pago.compra, pago.compra?.camiseta].filter(Boolean));
 
       res.json({
         success: true,
@@ -298,7 +303,8 @@ export class PagoController {
       
       const orm = req.app.locals.orm;
       
-      const pago = await orm.em.findOne(Pago, { id: parseInt(id) }, {
+  const em = orm.em.fork();
+  const pago = await em.findOne(Pago, { id: parseInt(id) }, {
         populate: ['compra']
       });
       
@@ -327,7 +333,7 @@ export class PagoController {
         ? `${pago.notas} - Rechazado: ${motivo || 'Sin motivo especificado'}`
         : `Rechazado: ${motivo || 'Sin motivo especificado'}`;
 
-      await orm.em.persistAndFlush(pago);
+  await em.persistAndFlush(pago);
 
       res.json({
         success: true,

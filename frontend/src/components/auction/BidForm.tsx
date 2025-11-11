@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-toastify';
 import { useBids } from '../../hooks/useBids';
 import { useAuth } from '../../contexts/AuthContext'; // ✅ AGREGAR
 import type { Subasta } from '../../types';
@@ -50,7 +51,7 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
     if (resultado) {
       setMonto('');
       onBidSuccess();
-      alert(`✅ ¡Oferta de $${montoNum.toLocaleString()} realizada con éxito!`);
+      toast.success(`✅ ¡Oferta de $${montoNum.toLocaleString()} realizada con éxito!`);
     }
   };
 

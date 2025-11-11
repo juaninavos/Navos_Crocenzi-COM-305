@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/useCart';
 
@@ -107,9 +108,8 @@ export const CartPage: React.FC = () => {
                     <button 
                       className="btn btn-outline-danger btn-sm"
                       onClick={() => {
-                        if (window.confirm('¿Eliminar este producto del carrito?')) {
-                          removeFromCart(item.producto.id);
-                        }
+                        removeFromCart(item.producto.id);
+                        toast.info(`🗑️ ${item.producto.titulo} eliminado del carrito`);
                       }}
                       type="button"
                     >
@@ -132,9 +132,8 @@ export const CartPage: React.FC = () => {
             <button 
               className="btn btn-outline-danger"
               onClick={() => {
-                if (window.confirm('¿Vaciar todo el carrito?')) {
-                  clearCart();
-                }
+                clearCart();
+                toast.info('🧹 Carrito vaciado');
               }}
               type="button"
             >
