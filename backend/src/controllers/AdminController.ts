@@ -107,9 +107,8 @@ export class AdminController {
   static async gestionarUsuarios(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
-      
-      // ✅ AGREGAR ESTA VERIFICACIÓN
+      const em = orm.em.fork(); 
+
       if (!req.user) {
         return res.status(401).json({
           success: false,

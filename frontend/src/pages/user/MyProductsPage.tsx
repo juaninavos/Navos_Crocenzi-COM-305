@@ -56,7 +56,8 @@ export const MyProductsPage: React.FC = () => {
       form.equipo.trim().length >= 2 &&
       form.temporada.trim().length >= 2 &&
       Number(form.precioInicial) > 0 &&
-      form.stock > 0;
+      form.stock > 0 &&
+      form.imagen.trim().length > 5;
     
     if (form.esSubasta) {
       return basicValidation && !!form.fechaFinSubasta;
@@ -107,19 +108,30 @@ export const MyProductsPage: React.FC = () => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
-    
+
     if (!canCreate) {
       setFormError('Completa todos los campos obligatorios correctamente.');
       return;
     }
-    
+
     if (form.esSubasta && !form.fechaFinSubasta) {
       setFormError('Debes seleccionar una fecha de fin para la subasta.');
       return;
     }
-    
+
     try {
       setCreating(true);
+      let imagenFinal = form.imagen;
+      // Si la imagen es una URL externa (http/https), descargarla al backend
+      if (/^https?:\/\//i.test(form.imagen)) {
+        try {
+          const { imagenService } = await import('../../services/api');
+          const nombre = `${form.equipo}_${form.temporada}`.replace(/\s+/g, '_').toLowerCase();
+          imagenFinal = await imagenService.descargar(form.imagen, nombre);
+        } catch (err) {
+          console.error('Error descargando imagen, se usará la URL original', err);
+        }
+      }
       const payload = {
         titulo: form.titulo.trim(),
         descripcion: `${form.equipo} ${form.temporada}`,
@@ -127,7 +139,7 @@ export const MyProductsPage: React.FC = () => {
         temporada: form.temporada.trim(),
         talle: form.talle,
         condicion: form.condicion,
-        imagen: form.imagen || undefined,
+        imagen: imagenFinal || undefined,
         precioInicial: Number(form.precioInicial),
         esSubasta: form.esSubasta,
         stock: form.stock,
@@ -137,15 +149,15 @@ export const MyProductsPage: React.FC = () => {
       await camisetaService.publicar(payload);
       setFormSuccess('✅ Publicación creada con éxito');
       setTimeout(() => setFormSuccess(''), 3000);
-      setForm({ 
-        titulo: '', 
-        equipo: '', 
-        temporada: '', 
-        talle: 'M' as Talle, 
-        condicion: 'Nueva' as CondicionCamiseta, 
-        imagen: '', 
-        precioInicial: 0, 
-        stock: 1, 
+      setForm({
+        titulo: '',
+        equipo: '',
+        temporada: '',
+        talle: 'M' as Talle,
+        condicion: 'Nueva' as CondicionCamiseta,
+        imagen: '',
+        precioInicial: 0,
+        stock: 1,
         esSubasta: false,
         fechaFinSubasta: undefined
       });
@@ -423,8 +435,8 @@ export const MyProductsPage: React.FC = () => {
                 <input type="number" min={1} className="form-control" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))} required />
               </div>
               <div className="col-12 col-md-6">
-                <label className="form-label">URL de Imagen</label>
-                <input className="form-control" value={form.imagen} onChange={e => setForm(f => ({ ...f, imagen: e.target.value }))} placeholder="https://..." />
+                <label className="form-label">URL de Imagen *</label>
+                <input className="form-control" value={form.imagen} onChange={e => setForm(f => ({ ...f, imagen: e.target.value }))} placeholder="https://..." required />
               </div>
               <div className="col-12">
                 <div className="form-check">
@@ -506,7 +518,18 @@ export const MyProductsPage: React.FC = () => {
               <div className="card h-100">
                 <div className="position-relative">
                   {c.imagen ? (
-                    <img src={c.imagen} alt={c.titulo} className="card-img-top" style={{ height: 200, objectFit: 'cover' }} />
+                    (() => {
+                      const getSrc = () => {
+                        if (!c.imagen) return '';
+                        if (c.imagen.startsWith('http')) return c.imagen;
+                        // Quitar cualquier 'uploads/' o '/uploads/' al principio
+                        const cleanPath = c.imagen.replace(/^\/\?uploads\//, '');
+                        return `http://localhost:3000/uploads/${cleanPath}`;
+                      };
+                      const src = getSrc();
+                      console.log('🖼️ c.imagen:', c.imagen, '| src:', src);
+                      return <img src={src} alt={c.titulo} className="card-img-top" style={{ height: 200, objectFit: 'cover' }} />;
+                    })()
                   ) : (
                     <div className="bg-light d-flex align-items-center justify-content-center" style={{ height: 200 }}>
                       <span style={{ fontSize: '3rem' }}>👕</span>

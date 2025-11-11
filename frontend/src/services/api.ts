@@ -1,3 +1,18 @@
+// =========================
+// 🖼️ Servicio de imágenes
+// =========================
+export const imagenService = {
+  descargar: async (url: string, nombre?: string): Promise<string> => {
+    const response = await api.post<{ success: boolean; path: string }>(
+      '/imagenes/descargar',
+      { url, nombre }
+    );
+    if (response.data.success && response.data.path) {
+      return response.data.path;
+    }
+    throw new Error('No se pudo descargar la imagen');
+  },
+};
 // src/services/api.ts
 
 import axios, { AxiosError } from 'axios';
@@ -98,7 +113,7 @@ export const authService = {
 // =========================
 export const camisetaService = {
   async getAll(filtros?: CamisetaFiltro) {
-    const params: Record<string, any> = {};
+    const params: Record<string, unknown> = {};
     
     if (filtros?.equipo) params.equipo = filtros.equipo;
     if (filtros?.temporada) params.temporada = filtros.temporada;

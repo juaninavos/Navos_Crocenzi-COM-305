@@ -8,7 +8,7 @@ exports.createApp = createApp;
 require("reflect-metadata");
 require("dotenv/config");
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors")); // ✅ DESCOMMENTAR
+const cors_1 = __importDefault(require("cors"));
 const core_1 = require("@mikro-orm/core");
 const mikro_orm_config_1 = __importDefault(require("./mikro-orm.config"));
 // Importar rutas
@@ -31,6 +31,9 @@ let orm;
 async function createApp() {
     orm = await core_1.MikroORM.init(mikro_orm_config_1.default);
     app = (0, express_1.default)();
+    // Servir archivos estáticos para imágenes (debe ir antes de las rutas API)
+    const path = require('path');
+    app.use('/uploads', express_1.default.static(path.resolve(__dirname, '../public/uploads')));
     // CORS
     const defaultAllowed = [
         'http://localhost:5173',
@@ -53,7 +56,6 @@ async function createApp() {
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization']
     }));
-    app.use(express_1.default.json());
     app.use((req, res, next) => {
         console.log(`🔍 ${req.method} ${req.url}`);
         console.log('📦 Body:', req.body);
@@ -107,7 +109,7 @@ async function createApp() {
 if (require.main === module) {
     (async () => {
         const app = await createApp();
-        const PORT = Number(process.env.PORT) || 3001;
+        const PORT = Number(process.env.PORT) || 3000;
         const HOST = process.env.HOST || '0.0.0.0';
         app.listen(PORT, HOST, () => {
             console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);

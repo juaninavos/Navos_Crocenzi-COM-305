@@ -118,7 +118,7 @@ async function seedDatabase() {
       '1986',
       Talle.L,
       CondicionCamiseta.VINTAGE,
-      'argentina_1986.jpg',
+      '/uploads/argentina_1986.jpg',
       25000,
       adminUser
     );
@@ -131,7 +131,7 @@ async function seedDatabase() {
       '1981',
       Talle.M,
       CondicionCamiseta.USADA,
-      'boca_1981.jpg',
+      '/uploads/boca_1981.jpg',
       18000,
       adminUser
     );
@@ -144,7 +144,7 @@ async function seedDatabase() {
       '1992',
       Talle.XL,
       CondicionCamiseta.VINTAGE,
-      'barcelona_1992.jpg',
+      '/uploads/barcelona_1992.jpeg',
       30000,
       adminUser
     );
@@ -157,7 +157,7 @@ async function seedDatabase() {
       '1986',
       Talle.L,
       CondicionCamiseta.NUEVA,
-      'river_1986.jpg',
+      '/uploads/river_1986.jpeg',
       22000,
       adminUser
     );
@@ -170,7 +170,7 @@ async function seedDatabase() {
       '1970',
       Talle.M,
       CondicionCamiseta.VINTAGE,
-      'brasil_1970.jpg',
+      '/uploads/brasil_1970.jpg',
       35000,
       adminUser
     );
@@ -185,7 +185,7 @@ async function seedDatabase() {
       '1982',
       Talle.L,
       CondicionCamiseta.VINTAGE,
-      'italia_1982.jpg',
+      '/uploads/italia_1982.jpg',
       40000,
       adminUser
     );
