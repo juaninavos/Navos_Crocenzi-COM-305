@@ -37,12 +37,18 @@ export const CartPage: React.FC = () => {
                 <div className="row align-items-center">
                   <div className="col-md-2">
                     {item.producto.imagen ? (
-                      <img 
-                        src={item.producto.imagen} 
-                        alt={item.producto.titulo}
-                        className="img-fluid rounded"
-                        style={{ maxHeight: '100px', objectFit: 'cover' }}
-                      />
+                      (() => {
+                        const getSrc = () => {
+                          if (!item.producto.imagen) return '';
+                          if (item.producto.imagen.startsWith('http')) return item.producto.imagen;
+                          const cleanPath = item.producto.imagen.replace(/^\/?uploads\//, '');
+                          return `http://localhost:3000/uploads/${cleanPath}`;
+                        };
+                        const src = getSrc();
+                        console.log('🖼️ item.producto.imagen:', item.producto.imagen, '| src:', src);
+                        return <img src={src} alt={item.producto.titulo} className="img-fluid rounded" style={{ maxHeight: '100px', objectFit: 'cover' }} />;
+                        return <img src={src} alt={item.producto.titulo} className="img-fluid rounded" style={{ width: '100%', height: 'auto', maxHeight: 100, objectFit: 'contain', background: '#fff' }} />;
+                      })()
                     ) : (
                       <div className="bg-light p-3 text-center rounded">
                         <span style={{ fontSize: '2rem' }}>👕</span>

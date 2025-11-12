@@ -113,7 +113,17 @@ export const ProductDetailPage: React.FC = () => {
         <div className="col-12 col-lg-6">
           <div className="card">
             {camiseta.imagen ? (
-              <img src={camiseta.imagen} alt={camiseta.titulo} className="card-img-top img-fluid" style={{ maxHeight: 480, objectFit: 'contain' }} />
+              (() => {
+                const getSrc = () => {
+                  if (!camiseta.imagen) return '';
+                  if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
+                  const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
+                  return `http://localhost:3000/uploads/${cleanPath}`;
+                };
+                const src = getSrc();
+                console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
+                return <img src={src} alt={camiseta?.titulo || ''} className="card-img-top img-fluid" style={{ width: '100%', height: 'auto', maxHeight: 480, objectFit: 'contain', background: '#fff' }} />;
+              })()
             ) : (
               <div className="bg-light d-flex align-items-center justify-content-center" style={{ height: 320 }}>
                 <span style={{ fontSize: '6rem' }}>👕</span>

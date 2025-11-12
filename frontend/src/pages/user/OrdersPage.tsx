@@ -15,41 +15,40 @@ export const OrdersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+
   useEffect(() => {
     if (!usuario) {
       navigate('/login');
       return;
     }
+    const loadCompras = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/compras/usuario/${usuario?.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.data.success) {
+          setCompras(response.data.data || []);
+        } else {
+          setCompras([]);
+        }
+      } catch (error: unknown) {
+        console.error('Error loading orders:', error);
+        if (error instanceof axios.AxiosError && (error.response?.status === 404 || error.response?.data?.count === 0)) {
+          setCompras([]);
+        } else {
+          setError('Error al cargar las compras');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
     loadCompras();
   }, [usuario, navigate]);
 
-  const loadCompras = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('token');
-      
-      const response = await axios.get(`${API_BASE_URL}/compras/usuario/${usuario?.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (response.data.success) {
-        setCompras(response.data.data || []);
-      } else {
-        setCompras([]);
-      }
-    } catch (error: any) {
-      console.error('Error loading orders:', error);
-      
-      if (error.response?.status === 404 || error.response?.data?.count === 0) {
-        setCompras([]);
-      } else {
-        setError('Error al cargar las compras');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  // loadCompras ya está dentro del useEffect
 
   const getEstadoBadge = (estado: EstadoCompra): string => {
     const badges: Record<string, string> = {
@@ -95,7 +94,7 @@ export const OrdersPage: React.FC = () => {
           <h5>⚠️ {error}</h5>
           <button 
             className="btn btn-outline-danger mt-2" 
-            onClick={loadCompras}
+            onClick={() => window.location.reload()}
             type="button"
           >
             Reintentar
@@ -184,12 +183,18 @@ export const OrdersPage: React.FC = () => {
                           {compra.items.map((item) => (
                             <div key={item.id} className="d-flex align-items-center mb-2 pb-2 border-bottom">
                               {item.camiseta.imagen ? (
-                                <img 
-                                  src={item.camiseta.imagen} 
-                                  alt={item.camiseta.titulo}
-                                  className="rounded me-3"
-                                  style={{ width: '60px', height: '60px', objectFit: 'cover' }}
-                                />
+                                (() => {
+                                  const getSrc = () => {
+                                    if (!item.camiseta.imagen) return '';
+                                    if (item.camiseta.imagen.startsWith('http')) return item.camiseta.imagen;
+                                    const cleanPath = item.camiseta.imagen.replace(/^\/?uploads\//, '');
+                                    return `http://localhost:3000/uploads/${cleanPath}`;
+                                  };
+                                  const src = getSrc();
+                                  console.log('🖼️ item.camiseta.imagen:', item.camiseta.imagen, '| src:', src);
+                                  return <img src={src} alt={item.camiseta.titulo} className="rounded me-3" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />;
+                                  return <img src={src} alt={item.camiseta.titulo} className="rounded me-3" style={{ width: 60, height: 'auto', maxHeight: 60, objectFit: 'contain', background: '#fff' }} />;
+                                })()
                               ) : (
                                 <div className="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
                                      style={{ width: '60px', height: '60px' }}>

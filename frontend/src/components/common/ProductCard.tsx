@@ -62,25 +62,51 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     ? camiseta.precioConDescuento 
     : camiseta.precioInicial;
 
+
   return (
     <div className="card h-100 shadow-sm">
       {/* Imagen */}
       <div className="position-relative">
-        {camiseta.imagen ? (
-          <img
-            src={camiseta.imagen}
-            alt={camiseta.titulo}
-            className="card-img-top"
-            style={{ height: '250px', objectFit: 'cover' }}
-          />
-        ) : (
-          <div
-            className="bg-light d-flex align-items-center justify-content-center"
-            style={{ height: '250px' }}
-          >
-            <span style={{ fontSize: '4rem' }}>👕</span>
-          </div>
-        )}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '250px',
+            background: '#fff',
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          {camiseta.imagen ? (() => {
+            const getSrc = () => {
+              if (!camiseta.imagen) return '';
+              if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
+              const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
+              return `http://localhost:3000/uploads/${cleanPath}`;
+            };
+            const src = getSrc();
+            console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
+            return (
+              <img
+                src={src}
+                alt={camiseta.titulo}
+                style={{
+                  maxWidth: '90%',
+                  maxHeight: '90%',
+                  objectFit: 'contain',
+                  width: 'auto',
+                  height: 'auto',
+                  display: 'block',
+                  margin: '0 auto',
+                  background: '#fff',
+                }}
+              />
+            );
+          })() : (
+            <span style={{ fontSize: '4rem', color: '#ccc' }}>👕</span>
+          )}
+        </div>
 
         {/* Badge de SUBASTA */}
         {camiseta.esSubasta && (

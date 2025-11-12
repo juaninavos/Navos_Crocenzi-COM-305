@@ -153,7 +153,7 @@ export const Home = () => {
   const handleVerSubasta = async (camisetaId: number) => {
     try {
       // Buscar subasta por camisetaId
-      const response = await fetch(`http://localhost:3001/api/subastas/camiseta/${camisetaId}`);
+      const response = await fetch(`http://localhost:3000/api/subastas/camiseta/${camisetaId}`);
       const data = await response.json();
       
       if (data.success && data.data) {
@@ -396,12 +396,18 @@ export const Home = () => {
                   {/* Imagen */}
                   <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>
                     {camiseta.imagen ? (
-                      <img 
-                        src={camiseta.imagen} 
-                        alt={camiseta.titulo} 
-                        className="img-fluid" 
-                        style={{ maxHeight: '200px', objectFit: 'cover' }} 
-                      />
+                      (() => {
+                        const getSrc = () => {
+                          if (!camiseta.imagen) return '';
+                          if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
+                          const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
+                          return `http://localhost:3000/uploads/${cleanPath}`;
+                        };
+                        const src = getSrc();
+                        console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
+                        return <img src={src} alt={camiseta.titulo} className="img-fluid" style={{ maxHeight: '200px', objectFit: 'cover' }} />;
+                        return <img src={src} alt={camiseta.titulo} className="img-fluid" style={{ width: '100%', height: 'auto', maxHeight: 250, objectFit: 'contain', background: '#fff' }} />;
+                      })()
                     ) : (
                       <div className="text-center">
                         <div style={{ fontSize: '3rem' }}>👕</div>
