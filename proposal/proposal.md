@@ -2,53 +2,40 @@
 
 ## Grupo
 ### Integrantes
-*53169 - Navos, Juan Ignacio.
-*52238 - Crocenzi, Mateo Santiago.
+* 53169 - Navos, Juan Ignacio
+* 52238 - Crocenzi, Mateo Santiago
 
-### Repositorios
-* [fullstack app](https://github.com/juaninavos/Navos_Crocenzi-COM-305)
+### Repositorio
+* [Repositorio GitHub](https://github.com/juaninavos/Navos_Crocenzi-COM-305)
 
 ## Tema
 ### Descripción
-Marketplace digital de venta de camisetas de fútbol retro donde usuarios actúan como compradores y vendedores. Los usuarios pueden publicar sus camisetas con precio fijo o subasta, comprar camisetas de otros usuarios y participar en ofertas. El administrador gestiona la plataforma, crea promociones y supervisa transacciones. El sistema incluye búsquedas avanzadas, filtros, sistema de ofertas competitivas y procesamiento de pagos.
+Sistema web de compra y venta de camisetas de fútbol retro donde los usuarios pueden actuar como compradores y vendedores. Los usuarios pueden publicar camisetas con precio fijo o mediante subasta, realizar compras y participar en ofertas. El administrador gestiona usuarios, categorías, descuentos y supervisa las transacciones de la plataforma.
 
-**Tipos de usuarios:**
-- **Usuario común:** Puede comprar y vender camisetas, participar en subastas, gestionar su perfil y historial de transacciones.
-- **Administrador:** Puede hacer todo lo anterior y además gestionar usuarios, ver estadísticas, crear descuentos y categorías, generar reportes y supervisar la plataforma completa.
+El sistema incluye funcionalidades de búsqueda y filtrado de productos, gestión de stock, sistema de subastas con ofertas en tiempo real, aplicación de descuentos y procesamiento de compras.
+
+### Tipos de usuarios
+- **Usuario**: Puede publicar camisetas para venta, comprar productos, participar en subastas realizando ofertas, gestionar su perfil y ver su historial de compras.
+- **Administrador**: Tiene todos los permisos de usuario y además puede gestionar usuarios del sistema, crear y administrar categorías, crear descuentos promocionales, visualizar estadísticas de ventas y supervisar todas las transacciones.
 
 ### Modelo
-[![imagen del modelo]()]
-https://drive.google.com/drive/folders/1uHB4GVj3cE49v5StdFB6z5nS-QJeoHe6?usp=sharing
-
-
+[Diagrama de modelo de datos](https://github.com/juaninavos/Navos_Crocenzi-COM-305/blob/main/Modelo%20de%20dominio.png)
 
 ## Alcance Funcional 
 
-### Alcance Mínimo
-
-Regularidad:
-|Req|Detalle|
+### Regularidad
+|Requisito|Detalle|
 |:-|:-|
-|CRUD simple|1. CRUD Categoria<br>2. CRUD Usuario|
-|CRUD dependiente|1. CRUD Camiseta {depende de} CRUD Categoria y CRUD Usuario|
-|Listado<br>+<br>detalle| 1. Listado de camisetas filtrado por equipo, temporada y talle, muestra título, equipo, precio y estado => detalle CRUD Camiseta con información completa incluyendo vendedor y categoría|
-|CUU/Epic|1. Publicar una camiseta para la venta con opción de precio fijo o subasta|
+|CRUD simple|1. CRUD Usuario<br>2. CRUD Categoria|
+|CRUD dependiente|1. CRUD Camiseta (depende de Usuario y Categoria)|
+|Listado + detalle|1. Listado de camisetas filtrado por equipo, temporada, talle y condición, mostrando título, imagen, precio y estado. Al seleccionar una camiseta se muestra el detalle completo con toda la información.|
+|CUU/Epic|1. Publicar camiseta para venta: permite al usuario crear una publicación eligiendo entre precio fijo o subasta, ingresando todos los datos necesarios y cargando una imagen.|
 
-
-Adicionales para Aprobación
-|Req|Detalle|
+### Aprobación
+|Requisito|Detalle|
 |:-|:-|
-|CRUD |1. CRUD Categoria<br>2. CRUD Usuario<br>3. CRUD Camiseta<br>4. CRUD Descuento<br>5. CRUD Subasta<br>6. CRUD Oferta<br>7. CRUD Compra|
-|CUU/Epic|1. Publicar una camiseta para la venta con opción de precio fijo o subasta<br>2. Realizar ofertas en subastas de camisetas<br>3. Procesar compra de camiseta con aplicación de descuentos|
+|CRUD|1. CRUD Usuario<br>2. CRUD Categoria<br>3. CRUD Camiseta<br>4. CRUD Descuento<br>5. CRUD Subasta<br>6. CRUD Oferta<br>7. CRUD Compra|
+|CUU/Epic|1. Publicar camiseta para venta con opción de precio fijo o subasta<br>2. Realizar ofertas en subastas: los usuarios pueden ofertar por camisetas en subasta, el sistema valida que cada oferta sea mayor a la anterior y actualiza el precio actual en tiempo real<br>3. Realizar compra de camiseta: permite al usuario agregar productos al carrito, aplicar descuentos automáticos según categorías o productos específicos, y completar la compra con procesamiento de pago|
 
 
-### Alcance Adicional Voluntario
-
-*Nota*: El Alcance Adicional Voluntario es opcional, pero ayuda a que la funcionalidad del sistema esté completa y será considerado en la nota en función de su complejidad y esfuerzo.
-
-|Req|Detalle|
-|:-|:-|
-|Listados |1. Historial de compras por usuario mostrando camisetas adquiridas, fechas y montos <br>2. Ranking de camisetas más vendidas filtrado por categoría y período|
-|CUU/Epic|1. Sistema de notificaciones por email para ofertas ganadoras en subastas<br>2. Gestión de métodos de pago y procesamiento de pagos|
-|Otros|1. Sistema de valoraciones y comentarios en camisetas<br>2. Recomendaciones basadas en historial de compras|
 
