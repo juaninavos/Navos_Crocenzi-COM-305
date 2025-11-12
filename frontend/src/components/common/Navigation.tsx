@@ -23,8 +23,36 @@ export const Navigation: React.FC = () => {
   return (
     <nav className="bg-blue-600 text-white p-3 p-md-4">
       <div className="container d-flex align-items-center justify-content-between">
-        <Link to="/" className="text-decoration-none" onClick={() => setMenuOpen(false)}>
-          <span className="text-white fw-bold" style={{ fontSize: '1.25rem' }}>Tienda Retro</span>
+        {/* Logo Home estilizado con texto en dos líneas */}
+        <Link to="/" className="text-decoration-none d-flex align-items-center" onClick={() => setMenuOpen(false)} style={{ gap: '10px' }}>
+          <button
+            type="button"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 60,
+              height: 60,
+              borderRadius: '12px',
+              background: 'white',
+              color: '#2563eb',
+              fontWeight: 900,
+              fontSize: '1.1rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+              border: '2px solid #2563eb',
+              transition: 'background 0.2s',
+              padding: 0,
+              lineHeight: 1.1,
+              minWidth: 60,
+              minHeight: 60,
+            }}
+            title="Ir a inicio"
+            className="border-0"
+          >
+            <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '1px' }}>Tienda</span>
+            <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '2px', marginTop: '-2px' }}>Retro</span>
+          </button>
         </Link>
 
         {/* Toggle móvil */}

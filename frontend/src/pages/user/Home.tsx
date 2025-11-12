@@ -331,8 +331,12 @@ export const Home = () => {
                   className="form-control"
                   placeholder="Precio mínimo"
                   min={0}
+                  step="any"
                   value={filtros.precioMin ?? ''}
-                  onChange={e => updateFiltro({ precioMin: e.target.value || null })}
+                  onChange={e => {
+                    const val = e.target.value;
+                    updateFiltro({ precioMin: val === '' ? null : val });
+                  }}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 />
               </div>
@@ -342,8 +346,12 @@ export const Home = () => {
                   className="form-control"
                   placeholder="Precio máximo"
                   min={0}
+                  step="any"
                   value={filtros.precioMax ?? ''}
-                  onChange={e => updateFiltro({ precioMax: e.target.value || null })}
+                  onChange={e => {
+                    const val = e.target.value;
+                    updateFiltro({ precioMax: val === '' ? null : val });
+                  }}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 />
               </div>

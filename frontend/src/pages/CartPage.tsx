@@ -77,10 +77,12 @@ export const CartPage: React.FC = () => {
                       </button>
                       <input 
                         type="number" 
+                        step="any"
                         className="form-control text-center" 
-                        value={item.cantidad}
+                        value={item.cantidad === 0 ? '' : item.cantidad}
                         onChange={(e) => {
-                          const qty = Math.max(1, Math.min(item.producto.stock, parseInt(e.target.value) || 1));
+                          const val = e.target.value;
+                          const qty = val === '' ? 1 : Math.max(1, Math.min(item.producto.stock, Number(val)));
                           updateQuantity(item.producto.id, qty);
                         }}
                         min={1}

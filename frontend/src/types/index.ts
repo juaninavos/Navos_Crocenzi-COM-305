@@ -158,6 +158,7 @@ export interface Compra {
   notas?: string;
   comprador: Usuario;
   items?: CompraItem[]; // ✅ AGREGAR: Array de items (compras nuevas)
+  camiseta?: Camiseta; // Opcional: para compatibilidad con vistas que acceden a compra.camiseta
   metodoPago: MetodoPago;
 }
 

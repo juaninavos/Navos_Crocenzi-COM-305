@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -233,10 +234,21 @@ export const ProfilePage: React.FC = () => {
                     type="button" 
                     className="btn btn-outline-danger" 
                     onClick={() => {
-                    if (window.confirm('¿Seguro que deseas cerrar sesión?')) {
-                        logout();
-                        navigate('/login');
-                    }
+                        Swal.fire({
+                            title: '¿Cerrar sesión?',
+                            text: '¿Estás seguro de que quieres cerrar sesión?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Sí, cerrar sesión',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                logout();
+                                navigate('/login');
+                            }
+                        });
                     }}
                 >
                     🚪 Cerrar Sesión

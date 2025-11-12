@@ -428,11 +428,17 @@ export const MyProductsPage: React.FC = () => {
               </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Precio Inicial ($) *</label>
-                <input type="number" min={1} className="form-control" value={form.precioInicial} onChange={e => setForm(f => ({ ...f, precioInicial: Number(e.target.value) }))} required />
+                <input type="number" min={1} step="any" className="form-control" value={form.precioInicial === 0 ? '' : form.precioInicial} onChange={e => {
+                  const val = e.target.value;
+                  setForm(f => ({ ...f, precioInicial: val === '' ? 0 : Number(val) }));
+                }} required />
               </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Stock *</label>
-                <input type="number" min={1} className="form-control" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: Number(e.target.value) }))} required />
+                <input type="number" min={1} step="any" className="form-control" value={form.stock === 0 ? '' : form.stock} onChange={e => {
+                  const val = e.target.value;
+                  setForm(f => ({ ...f, stock: val === '' ? 0 : Number(val) }));
+                }} required />
               </div>
               <div className="col-12 col-md-6">
                 <label className="form-label">URL de Imagen *</label>
@@ -558,11 +564,17 @@ export const MyProductsPage: React.FC = () => {
                       <div className="row g-2">
                         <div className="col-6">
                           <label className="form-label small">Precio ($)</label>
-                          <input type="number" className="form-control" value={editForm.precioInicial} onChange={e => setEditForm(f => ({ ...f, precioInicial: Number(e.target.value) }))} />
+                          <input type="number" step="any" className="form-control" value={editForm.precioInicial === 0 ? '' : editForm.precioInicial} onChange={e => {
+                            const val = e.target.value;
+                            setEditForm(f => ({ ...f, precioInicial: val === '' ? 0 : Number(val) }));
+                          }} />
                         </div>
                         <div className="col-6">
                           <label className="form-label small">Stock</label>
-                          <input type="number" className="form-control" value={editForm.stock} onChange={e => setEditForm(f => ({ ...f, stock: Number(e.target.value) }))} />
+                          <input type="number" step="any" className="form-control" value={editForm.stock === 0 ? '' : editForm.stock} onChange={e => {
+                            const val = e.target.value;
+                            setEditForm(f => ({ ...f, stock: val === '' ? 0 : Number(val) }));
+                          }} />
                         </div>
                       </div>
                     </>

@@ -65,21 +65,30 @@ export const AuctionDetailPage: React.FC = () => {
         <div className="col-lg-7">
           {/* Imagen */}
           <div className="card mb-4">
-            {camiseta.imagen ? (
-              <img 
-                src={camiseta.imagen} 
-                alt={camiseta.titulo}
-                className="card-img-top"
-                style={{ maxHeight: '500px', objectFit: 'contain' }}
-              />
-            ) : (
-              <div 
-                className="bg-light d-flex align-items-center justify-content-center"
-                style={{ height: '500px' }}
-              >
-                <span style={{ fontSize: '8rem' }}>👕</span>
-              </div>
-            )}
+                {camiseta.imagen ? (() => {
+                  const getSrc = () => {
+                    if (!camiseta.imagen) return '';
+                    if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
+                    const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
+                    return `http://localhost:3000/uploads/${cleanPath}`;
+                  };
+                  const src = getSrc();
+                  return (
+                    <img
+                      src={src}
+                      alt={camiseta.titulo}
+                      className="card-img-top"
+                      style={{ maxHeight: '500px', objectFit: 'contain', background: '#fff', width: '100%' }}
+                    />
+                  );
+                })() : (
+                  <div
+                    className="bg-light d-flex align-items-center justify-content-center"
+                    style={{ height: '500px' }}
+                  >
+                    <span style={{ fontSize: '8rem' }}>👕</span>
+                  </div>
+                )}
           </div>
 
           {/* Información de la camiseta */}

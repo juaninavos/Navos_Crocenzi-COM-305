@@ -69,6 +69,49 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 }
 
 export default function authRouter(orm: MikroORM): Router {
+  // Cambiar contraseña
+  router.post('/change-password', async (req: Request, res: Response) => {
+    try {
+      const em = orm.em.fork();
+      const { usuarioId, contrasenaActual, contrasenaNueva } = req.body;
+      if (!usuarioId || !contrasenaActual || !contrasenaNueva) {
+        return res.status(400).json({
+          success: false,
+          message: 'Faltan datos para cambiar la contraseña',
+          code: 'MISSING_DATA'
+        });
+      }
+      const usuario = await em.findOne(Usuario, { id: usuarioId });
+      if (!usuario) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+      const ok = await bcrypt.compare(contrasenaActual, (usuario as any).contrasena);
+      if (!ok) {
+        return res.status(401).json({
+          success: false,
+          message: 'La contraseña actual es incorrecta',
+          code: 'WRONG_PASSWORD'
+        });
+      }
+      (usuario as any).contrasena = await bcrypt.hash(contrasenaNueva, BCRYPT_SALT_ROUNDS);
+      await em.persistAndFlush(usuario);
+      return res.json({
+        success: true,
+        message: 'Contraseña actualizada correctamente'
+      });
+    } catch (error) {
+      console.error('Error en /change-password:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'No se pudo cambiar la contraseña',
+        code: 'CHANGE_PASSWORD_ERROR'
+      });
+    }
+  });
   // Registro
   router.post('/register', async (req: Request, res: Response) => {
     try {

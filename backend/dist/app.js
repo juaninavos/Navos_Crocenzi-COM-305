@@ -31,6 +31,8 @@ let orm;
 async function createApp() {
     orm = await core_1.MikroORM.init(mikro_orm_config_1.default);
     app = (0, express_1.default)();
+    // Middleware para parsear JSON en el body (debe ir antes de cualquier middleware que use req.body)
+    app.use(express_1.default.json());
     // Servir archivos estáticos para imágenes (debe ir antes de las rutas API)
     const path = require('path');
     app.use('/uploads', express_1.default.static(path.resolve(__dirname, '../public/uploads')));

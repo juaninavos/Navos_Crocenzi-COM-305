@@ -7,10 +7,10 @@ export class Subasta {
   @PrimaryKey()
   id!: number;
 
-  @Property()
+  @Property({ fieldName: 'fecha_inicio' })
   fechaInicio!: Date;
 
-  @Property()
+  @Property({ fieldName: 'fecha_fin' })
   fechaFin!: Date;
 
   @Property({ type: 'decimal', precision: 8, scale: 2 })

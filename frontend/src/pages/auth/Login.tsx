@@ -34,7 +34,13 @@ export const Login = () => {
         navigate('/');
       }, 1500);
     } catch (error: unknown) {
-      if (error instanceof Error) {
+      // Si es error de autenticación (ApiAuthError o mensaje UNAUTHORIZED), mostrar mensaje amigable
+      if (
+        (error instanceof Error &&
+          (error.message === 'UNAUTHORIZED' || error.message.toLowerCase().includes('unauthorized')))
+      ) {
+        setError('Email o contraseña incorrectos. Intente nuevamente.');
+      } else if (error instanceof Error) {
         setError(error.message || 'Error al iniciar sesión');
       } else {
         setError('Error desconocido');

@@ -12,15 +12,20 @@ export class SubastaController {
       
       const { activas, vendedorId } = req.query;
       
-      console.log('📊 Obteniendo subastas con filtros:', { activas, vendedorId });
+  const now = new Date();
+  console.log('📊 Obteniendo subastas con filtros:', { activas, vendedorId });
+  console.log('🕒 Fecha actual (servidor):', now.toISOString());
       
-      const where: any = {};
+  const where: any = {};
       
-      // Filtro por activas (fecha fin > ahora)
+      // Filtro por activas (fecha fin >= ahora)
       if (activas === 'true') {
-        where.fechaFin = { $gte: new Date() };
-        where.activa = true;
+        where.fechaFin = { $gte: now };
+      } else if (activas === 'false') {
+        where.fechaFin = { $lt: now };
       }
+      console.log('🔎 Filtro where (forzado):', JSON.stringify(where));
+      console.log('🔎 Filtro where:', JSON.stringify(where));
       
       // ✅ AGREGAR: Filtro por vendedor de la camiseta
       if (vendedorId) {
@@ -32,6 +37,9 @@ export class SubastaController {
       });
       
       console.log(`✅ Encontradas ${subastas.length} subastas`);
+      subastas.forEach((s: Subasta) => {
+        console.log(`   - Subasta id: ${s.id}, fechaFin: ${s.fechaFin instanceof Date ? s.fechaFin.toISOString() : s.fechaFin}`);
+      });
       
       res.json({
         success: true,

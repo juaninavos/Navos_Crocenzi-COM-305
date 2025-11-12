@@ -21,7 +21,8 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.11.0",
-    "reflect-metadata": "^0.2.2"
+    "reflect-metadata": "^0.2.2",
+    "sweetalert2": "^11.26.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
