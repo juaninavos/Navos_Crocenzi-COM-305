@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
 import type { Camiseta, Talle, CondicionCamiseta } from '../../types';
-
+import { getImageUrl } from '../../utils/api-config';
 export const MyProductsPage: React.FC = () => {
   const { usuario, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -26,6 +26,11 @@ export const MyProductsPage: React.FC = () => {
   }, [usuario]);
 
   const [creating, setCreating] = useState(false);
+
+  // ✅ AGREGAR: Estado para el archivo de imagen
+  const [imagenArchivo, setImagenArchivo] = useState<File | null>(null);
+  const [imagenPreview, setImagenPreview] = useState<string>('');
+
   const [form, setForm] = useState<{
     titulo: string;
     equipo: string;
@@ -57,14 +62,15 @@ export const MyProductsPage: React.FC = () => {
       form.temporada.trim().length >= 2 &&
       Number(form.precioInicial) > 0 &&
       form.stock > 0 &&
-      form.imagen.trim().length > 5;
+      // ✅ CAMBIO: Permitir que se pueda publicar si hay archivo O URL
+      (imagenArchivo !== null || form.imagen.trim().length > 5);
     
     if (form.esSubasta) {
       return basicValidation && !!form.fechaFinSubasta;
     }
     
     return basicValidation;
-  }, [form]);
+  }, [form, imagenArchivo]); // ✅ AGREGAR imagenArchivo a las dependencias
 
   const fetchMine = useCallback(async () => {
     if (!usuario) return;
@@ -122,8 +128,16 @@ export const MyProductsPage: React.FC = () => {
     try {
       setCreating(true);
       let imagenFinal = form.imagen;
-      // Si la imagen es una URL externa (http/https), descargarla al backend
-      if (/^https?:\/\//i.test(form.imagen)) {
+
+      // ✅ CAMBIO: Si hay un archivo, subirlo primero
+      if (imagenArchivo) {
+        console.log('📤 Subiendo imagen desde archivo...');
+        const { imagenService } = await import('../../services/api');
+        imagenFinal = await imagenService.upload(imagenArchivo);
+        console.log('✅ Imagen subida:', imagenFinal);
+      }
+      // Si no hay archivo pero hay URL, descargar la imagen
+      else if (/^https?:\/\//i.test(form.imagen)) {
         try {
           const { imagenService } = await import('../../services/api');
           const nombre = `${form.equipo}_${form.temporada}`.replace(/\s+/g, '_').toLowerCase();
@@ -132,6 +146,7 @@ export const MyProductsPage: React.FC = () => {
           console.error('Error descargando imagen, se usará la URL original', err);
         }
       }
+
       const payload = {
         titulo: form.titulo.trim(),
         descripcion: `${form.equipo} ${form.temporada}`,
@@ -145,10 +160,14 @@ export const MyProductsPage: React.FC = () => {
         stock: form.stock,
         ...(form.esSubasta && form.fechaFinSubasta ? { fechaFinSubasta: form.fechaFinSubasta } : {})
       };
+      
       console.log('📤 Enviando payload:', payload);
       await camisetaService.publicar(payload);
+      
       setFormSuccess('✅ Publicación creada con éxito');
       setTimeout(() => setFormSuccess(''), 3000);
+      
+      // Limpiar formulario
       setForm({
         titulo: '',
         equipo: '',
@@ -161,6 +180,9 @@ export const MyProductsPage: React.FC = () => {
         esSubasta: false,
         fechaFinSubasta: undefined
       });
+      setImagenArchivo(null);
+      setImagenPreview('');
+      
       await fetchMine();
     } catch (e: unknown) {
       console.error('Error creando publicación', e);
@@ -178,6 +200,46 @@ export const MyProductsPage: React.FC = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  // ✅ MEJORAR: Función para manejar cambio de archivo
+  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    
+    if (!file) {
+      setImagenArchivo(null);
+      setImagenPreview('');
+      return;
+    }
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      setFormError('Solo se permiten archivos de imagen');
+      e.target.value = ''; // Limpiar el input
+      return;
+    }
+
+    // Validar tamaño (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError('La imagen no debe superar los 5MB');
+      e.target.value = ''; // Limpiar el input
+      return;
+    }
+
+    // ✅ Limpiar errores previos
+    setFormError('');
+
+    setImagenArchivo(file);
+    
+    // Crear preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagenPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // ✅ CAMBIO: Limpiar campo URL solo si se carga exitosamente el archivo
+    setForm(f => ({ ...f, imagen: '' }));
   };
 
   const startEdit = (c: Camiseta) => {
@@ -441,8 +503,76 @@ export const MyProductsPage: React.FC = () => {
                 }} required />
               </div>
               <div className="col-12 col-md-6">
-                <label className="form-label">URL de Imagen *</label>
-                <input className="form-control" value={form.imagen} onChange={e => setForm(f => ({ ...f, imagen: e.target.value }))} placeholder="https://..." required />
+                {/* ✅ CAMBIAR: Permitir tanto archivo como URL */}
+                <label className="form-label">Imagen de la camiseta *</label>
+                
+                {/* Tabs para elegir entre archivo o URL */}
+                <ul className="nav nav-tabs mb-2" role="tablist">
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${!form.imagen ? 'active' : ''}`} 
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, imagen: '' }))}
+                    >
+                      📁 Subir Archivo
+                    </button>
+                  </li>
+                  <li className="nav-item">
+                    <button 
+                      className={`nav-link ${form.imagen ? 'active' : ''}`} 
+                      type="button"
+                      onClick={() => {
+                        setImagenArchivo(null);
+                        setImagenPreview('');
+                      }}
+                    >
+                      🔗 URL Externa
+                    </button>
+                  </li>
+                </ul>
+
+                {/* Input de archivo */}
+                {!form.imagen && (
+                  <div>
+                    <input 
+                      type="file" 
+                      className="form-control mb-2" 
+                      accept="image/*"
+                      onChange={handleImagenChange}
+                    />
+                    <small className="text-muted d-block">
+                      Formatos: JPG, PNG, GIF, WEBP • Máx 5MB
+                    </small>
+                    
+                    {/* Preview de la imagen */}
+                    {imagenPreview && (
+                      <div className="mt-2">
+                        <img 
+                          src={imagenPreview} 
+                          alt="Preview" 
+                          style={{ 
+                            maxWidth: '200px', 
+                            maxHeight: '200px', 
+                            objectFit: 'contain',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            padding: '8px'
+                          }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Input de URL */}
+                {form.imagen !== undefined && !imagenArchivo && (
+                  <input 
+                    className="form-control" 
+                    value={form.imagen} 
+                    onChange={e => setForm(f => ({ ...f, imagen: e.target.value }))} 
+                    placeholder="https://ejemplo.com/imagen.jpg" 
+                  />
+                )}
               </div>
               <div className="col-12">
                 <div className="form-check">
@@ -524,18 +654,12 @@ export const MyProductsPage: React.FC = () => {
               <div className="card h-100">
                 <div className="position-relative">
                   {c.imagen ? (
-                    (() => {
-                      const getSrc = () => {
-                        if (!c.imagen) return '';
-                        if (c.imagen.startsWith('http')) return c.imagen;
-                        // Quitar cualquier 'uploads/' o '/uploads/' al principio
-                        const cleanPath = c.imagen.replace(/^\/\?uploads\//, '');
-                        return `http://localhost:3000/uploads/${cleanPath}`;
-                      };
-                      const src = getSrc();
-                      console.log('🖼️ c.imagen:', c.imagen, '| src:', src);
-                      return <img src={src} alt={c.titulo} className="card-img-top" style={{ height: 200, objectFit: 'cover' }} />;
-                    })()
+                    <img 
+                      src={getImageUrl(c.imagen)} 
+                      alt={c.titulo} 
+                      className="card-img-top" 
+                      style={{ height: 200, objectFit: 'cover' }} 
+                    />
                   ) : (
                     <div className="bg-light d-flex align-items-center justify-content-center" style={{ height: 200 }}>
                       <span style={{ fontSize: '3rem' }}>👕</span>
@@ -584,8 +708,29 @@ export const MyProductsPage: React.FC = () => {
                   <div className="text-muted mb-2"><small>{c.equipo} • {c.temporada}</small></div>
                   <div className="mb-2"><span className="badge bg-info">{c.condicion}</span></div>
                   <div className="mb-3 d-flex justify-content-between align-items-center">
-                    <span className="fw-bold text-success">${(editingId === c.id ? editForm.precioInicial : c.precioInicial).toLocaleString()}</span>
-                    <small className="text-muted">Stock: {editingId === c.id ? editForm.stock : c.stock}</small>
+                    {/* ✅ MOSTRAR DESCUENTO */}
+                    <div className="mb-3">
+                      {c.tieneDescuento && c.precioConDescuento ? (
+                        <div>
+                          <div className="d-flex align-items-baseline gap-2">
+                            <span className="text-decoration-line-through text-muted small">
+                              ${c.precioInicial.toLocaleString()}
+                            </span>
+                            <span className="fw-bold text-success">
+                              ${c.precioConDescuento.toLocaleString()}
+                            </span>
+                          </div>
+                          <span className="badge bg-success small">
+                            -{c.porcentajeTotal?.toFixed(0)}% OFF
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="fw-bold text-success">
+                          ${(editingId === c.id ? editForm.precioInicial : c.precioInicial).toLocaleString()}
+                        </span>
+                      )}
+                      <small className="text-muted ms-2">Stock: {editingId === c.id ? editForm.stock : c.stock}</small>
+                    </div>
                   </div>
                   <div className="mt-auto d-grid gap-2">
                     {editingId === c.id ? (

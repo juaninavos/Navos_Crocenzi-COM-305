@@ -3,6 +3,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
 import { useCart } from '../../context/useCart';
+import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
+import { API_BASE_URL } from '../../utils/constants'; // ✅ IMPORTAR
 import { 
   EstadoCamiseta,
   Talle,
@@ -11,13 +13,13 @@ import {
 import type { 
   Camiseta,
   CamisetaFiltro,
-  Subasta // ✅ AGREGAR ESTE IMPORT
+  Subasta
 } from '../../types';
 
 export const Home = () => {
   const PAGE_SIZE = 9;
-  const { addToCart } = useCart(); // ✅ AGREGAR
-  const navigate = useNavigate(); // ✅ AGREGAR
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -152,8 +154,8 @@ export const Home = () => {
 
   const handleVerSubasta = async (camisetaId: number) => {
     try {
-      // Buscar subasta por camisetaId
-      const response = await fetch(`http://localhost:3000/api/subastas/camiseta/${camisetaId}`);
+      // ✅ CAMBIO: usar API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/subastas/camiseta/${camisetaId}`);
       const data = await response.json();
       
       if (data.success && data.data) {
@@ -171,11 +173,11 @@ export const Home = () => {
   useEffect(() => {
     const cargarSubastas = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/subastas?activas=true`);
+        // ✅ CAMBIO: usar API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/subastas?activas=true`);
         const data = await response.json();
         
         if (data.success) {
-          // Crear mapa camisetaId -> subasta
           const mapa: Record<number, Subasta> = {};
           data.data.forEach((s: Subasta) => {
             if (s.camiseta?.id) {
@@ -401,21 +403,15 @@ export const Home = () => {
             {camisetas.map((camiseta) => (
               <div key={camiseta.id} className="col-md-6 col-lg-4 mb-4">
                 <div className="card card-camiseta h-100">
-                  {/* Imagen */}
+                  {/* ✅ CAMBIO: Imagen corregida */}
                   <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: '200px' }}>
                     {camiseta.imagen ? (
-                      (() => {
-                        const getSrc = () => {
-                          if (!camiseta.imagen) return '';
-                          if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
-                          const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
-                          return `http://localhost:3000/uploads/${cleanPath}`;
-                        };
-                        const src = getSrc();
-                        console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
-                        return <img src={src} alt={camiseta.titulo} className="img-fluid" style={{ maxHeight: '200px', objectFit: 'cover' }} />;
-                        return <img src={src} alt={camiseta.titulo} className="img-fluid" style={{ width: '100%', height: 'auto', maxHeight: 250, objectFit: 'contain', background: '#fff' }} />;
-                      })()
+                      <img 
+                        src={getImageUrl(camiseta.imagen)} 
+                        alt={camiseta.titulo} 
+                        className="img-fluid" 
+                        style={{ width: '100%', height: 'auto', maxHeight: 250, objectFit: 'contain', background: '#fff' }} 
+                      />
                     ) : (
                       <div className="text-center">
                         <div style={{ fontSize: '3rem' }}>👕</div>
@@ -432,7 +428,6 @@ export const Home = () => {
                       <span className="badge bg-primary me-1">{camiseta.equipo}</span>
                       <span className="badge bg-secondary me-1">{camiseta.talle}</span>
                       <span className="badge bg-info me-1">{camiseta.condicion}</span>
-                      {/* ✅ CORREGIR: Usar const object correctamente */}
                       <span className={`badge ${
                         camiseta.estado === EstadoCamiseta.DISPONIBLE ? 'bg-success' :
                         camiseta.estado === EstadoCamiseta.VENDIDA ? 'bg-danger' :
@@ -452,7 +447,22 @@ export const Home = () => {
                       {/* Precio y temporada */}
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <div className="precio">
-                          {camiseta.esSubasta && subastas[camiseta.id] ? (
+                          {/* ✅ MOSTRAR DESCUENTO SI EXISTE */}
+                          {camiseta.tieneDescuento && camiseta.precioConDescuento ? (
+                            <div>
+                              <div className="d-flex align-items-baseline gap-2">
+                                <span className="text-decoration-line-through text-muted">
+                                  ${camiseta.precioInicial.toLocaleString()}
+                                </span>
+                                <span className="text-success fw-bold">
+                                  ${camiseta.precioConDescuento.toLocaleString()}
+                                </span>
+                              </div>
+                              <span className="badge bg-success small">
+                                -{camiseta.porcentajeTotal?.toFixed(0)}% OFF
+                              </span>
+                            </div>
+                          ) : camiseta.esSubasta && subastas[camiseta.id] ? (
                             <>
                               <div className="text-success fw-bold">
                                 ${subastas[camiseta.id].precioActual.toLocaleString()}
@@ -462,7 +472,9 @@ export const Home = () => {
                               </small>
                             </>
                           ) : (
-                            <>${camiseta.precioInicial.toLocaleString()}</>
+                            <div className="text-success fw-bold">
+                              ${camiseta.precioInicial.toLocaleString()}
+                            </div>
                           )}
                         </div>
                         <small className="text-muted">Temporada {camiseta.temporada}</small>
@@ -483,7 +495,7 @@ export const Home = () => {
                         </span>
                       </div>
 
-                      {/* Botón de acción mejorado UX */}
+                      {/* Botón de acción */}
                       {camiseta.estado === EstadoCamiseta.VENDIDA ? (
                         <button type="button" className="btn btn-secondary w-100" disabled>
                           Vendida
@@ -492,7 +504,7 @@ export const Home = () => {
                         <button 
                           type="button" 
                           className="btn btn-warning w-100"
-                          onClick={() => handleVerSubasta(camiseta.id)} // ✅ CAMBIAR ESTO
+                          onClick={() => handleVerSubasta(camiseta.id)}
                         >
                           Ver Subasta
                         </button>
@@ -504,7 +516,7 @@ export const Home = () => {
                         <button 
                           type="button" 
                           className="btn btn-primary w-100"
-                          onClick={() => handleAddToCart(camiseta)} // ✅ AGREGAR ESTO
+                          onClick={() => handleAddToCart(camiseta)}
                           disabled={camiseta.stock <= 0}
                         >
                           {camiseta.stock > 0 ? '🛒 Agregar al Carrito' : 'Sin Stock'}
@@ -518,7 +530,7 @@ export const Home = () => {
           </div>
         )}
 
-        {/* Paginación simple */}
+        {/* Paginación - sin cambios */}
         <div className="d-flex justify-content-between align-items-center mt-4">
           <button 
             type="button" 

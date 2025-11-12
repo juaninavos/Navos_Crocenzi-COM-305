@@ -118,7 +118,7 @@ async function seedDatabase() {
       '1986',
       Talle.L,
       CondicionCamiseta.VINTAGE,
-      '/uploads/argentina_1986.jpg',
+      'argentina_1986.jpg', // ✅ Sin /uploads/
       25000,
       adminUser
     );
@@ -131,7 +131,7 @@ async function seedDatabase() {
       '1981',
       Talle.M,
       CondicionCamiseta.USADA,
-      '/uploads/boca_1981.jpg',
+      'boca_1981.jpg', // ✅ Sin /uploads/
       18000,
       adminUser
     );
@@ -144,7 +144,7 @@ async function seedDatabase() {
       '1992',
       Talle.XL,
       CondicionCamiseta.VINTAGE,
-      '/uploads/barcelona_1992.jpeg',
+      'barcelona_1992.jpeg', // ✅ Sin /uploads/
       30000,
       adminUser
     );
@@ -157,7 +157,7 @@ async function seedDatabase() {
       '1986',
       Talle.L,
       CondicionCamiseta.NUEVA,
-      '/uploads/river_1986.jpeg',
+      'river_1986.jpeg', // ✅ Sin /uploads/
       22000,
       adminUser
     );
@@ -170,14 +170,13 @@ async function seedDatabase() {
       '1970',
       Talle.M,
       CondicionCamiseta.VINTAGE,
-      '/uploads/brasil_1970.jpg',
+      'brasil_1970.jpg', // ✅ Sin /uploads/
       35000,
       adminUser
     );
     camiseta5.esSubasta = true;
     camiseta5.categoria = categoriaSelecciones;
 
-    // ✅ AGREGAR: Camiseta 6 para subasta
     const camiseta6 = new Camiseta(
       'Camiseta Italia 1982',
       'Camiseta del campeón mundial Italia 1982 - SUBASTA',
@@ -185,7 +184,7 @@ async function seedDatabase() {
       '1982',
       Talle.L,
       CondicionCamiseta.VINTAGE,
-      '/uploads/italia_1982.jpg',
+      'italia_1982.jpg', // ✅ Sin /uploads/
       40000,
       adminUser
     );

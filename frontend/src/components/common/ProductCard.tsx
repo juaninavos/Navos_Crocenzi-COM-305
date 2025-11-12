@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
+import { getImageUrl } from '../../utils/api-config';
+import { API_BASE_URL } from '../../utils/constants'; // ✅ IMPORTAR
 
 interface ProductCardProps {
   camiseta: Camiseta;
@@ -26,8 +28,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     try {
       setLoading(true);
       
-      // ✅ CORREGIR: Usar el endpoint correcto
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/subastas/camiseta/${camiseta.id}`);
+      // ✅ CAMBIAR: usar API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/subastas/camiseta/${camiseta.id}`);
       
       if (!response.ok) {
         throw new Error('No se encontró subasta');
@@ -50,22 +52,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
 
   const handleAgregarAlCarrito = () => {
     if (onAddToCart) {
-      onAddToCart(camiseta); // El padre muestra la notificación
+      onAddToCart(camiseta);
     } else {
       addToCart(camiseta, 1);
       toast.success(`✅ ${camiseta.titulo} agregado al carrito`);
     }
   };
 
-  // ✅ CALCULAR PRECIO A MOSTRAR
   const precioFinal = camiseta.tieneDescuento && camiseta.precioConDescuento 
     ? camiseta.precioConDescuento 
     : camiseta.precioInicial;
 
-
   return (
     <div className="card h-100 shadow-sm">
-      {/* Imagen */}
       <div className="position-relative">
         <div
           style={{
@@ -78,44 +77,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
             position: 'relative',
           }}
         >
-          {camiseta.imagen ? (() => {
-            const getSrc = () => {
-              if (!camiseta.imagen) return '';
-              if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
-              const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
-              return `http://localhost:3000/uploads/${cleanPath}`;
-            };
-            const src = getSrc();
-            console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
-            return (
-              <img
-                src={src}
-                alt={camiseta.titulo}
-                style={{
-                  maxWidth: '90%',
-                  maxHeight: '90%',
-                  objectFit: 'contain',
-                  width: 'auto',
-                  height: 'auto',
-                  display: 'block',
-                  margin: '0 auto',
-                  background: '#fff',
-                }}
-              />
-            );
-          })() : (
+          {camiseta.imagen ? (
+            <img
+              src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+              alt={camiseta.titulo}
+              style={{
+                maxWidth: '90%',
+                maxHeight: '90%',
+                objectFit: 'contain',
+                width: 'auto',
+                height: 'auto',
+                display: 'block',
+                margin: '0 auto',
+                background: '#fff',
+              }}
+            />
+          ) : (
             <span style={{ fontSize: '4rem', color: '#ccc' }}>👕</span>
           )}
         </div>
 
-        {/* Badge de SUBASTA */}
         {camiseta.esSubasta && (
           <span className="position-absolute top-0 end-0 m-2 badge bg-danger">
             🔨 EN SUBASTA
           </span>
         )}
 
-        {/* ✅ Badge de DESCUENTO (mostrar porcentaje total) */}
         {camiseta.tieneDescuento && camiseta.porcentajeTotal && (
           <span className="position-absolute top-0 start-0 m-2 badge bg-success">
             🏷️ -{camiseta.porcentajeTotal.toFixed(0)}% OFF
@@ -136,7 +123,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
           <span className="badge bg-info">{camiseta.condicion}</span>
         </div>
 
-        {/* ✅ MOSTRAR PRECIO CON/SIN DESCUENTO */}
         <div className="mb-3">
           {camiseta.tieneDescuento && camiseta.precioConDescuento ? (
             <>
@@ -148,7 +134,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
                   ${precioFinal.toLocaleString()}
                 </span>
               </div>
-              {/* ✅ Mostrar todos los descuentos aplicados */}
               {camiseta.descuentos && camiseta.descuentos.length > 0 && (
                 <small className="text-success d-block">
                   {camiseta.descuentos.length === 1 
@@ -170,7 +155,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
           )}
         </div>
 
-        {/* BOTONES */}
         <div className="mt-auto">
           {camiseta.esSubasta ? (
             <button

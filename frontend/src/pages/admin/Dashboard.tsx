@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR
 import { adminService, camisetaService } from '../../services/api';
 import { ProductCard } from '../../components/common/ProductCard';
 // ✅ CAMBIAR: Importar tipos con 'type'
 import type { DashboardData, Camiseta } from '../../types';
 
 export const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate(); // ✅ AGREGAR
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,8 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
-    // TODO: Implementar modal de edición
-    toast.info(`Funcionalidad de editar camiseta ${id} - Por implementar`);
+    // ✅ CAMBIO: Redirigir a la página de detalle o edición
+    navigate(`/product/${id}`);
   };
 
   if (loading) {
@@ -105,12 +107,35 @@ export const AdminDashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold">Gestión de Camisetas</h2>
           <div className="d-flex gap-2">
-            <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+            {/* ✅ CAMBIO: Agregar onClick para redirigir */}
+            <button 
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+              onClick={() => navigate('/my-products')}
+              type="button"
+            >
               + Nueva Camiseta
             </button>
-            <a href="/admin/users" className="btn btn-outline-primary">👥 Usuarios</a>
-            <a href="/admin/categories" className="btn btn-outline-success">📂 Categorías</a>
-            <a href="/admin/discounts" className="btn btn-outline-warning">💰 Descuentos</a>
+            <button 
+              className="btn btn-outline-primary"
+              onClick={() => navigate('/admin/users')}
+              type="button"
+            >
+              👥 Usuarios
+            </button>
+            <button 
+              className="btn btn-outline-success"
+              onClick={() => navigate('/admin/categories')}
+              type="button"
+            >
+              📂 Categorías
+            </button>
+            <button 
+              className="btn btn-outline-warning"
+              onClick={() => navigate('/admin/discounts')}
+              type="button"
+            >
+              💰 Descuentos
+            </button>
           </div>
         </div>
         

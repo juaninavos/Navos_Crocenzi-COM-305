@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
+import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
 
 export const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +59,6 @@ export const ProductDetailPage: React.FC = () => {
     );
   }
 
-  // ✅ CALCULAR PRECIO FINAL
   const precioFinal = camiseta.tieneDescuento && camiseta.precioConDescuento
     ? camiseta.precioConDescuento
     : camiseta.precioInicial;
@@ -72,7 +72,6 @@ export const ProductDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* ✅ MOSTRAR BANNER DE DESCUENTOS ACUMULADOS */}
       {camiseta.tieneDescuento && camiseta.descuentos && camiseta.descuentos.length > 0 && (
         <div className="alert alert-success mb-3">
           <div className="d-flex align-items-start">
@@ -113,17 +112,12 @@ export const ProductDetailPage: React.FC = () => {
         <div className="col-12 col-lg-6">
           <div className="card">
             {camiseta.imagen ? (
-              (() => {
-                const getSrc = () => {
-                  if (!camiseta.imagen) return '';
-                  if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
-                  const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
-                  return `http://localhost:3000/uploads/${cleanPath}`;
-                };
-                const src = getSrc();
-                console.log('🖼️ camiseta.imagen:', camiseta.imagen, '| src:', src);
-                return <img src={src} alt={camiseta?.titulo || ''} className="card-img-top img-fluid" style={{ width: '100%', height: 'auto', maxHeight: 480, objectFit: 'contain', background: '#fff' }} />;
-              })()
+              <img 
+                src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+                alt={camiseta.titulo} 
+                className="card-img-top img-fluid" 
+                style={{ width: '100%', height: 'auto', maxHeight: 480, objectFit: 'contain', background: '#fff' }} 
+              />
             ) : (
               <div className="bg-light d-flex align-items-center justify-content-center" style={{ height: 320 }}>
                 <span style={{ fontSize: '6rem' }}>👕</span>
@@ -135,7 +129,6 @@ export const ProductDetailPage: React.FC = () => {
         <div className="col-12 col-lg-6">
           <div className="card mb-3">
             <div className="card-body">
-              {/* ✅ MOSTRAR PRECIO CON/SIN DESCUENTO */}
               <div className="mb-3">
                 <span className="text-muted d-block mb-1">Precio</span>
                 {camiseta.tieneDescuento && camiseta.precioConDescuento ? (

@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AuctionTimer } from '../../components/auction/AuctionTimer';
 import { BidForm } from '../../components/auction/BidForm';
 import { BidHistory } from '../../components/auction/BidHistory';
+import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
 
 export const AuctionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -65,30 +66,21 @@ export const AuctionDetailPage: React.FC = () => {
         <div className="col-lg-7">
           {/* Imagen */}
           <div className="card mb-4">
-                {camiseta.imagen ? (() => {
-                  const getSrc = () => {
-                    if (!camiseta.imagen) return '';
-                    if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
-                    const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
-                    return `http://localhost:3000/uploads/${cleanPath}`;
-                  };
-                  const src = getSrc();
-                  return (
-                    <img
-                      src={src}
-                      alt={camiseta.titulo}
-                      className="card-img-top"
-                      style={{ maxHeight: '500px', objectFit: 'contain', background: '#fff', width: '100%' }}
-                    />
-                  );
-                })() : (
-                  <div
-                    className="bg-light d-flex align-items-center justify-content-center"
-                    style={{ height: '500px' }}
-                  >
-                    <span style={{ fontSize: '8rem' }}>👕</span>
-                  </div>
-                )}
+            {camiseta.imagen ? (
+              <img
+                src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+                alt={camiseta.titulo}
+                className="card-img-top"
+                style={{ maxHeight: '500px', objectFit: 'contain', background: '#fff', width: '100%' }}
+              />
+            ) : (
+              <div
+                className="bg-light d-flex align-items-center justify-content-center"
+                style={{ height: '500px' }}
+              >
+                <span style={{ fontSize: '8rem' }}>👕</span>
+              </div>
+            )}
           </div>
 
           {/* Información de la camiseta */}

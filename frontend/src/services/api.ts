@@ -1,18 +1,3 @@
-// =========================
-// 🖼️ Servicio de imágenes
-// =========================
-export const imagenService = {
-  descargar: async (url: string, nombre?: string): Promise<string> => {
-    const response = await api.post<{ success: boolean; path: string }>(
-      '/imagenes/descargar',
-      { url, nombre }
-    );
-    if (response.data.success && response.data.path) {
-      return response.data.path;
-    }
-    throw new Error('No se pudo descargar la imagen');
-  },
-};
 // src/services/api.ts
 
 import axios, { AxiosError } from 'axios';
@@ -34,7 +19,7 @@ import type {
   SubastaFiltro,
   Categoria,
   Descuento,
-  CamisetaSeleccion // ✅ AGREGAR ESTE IMPORT
+  CamisetaSeleccion
 } from '../types';
 
 export class ApiAuthError extends Error {
@@ -97,7 +82,6 @@ export const authService = {
     return response.data.data;
   },
 
-  // ✅ AGREGAR ESTE MÉTODO
   changePassword: async (usuarioId: number, contrasenaActual: string, contrasenaNueva: string): Promise<{ message: string }> => {
     const response = await api.post<ApiResponse<{ message: string }>>('/auth/change-password', {
       usuarioId,
@@ -129,11 +113,10 @@ export const camisetaService = {
     if (filtros?.sort) params.sort = filtros.sort;
     if (filtros?.categoriaId) params.categoriaId = filtros.categoriaId;
     
-    // ✅ AGREGAR ESTE MAPEO
     if (filtros?.usuarioId) params.vendedorId = filtros.usuarioId;
     if (filtros?.vendedorId) params.vendedorId = filtros.vendedorId;
 
-    console.log('camisetaService.getAll -> params:', params); // ✅ DEBUG
+    console.log('camisetaService.getAll -> params:', params);
     
     const response = await api.get<ApiResponse<Camiseta[]>>('/camisetas', { params });
     return response.data;
@@ -141,6 +124,12 @@ export const camisetaService = {
 
   getById: async (id: number): Promise<Camiseta> => {
     const response = await api.get<ApiResponse<Camiseta>>(`/camisetas/${id}`);
+    return response.data.data;
+  },
+
+  // ✅ NUEVO: Obtener múltiples camisetas por IDs (con descuentos actualizados)
+  getByIds: async (ids: number[]): Promise<Camiseta[]> => {
+    const response = await api.post<ApiResponse<Camiseta[]>>('/camisetas/by-ids', { ids });
     return response.data.data;
   },
 
@@ -164,7 +153,6 @@ export const camisetaService = {
     return response.data.data;
   },
 
-  // ✅ AGREGAR ESTE MÉTODO
   getSeleccion: async (): Promise<{ data: CamisetaSeleccion[] }> => {
     const response = await api.get<ApiResponse<CamisetaSeleccion[]>>('/camisetas/seleccion');
     return {
@@ -182,25 +170,21 @@ export const adminService = {
     return response.data.data;
   },
 
-  // ✅ CORREGIR: Cambiar de /admin/usuarios a /usuarios
   getUsuarios: async (): Promise<Usuario[]> => {
     const response = await api.get<ApiResponse<Usuario[]>>('/usuarios');
     return response.data.data;
   },
 
-  // ✅ AGREGAR: Método para cambiar estado de usuario
   toggleEstadoUsuario: async (id: number): Promise<Usuario> => {
     const response = await api.put<ApiResponse<Usuario>>(`/usuarios/${id}/toggle-estado`);
     return response.data.data;
   },
 
-  // ✅ AGREGAR: Método para actualizar usuario
   updateUsuario: async (id: number, data: Partial<Usuario>): Promise<Usuario> => {
     const response = await api.put<ApiResponse<Usuario>>(`/usuarios/${id}`, data);
     return response.data.data;
   },
 
-  // ✅ AGREGAR: Método para eliminar usuario
   deleteUsuario: async (id: number): Promise<{ message: string }> => {
     const response = await api.delete<ApiResponse<{ message: string }>>(`/usuarios/${id}`);
     return response.data.data;
@@ -288,7 +272,6 @@ export const ofertaService = {
     return response.data.data;
   },
 
-  // ✅ AGREGAR ESTE MÉTODO
   getBySubasta: async (subastaId: number): Promise<Oferta[]> => {
     const response = await api.get<ApiResponse<Oferta[]>>('/ofertas', {
       params: { subastaId }
@@ -363,31 +346,29 @@ export const descuentoService = {
     return response.data;
   },
 
-  // ✅ ACTUALIZAR ESTE MÉTODO
   create: async (data: {
     codigo: string;
     descripcion: string;
     porcentaje: number;
     fechaInicio: string | Date;
     fechaFin: string | Date;
-    tipoAplicacion?: string; // ✅ AGREGAR
-    categoriaId?: number;    // ✅ AGREGAR
-    camisetaIds?: number[];  // ✅ AGREGAR
+    tipoAplicacion?: string;
+    categoriaId?: number;
+    camisetaIds?: number[];
   }): Promise<Descuento> => {
     const response = await api.post<ApiResponse<Descuento>>('/descuentos', data);
     return response.data.data;
   },
 
-  // ✅ ACTUALIZAR ESTE MÉTODO
   update: async (id: number, data: {
     descripcion?: string;
     porcentaje?: number;
     fechaInicio?: string | Date;
     fechaFin?: string | Date;
     activo?: boolean;
-    tipoAplicacion?: string; // ✅ AGREGAR
-    categoriaId?: number;    // ✅ AGREGAR
-    camisetaIds?: number[];  // ✅ AGREGAR
+    tipoAplicacion?: string;
+    categoriaId?: number;
+    camisetaIds?: number[];
   }): Promise<Descuento> => {
     const response = await api.put<ApiResponse<Descuento>>(`/descuentos/${id}`, data);
     return response.data.data;
@@ -399,14 +380,56 @@ export const descuentoService = {
   },
 };
 
+// =========================
+// 🖼️ Servicio de imágenes
+// =========================
+export const imagenService = {
+  // ✅ NUEVO: Subir archivo de imagen
+  upload: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('imagen', file);
+
+    const response = await api.post<{
+      success: boolean;
+      data: {
+        filename: string;
+        path: string;
+        size: number;
+        mimetype: string;
+      };
+    }>('/imagenes/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+
+    if (response.data.success && response.data.data.path) {
+      return response.data.data.path;
+    }
+    throw new Error('No se pudo subir la imagen');
+  },
+
+  descargar: async (url: string, nombre?: string): Promise<string> => {
+    const response = await api.post<{ success: boolean; path: string }>(
+      '/imagenes/descargar',
+      { url, nombre }
+    );
+    if (response.data.success && response.data.path) {
+      return response.data.path;
+    }
+    throw new Error('No se pudo descargar la imagen');
+  },
+};
+
 export const services = {
   auth: authService,
   camiseta: camisetaService,
   admin: adminService,
   subasta: subastaService,
   oferta: ofertaService,
-  categoria: categoriaService, // ✅ AGREGAR
-  descuento: descuentoService, // ✅ AGREGAR
+  categoria: categoriaService,
+  descuento: descuentoService,
+  imagen: imagenService, // ✅ AGREGAR
 };
 
 export default api;

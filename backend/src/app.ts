@@ -17,6 +17,7 @@ import pagoRoutes from './routes/pagoRoutes';
 import descuentoRoutes from './routes/descuentoRoutes';
 import metodoPagoRoutes from './routes/metodoPagoRoutes';
 import adminRoutes from './routes/adminRoutes';
+import imagenRoutes from './routes/imagenRoutes'; // ✅ AGREGAR
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import authRouter from './controllers/AuthController';
 import authMiddleware from './middleware/auth';
@@ -79,6 +80,7 @@ export async function createApp() {
   app.use('/api/pagos', pagoRoutes);
   app.use('/api/descuentos', descuentoRoutes);
   app.use('/api/metodos-pago', metodoPagoRoutes);  
+  app.use('/api/imagenes', imagenRoutes); 
   app.use('/api/admin', adminRoutes);  
 
   app.get('/api/health', (req: Request, res: Response) => {

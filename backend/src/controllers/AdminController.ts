@@ -11,9 +11,8 @@ export class AdminController {
   static async getDashboard(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      const em = orm.em.fork();
 
-      // ✅ VERIFICAR que req.user exista
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -22,7 +21,6 @@ export class AdminController {
         });
       }
 
-      // ✅ VERIFICAR que sea administrador
       if (req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -41,16 +39,20 @@ export class AdminController {
       const compras = await em.find(Compra, {});
       const ingresosTotales = compras.reduce((suma: number, compra: Compra) => suma + Number(compra.total), 0);
 
-      // Top 5 camisetas más vendidas
+      // ✅ CORRECCIÓN: Usar 'compraItems' en lugar de 'compras'
       const camisetas = await em.find(Camiseta, {}, {
-        populate: ['compras'],
+        populate: ['compraItems'], // ✅ CAMBIO AQUÍ
         orderBy: { fechaCreacion: 'DESC' }
       });
 
       const camisetasMasVendidas = camisetas
         .map((camiseta: Camiseta) => ({
-          ...camiseta,
-          totalVentas: camiseta.compraItems?.length || 0
+          id: camiseta.id,
+          titulo: camiseta.titulo,
+          equipo: camiseta.equipo,
+          imagen: camiseta.imagen,
+          precioInicial: camiseta.precioInicial,
+          totalVentas: camiseta.compraItems?.length || 0 // ✅ USAR compraItems
         }))
         .sort((a: any, b: any) => b.totalVentas - a.totalVentas)
         .slice(0, 5);
@@ -172,9 +174,8 @@ export class AdminController {
       const { id } = req.params;
       const { motivo } = req.body;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      const em = orm.em.fork();
       
-      // ✅ AGREGAR ESTA VERIFICACIÓN
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -212,7 +213,6 @@ export class AdminController {
         });
       }
 
-      const estadoAnterior = usuario.activo;
       usuario.activo = !usuario.activo;
 
       await em.persistAndFlush(usuario);
@@ -239,9 +239,8 @@ export class AdminController {
     try {
       const { fechaInicio, fechaFin } = req.query;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ CREAR CONTEXTO ESPECÍFICO
+      const em = orm.em.fork();
       
-      // ✅ AGREGAR ESTA VERIFICACIÓN
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -268,8 +267,9 @@ export class AdminController {
         };
       }
 
+      // ✅ CORRECCIÓN: Populate correcto para Compra
       const compras = await em.find(Compra, filtros, {
-        populate: ['camiseta', 'camiseta.vendedor', 'comprador'],
+        populate: ['items.camiseta', 'items.camiseta.vendedor', 'usuario'], // ✅ CAMBIO AQUÍ
         orderBy: { fechaCompra: 'DESC' }
       });
 

@@ -5,12 +5,12 @@ import { Usuario, UsuarioRol } from '../entities/Usuario';
 import { Categoria } from '../entities/Categoria';
 import { Descuento, TipoAplicacionDescuento } from '../entities/Descuento';
 import '../types/auth';
-import { Subasta } from '../entities/Subasta'; // ✅ AGREGAR IMPORT
-
+import { Subasta } from '../entities/Subasta';
 import { z } from 'zod';
+import fs from 'fs'; // ✅ AGREGAR
+import path from 'path'; // ✅ AGREGAR
 
 export class CamisetaController {
-
   // ✅ FUNCIÓN AUXILIAR: Calcular TODOS los descuentos aplicables a una camiseta
   private static async calcularDescuentoAplicable(em: any, camiseta: Camiseta): Promise<{
     tieneDescuento: boolean;
@@ -244,7 +244,7 @@ export class CamisetaController {
         });
       }
 
-      // ✅ AGREGAR DESCUENTO
+      // ✅ AGREGAR: Calcular descuentos
       const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
 
       res.json({
@@ -252,7 +252,7 @@ export class CamisetaController {
         message: 'Operación getOne realizada correctamente.',
         data: {
           ...camiseta,
-          ...infoDescuento
+          ...infoDescuento // ✅ INCLUIR info de descuentos
         }
       });
     } catch (error) {
@@ -277,10 +277,12 @@ export class CamisetaController {
           code: 'UNAUTHORIZED'
         });
       }
-      if (req.user.rol !== UsuarioRol.USUARIO) {
+      
+      // ✅ CAMBIO: Permitir tanto 'usuario' como 'administrador'
+      if (req.user.rol !== UsuarioRol.USUARIO && req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'No se pudo crear camiseta: solo usuarios pueden publicar camisetas.',
+          message: 'No se pudo crear camiseta: rol no permitido.',
           error: 'Rol no permitido',
           code: 'FORBIDDEN'
         });
@@ -399,11 +401,20 @@ export class CamisetaController {
   // DELETE /api/camisetas/:id
   static async delete(req: Request, res: Response) {
     try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'No se pudo eliminar camiseta: no autorizado.',
+          error: 'No autorizado',
+          code: 'UNAUTHORIZED'
+        });
+      }
+
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
-
       const camiseta = await em.findOne(Camiseta, { id: Number(req.params.id) });
-      if (!camiseta || camiseta.estado === EstadoCamiseta.INACTIVA) {
+
+      if (!camiseta) {
         return res.status(404).json({
           success: false,
           message: 'No se pudo eliminar camiseta: camiseta no encontrada.',
@@ -412,16 +423,48 @@ export class CamisetaController {
         });
       }
 
-      camiseta.estado = EstadoCamiseta.INACTIVA;
-      await em.flush();
+      // Verificar permisos: solo el vendedor o admin puede eliminar
+      if (
+        req.user.rol !== UsuarioRol.ADMINISTRADOR &&
+        camiseta.vendedor.id !== req.user.id
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: 'No se pudo eliminar camiseta: no tienes permiso para eliminar esta camiseta.',
+          error: 'No autorizado',
+          code: 'FORBIDDEN'
+        });
+      }
+
+      // ✅ AGREGAR: Eliminar archivo de imagen si existe
+      if (camiseta.imagen && camiseta.imagen.startsWith('/uploads/')) {
+        try {
+          const imagePath = path.resolve(__dirname, '../../public', camiseta.imagen.substring(1));
+          if (fs.existsSync(imagePath)) {
+            fs.unlinkSync(imagePath);
+            console.log(`🗑️ Imagen eliminada: ${imagePath}`);
+          }
+        } catch (error) {
+          console.error('⚠️ Error al eliminar imagen:', error);
+          // No fallar la eliminación de la camiseta si falla eliminar la imagen
+        }
+      }
+
+      await em.removeAndFlush(camiseta);
 
       res.json({
         success: true,
-        message: 'Operación delete realizada correctamente.'
+        message: 'Operación delete realizada correctamente.',
+        data: { message: 'Camiseta eliminada con éxito' }
       });
     } catch (error) {
       console.error('Error en delete camiseta:', error);
-      res.status(500).json({ success: false, message: 'Error al eliminar camiseta' });
+      res.status(500).json({
+        success: false,
+        message: 'No se pudo eliminar camiseta: error interno.',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'DELETE_ERROR'
+      });
     }
   }
 
@@ -436,10 +479,12 @@ export class CamisetaController {
           code: 'UNAUTHORIZED'
         });
       }
-      if (req.user.rol !== UsuarioRol.USUARIO) {
+      
+      // ✅ CAMBIO: Permitir tanto 'usuario' como 'administrador'
+      if (req.user.rol !== UsuarioRol.USUARIO && req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
-          message: 'No se pudo publicar camiseta: solo usuarios pueden publicar camisetas.',
+          message: 'No se pudo publicar camiseta: rol no permitido.',
           error: 'Rol no permitido',
           code: 'FORBIDDEN'
         });
@@ -597,25 +642,20 @@ export class CamisetaController {
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
 
-      const knex = (orm.em as any).getConnection().getKnex();
-      const row = await knex('camiseta')
-        .whereNot('estado', 'INACTIVA')
-        .select(knex.raw('MIN(precio_inicial) as minPrecio'), knex.raw('MAX(precio_inicial) as maxPrecio'))
-        .first();
-
-      const minPrecio = row?.minPrecio ? Number(row.minPrecio) : null;
-      const maxPrecio = row?.maxPrecio ? Number(row.maxPrecio) : null;
+      const disponibles = await em.count(Camiseta, { estado: EstadoCamiseta.DISPONIBLE });
+      const vendidas = await em.count(Camiseta, { estado: EstadoCamiseta.VENDIDA });
+      const enSubasta = await em.count(Camiseta, { estado: EstadoCamiseta.EN_SUBASTA });
 
       res.json({
         success: true,
         message: 'Operación stats realizada correctamente.',
-        data: { minPrecio, maxPrecio }
+        data: { disponibles, vendidas, enSubasta }
       });
     } catch (error) {
-      console.error('Error en stats camisetas:', error);
+      console.error('Error en stats:', error);
       res.status(500).json({
         success: false,
-        message: 'No se pudo obtener estadísticas de camisetas: error interno.',
+        message: 'No se pudo obtener estadísticas: error interno.',
         error: error instanceof Error ? error.message : 'Error desconocido',
         code: 'STATS_ERROR'
       });
@@ -662,6 +702,53 @@ export class CamisetaController {
         message: 'No se pudo obtener selección de camisetas: error interno.',
         error: error instanceof Error ? error.message : 'Error desconocido',
         code: 'GETSELECCION_ERROR'
+      });
+    }
+  }
+
+  // ✅ AGREGAR: Nuevo endpoint para obtener camisetas con descuentos para el carrito
+  static async getByIds(req: Request, res: Response) {
+    try {
+      const orm = req.app.locals.orm as MikroORM;
+      const em = orm.em.fork();
+      
+      const { ids } = req.body;
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Se requiere un array de IDs',
+          code: 'INVALID_IDS'
+        });
+      }
+
+      const camisetas = await em.find(Camiseta, { id: { $in: ids } }, { 
+        populate: ['categoria', 'vendedor'] 
+      });
+
+      // ✅ Calcular descuentos para cada camiseta
+      const camisetasConDescuentos = await Promise.all(
+        camisetas.map(async (camiseta) => {
+          const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
+          return {
+            ...camiseta,
+            ...infoDescuento
+          };
+        })
+      );
+
+      res.json({
+        success: true,
+        message: 'Camisetas obtenidas correctamente',
+        data: camisetasConDescuentos
+      });
+    } catch (error) {
+      console.error('Error en getByIds:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener camisetas',
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        code: 'GETBYIDS_ERROR'
       });
     }
   }

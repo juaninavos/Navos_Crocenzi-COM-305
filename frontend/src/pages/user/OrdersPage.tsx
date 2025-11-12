@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import { API_BASE_URL } from '../../utils/constants';
+import { getImageUrl } from '../../utils/api-config';
 import type { Compra, EstadoCompra } from '../../types';
 
 export const OrdersPage: React.FC = () => {
@@ -14,7 +15,6 @@ export const OrdersPage: React.FC = () => {
   const [compras, setCompras] = useState<Compra[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
 
   useEffect(() => {
     if (!usuario) {
@@ -47,8 +47,6 @@ export const OrdersPage: React.FC = () => {
     };
     loadCompras();
   }, [usuario, navigate]);
-
-  // loadCompras ya está dentro del useEffect
 
   const getEstadoBadge = (estado: EstadoCompra): string => {
     const badges: Record<string, string> = {
@@ -141,7 +139,7 @@ export const OrdersPage: React.FC = () => {
               <div key={compra.id} className="col-12 mb-3">
                 <div className="card">
                   <div className="card-body">
-                    {/* ✅ HEADER DE LA ORDEN */}
+                    {/* Header de la orden */}
                     <div className="row align-items-center mb-3">
                       <div className="col-md-3">
                         <h6 className="mb-0 text-primary">Orden #{compra.id}</h6>
@@ -173,53 +171,79 @@ export const OrdersPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* ✅ MOSTRAR ITEMS DE LA COMPRA */}
+                    {/* ✅ ITEMS CON PRECIOS Y DESCUENTOS */}
                     <div className="border-top pt-3">
                       {compra.items && compra.items.length > 0 ? (
                         <>
                           <small className="text-muted d-block mb-2">
                             <strong>Productos ({compra.items.length}):</strong>
                           </small>
-                          {compra.items.map((item) => (
-                            <div key={item.id} className="d-flex align-items-center mb-2 pb-2 border-bottom">
-                              {item.camiseta.imagen ? (
-                                (() => {
-                                  const getSrc = () => {
-                                    if (!item.camiseta.imagen) return '';
-                                    if (item.camiseta.imagen.startsWith('http')) return item.camiseta.imagen;
-                                    const cleanPath = item.camiseta.imagen.replace(/^\/?uploads\//, '');
-                                    return `http://localhost:3000/uploads/${cleanPath}`;
-                                  };
-                                  const src = getSrc();
-                                  console.log('🖼️ item.camiseta.imagen:', item.camiseta.imagen, '| src:', src);
-                                  return <img src={src} alt={item.camiseta.titulo} className="rounded me-3" style={{ width: '60px', height: '60px', objectFit: 'cover' }} />;
-                                  return <img src={src} alt={item.camiseta.titulo} className="rounded me-3" style={{ width: 60, height: 'auto', maxHeight: 60, objectFit: 'contain', background: '#fff' }} />;
-                                })()
-                              ) : (
-                                <div className="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
-                                     style={{ width: '60px', height: '60px' }}>
-                                  <span style={{ fontSize: '2rem' }}>👕</span>
+                          {compra.items.map((item) => {
+                            // ✅ Detectar si hubo descuento comparando precioUnitario con precioInicial
+                            const precioOriginal = item.camiseta.precioInicial;
+                            const precioComprado = item.precioUnitario;
+                            const huboDescuento = precioComprado < precioOriginal;
+                            const porcentajeDescuento = huboDescuento 
+                              ? ((precioOriginal - precioComprado) / precioOriginal * 100).toFixed(0)
+                              : 0;
+
+                            return (
+                              <div key={item.id} className="d-flex align-items-center mb-2 pb-2 border-bottom">
+                                {item.camiseta.imagen ? (
+                                  <img 
+                                    src={getImageUrl(item.camiseta.imagen)}
+                                    alt={item.camiseta.titulo} 
+                                    className="rounded me-3" 
+                                    style={{ width: '60px', height: '60px', objectFit: 'cover' }} 
+                                  />
+                                ) : (
+                                  <div className="bg-light rounded me-3 d-flex align-items-center justify-content-center" 
+                                       style={{ width: '60px', height: '60px' }}>
+                                    <span style={{ fontSize: '2rem' }}>👕</span>
+                                  </div>
+                                )}
+                                <div className="flex-grow-1">
+                                  <strong className="d-block">{item.camiseta.titulo}</strong>
+                                  <small className="text-muted">
+                                    {item.camiseta.equipo} • {item.camiseta.temporada} • Talle {item.camiseta.talle}
+                                  </small>
+                                  <div className="mt-1">
+                                    <span className="badge bg-secondary me-2">
+                                      Cantidad: {item.cantidad}
+                                    </span>
+                                    {/* ✅ MOSTRAR PRECIO CON DESCUENTO SI APLICA */}
+                                    {huboDescuento ? (
+                                      <span className="text-muted">
+                                        <span className="text-decoration-line-through me-1">
+                                          ${precioOriginal.toLocaleString()}
+                                        </span>
+                                        <span className="text-success fw-bold">
+                                          ${precioComprado.toLocaleString()} c/u
+                                        </span>
+                                        <span className="badge bg-success ms-2 small">
+                                          -{porcentajeDescuento}% OFF
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted">
+                                        ${item.precioUnitario.toLocaleString()} c/u
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              )}
-                              <div className="flex-grow-1">
-                                <strong className="d-block">{item.camiseta.titulo}</strong>
-                                <small className="text-muted">
-                                  {item.camiseta.equipo} • {item.camiseta.temporada} • Talle {item.camiseta.talle}
-                                </small>
-                                <div className="mt-1">
-                                  <span className="badge bg-secondary me-2">
-                                    Cantidad: {item.cantidad}
-                                  </span>
-                                  <span className="text-muted">
-                                    ${item.precioUnitario.toLocaleString()} c/u
-                                  </span>
+                                <div className="text-end">
+                                  <strong className="text-success d-block">
+                                    ${item.subtotal.toLocaleString()}
+                                  </strong>
+                                  {huboDescuento && (
+                                    <small className="text-muted">
+                                      Ahorraste ${((precioOriginal - precioComprado) * item.cantidad).toLocaleString()}
+                                    </small>
+                                  )}
                                 </div>
                               </div>
-                              <div className="text-end">
-                                <strong className="text-success">${item.subtotal.toLocaleString()}</strong>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </>
                       ) : (
                         <div className="alert alert-warning mb-0">

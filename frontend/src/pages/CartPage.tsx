@@ -2,6 +2,7 @@ import React from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/useCart';
+import { getImageUrl } from '../utils/api-config'; // ✅ IMPORTAR
 
 export const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export const CartPage: React.FC = () => {
           <p className="text-muted">¡Agrega algunos productos para comenzar!</p>
           <button 
             className="btn btn-primary mt-3"
-            onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
+            onClick={() => navigate('/catalog')}
           >
             Ver Catálogo
           </button>
@@ -30,25 +31,18 @@ export const CartPage: React.FC = () => {
 
       <div className="row">
         <div className="col-lg-8">
-          {/* ✅ Ya está bien: usar index como key */}
           {items.map((item, index) => (
             <div key={`cart-item-${item.producto.id}-${index}`} className="card mb-3">
               <div className="card-body">
                 <div className="row align-items-center">
                   <div className="col-md-2">
                     {item.producto.imagen ? (
-                      (() => {
-                        const getSrc = () => {
-                          if (!item.producto.imagen) return '';
-                          if (item.producto.imagen.startsWith('http')) return item.producto.imagen;
-                          const cleanPath = item.producto.imagen.replace(/^\/?uploads\//, '');
-                          return `http://localhost:3000/uploads/${cleanPath}`;
-                        };
-                        const src = getSrc();
-                        console.log('🖼️ item.producto.imagen:', item.producto.imagen, '| src:', src);
-                        return <img src={src} alt={item.producto.titulo} className="img-fluid rounded" style={{ maxHeight: '100px', objectFit: 'cover' }} />;
-                        return <img src={src} alt={item.producto.titulo} className="img-fluid rounded" style={{ width: '100%', height: 'auto', maxHeight: 100, objectFit: 'contain', background: '#fff' }} />;
-                      })()
+                      <img 
+                        src={getImageUrl(item.producto.imagen)} // ✅ USAR FUNCIÓN
+                        alt={item.producto.titulo} 
+                        className="img-fluid rounded" 
+                        style={{ width: '100%', height: 'auto', maxHeight: 100, objectFit: 'contain', background: '#fff' }} 
+                      />
                     ) : (
                       <div className="bg-light p-3 text-center rounded">
                         <span style={{ fontSize: '2rem' }}>👕</span>
@@ -77,12 +71,10 @@ export const CartPage: React.FC = () => {
                       </button>
                       <input 
                         type="number" 
-                        step="any"
                         className="form-control text-center" 
-                        value={item.cantidad === 0 ? '' : item.cantidad}
+                        value={item.cantidad}
                         onChange={(e) => {
-                          const val = e.target.value;
-                          const qty = val === '' ? 1 : Math.max(1, Math.min(item.producto.stock, Number(val)));
+                          const qty = Math.max(1, Math.min(item.producto.stock, parseInt(e.target.value) || 1));
                           updateQuantity(item.producto.id, qty);
                         }}
                         min={1}
@@ -132,7 +124,7 @@ export const CartPage: React.FC = () => {
           <div className="d-flex justify-content-between align-items-center mt-3">
             <button 
               className="btn btn-outline-secondary"
-              onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
+              onClick={() => navigate('/catalog')}
               type="button"
             >
               ← Seguir Comprando
@@ -141,7 +133,7 @@ export const CartPage: React.FC = () => {
               className="btn btn-outline-danger"
               onClick={() => {
                 clearCart();
-                toast.info('🧹 Carrito vaciado');
+                toast.success('🧹 Carrito vaciado');
               }}
               type="button"
             >
@@ -180,7 +172,7 @@ export const CartPage: React.FC = () => {
               
               <button 
                 className="btn btn-outline-secondary w-100"
-                onClick={() => navigate('/catalog')} // ✅ CAMBIAR: / → /catalog
+                onClick={() => navigate('/catalog')}
                 type="button"
               >
                 Continuar Comprando

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Subasta } from '../../types';
 import { AuctionTimer } from './AuctionTimer';
+import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
 
 interface AuctionCardProps {
   subasta: Subasta;
@@ -25,31 +26,22 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({ subasta }) => {
             position: 'relative',
           }}
         >
-          {camiseta.imagen ? (() => {
-            const getSrc = () => {
-              if (!camiseta.imagen) return '';
-              if (camiseta.imagen.startsWith('http')) return camiseta.imagen;
-              const cleanPath = camiseta.imagen.replace(/^\/?uploads\//, '');
-              return `http://localhost:3000/uploads/${cleanPath}`;
-            };
-            const src = getSrc();
-            return (
-              <img
-                src={src}
-                alt={camiseta.titulo}
-                style={{
-                  maxWidth: '90%',
-                  maxHeight: '90%',
-                  objectFit: 'contain',
-                  width: 'auto',
-                  height: 'auto',
-                  display: 'block',
-                  margin: '0 auto',
-                  background: '#fff',
-                }}
-              />
-            );
-          })() : (
+          {camiseta.imagen ? (
+            <img
+              src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+              alt={camiseta.titulo}
+              style={{
+                maxWidth: '90%',
+                maxHeight: '90%',
+                objectFit: 'contain',
+                width: 'auto',
+                height: 'auto',
+                display: 'block',
+                margin: '0 auto',
+                background: '#fff',
+              }}
+            />
+          ) : (
             <span style={{ fontSize: '4rem', color: '#ccc' }}>👕</span>
           )}
         </div>
