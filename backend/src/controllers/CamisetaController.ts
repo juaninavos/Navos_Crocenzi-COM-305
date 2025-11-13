@@ -7,8 +7,8 @@ import { Descuento, TipoAplicacionDescuento } from '../entities/Descuento';
 import '../types/auth';
 import { Subasta } from '../entities/Subasta';
 import { z } from 'zod';
-import fs from 'fs'; // ✅ AGREGAR
-import path from 'path'; // ✅ AGREGAR
+import fs from 'fs'; 
+import path from 'path';
 
 export class CamisetaController {
   // ✅ FUNCIÓN AUXILIAR: Calcular TODOS los descuentos aplicables a una camiseta
@@ -189,8 +189,8 @@ export class CamisetaController {
           orderBy = { fechaPublicacion: 'ASC' };
           break;
         case 'fechaDesc':
-        default:
           orderBy = { fechaPublicacion: 'DESC' };
+          break
       }
 
       const [camisetasList, total] = await Promise.all([
@@ -401,6 +401,8 @@ export class CamisetaController {
   // DELETE /api/camisetas/:id
   static async delete(req: Request, res: Response) {
     try {
+      console.log('🗑️ Entrando a CamisetaController.delete, req.user:', req.user);
+
       if (!req.user) {
         return res.status(401).json({
           success: false,
@@ -449,6 +451,8 @@ export class CamisetaController {
           // No fallar la eliminación de la camiseta si falla eliminar la imagen
         }
       }
+
+        // Ya no es necesario eliminar subastas manualmente: ON DELETE CASCADE en la base de datos
 
       await em.removeAndFlush(camiseta);
 
@@ -752,4 +756,5 @@ export class CamisetaController {
       });
     }
   }
+
 }

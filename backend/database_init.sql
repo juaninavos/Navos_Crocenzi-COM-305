@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS subasta (
     activa BOOLEAN DEFAULT true,
     camiseta_id INT NOT NULL,
     ganador_id INT,
-    FOREIGN KEY (camiseta_id) REFERENCES camiseta(id),
+    FOREIGN KEY (camiseta_id) REFERENCES camiseta(id) ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (ganador_id) REFERENCES usuario(id)
 );
 

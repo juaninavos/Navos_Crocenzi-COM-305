@@ -117,9 +117,14 @@ const UsersManagement: React.FC = () => {
 
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h1 className="mb-0">👥 Gestión de Usuarios</h1>
-        <button className="btn btn-outline-secondary" onClick={load} type="button" disabled={loading}>
-          🔄 {loading ? 'Cargando...' : 'Actualizar'}
-        </button>
+        <div className="d-flex gap-2">
+          <button className="btn btn-outline-primary" onClick={load} type="button" disabled={loading}>
+            <span className="me-1">⟳</span> Actualizar
+          </button>
+          <button className="btn btn-outline-secondary" onClick={() => navigate('/admin/dashboard')} type="button">
+            ← Volver al Dashboard
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas */}
@@ -159,7 +164,7 @@ const UsersManagement: React.FC = () => {
               <select 
                 className="form-select" 
                 value={filtroRol} 
-                onChange={(e) => setFiltroRol(e.target.value as any)}
+                onChange={(e) => setFiltroRol(e.target.value as typeof filtroRol)}
               >
                 <option value="todos">Todos los roles</option>
                 <option value="usuario">Usuarios</option>
@@ -171,7 +176,7 @@ const UsersManagement: React.FC = () => {
               <select 
                 className="form-select" 
                 value={filtroEstado} 
-                onChange={(e) => setFiltroEstado(e.target.value as any)}
+                onChange={(e) => setFiltroEstado(e.target.value as typeof filtroEstado)}
               >
                 <option value="todos">Todos los estados</option>
                 <option value="activos">Solo activos</option>

@@ -5,6 +5,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { RegisterData } from '../../types';
 
 export const Register = () => {
+    React.useEffect(() => {
+      // Oculta la barra de scroll vertical solo en esta página
+      const originalOverflow = document.body.style.overflowY;
+      document.body.style.overflowY = 'hidden';
+      return () => {
+        document.body.style.overflowY = originalOverflow;
+      };
+    }, []);
   const [formData, setFormData] = useState<RegisterData>({
     nombre: '',
     apellido: '',
@@ -101,15 +109,45 @@ export const Register = () => {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 position-relative">
+      {/* Botón Tienda Retro arriba a la izquierda, igual que en login */}
+      <Link to="/" style={{ position: 'absolute', top: 0, left: 10, zIndex: 10, textDecoration: 'none' }} title="Ir a inicio">
+        <button
+          type="button"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 60,
+            height: 60,
+            borderRadius: '12px',
+            background: 'white',
+            color: '#2563eb',
+            fontWeight: 900,
+            fontSize: '1.1rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            border: '2px solid #2563eb',
+            transition: 'background 0.2s',
+            padding: 0,
+            lineHeight: 1.1,
+            minWidth: 60,
+            minHeight: 60,
+          }}
+          title="Ir a inicio"
+          className="border-0"
+        >
+          <span style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '1px' }}>Tienda</span>
+          <span style={{ fontSize: '1.3rem', fontWeight: 900, letterSpacing: '2px', marginTop: '-2px' }}>Retro</span>
+        </button>
+      </Link>
       <div className="row justify-content-center">
         <div className="col-12 col-md-8 col-lg-6">
           <div className="card">
-            <div className="card-header">
+            <div className="card-header bg-white border-bottom-0">
               <h3 className="text-center">📝 Crear Cuenta</h3>
             </div>
             <div className="card-body">
-              
               {error && (
                 <div className="alert alert-danger" role="alert">
                   {error}
@@ -120,9 +158,8 @@ export const Register = () => {
                   {success}
                 </div>
               )}
-
               <form onSubmit={handleSubmit}>
-                {/* Nombre y Apellido en fila */}
+                {/* ...existing code... */}
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <label htmlFor="nombre" className="form-label">Nombre *</label>
@@ -141,7 +178,6 @@ export const Register = () => {
                       </div>
                     )}
                   </div>
-
                   <div className="col-md-6">
                     <label htmlFor="apellido" className="form-label">Apellido *</label>
                     <input
@@ -160,8 +196,7 @@ export const Register = () => {
                     )}
                   </div>
                 </div>
-
-                {/* Email */}
+                {/* ...existing code... */}
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label">Email *</label>
                   <input
@@ -179,8 +214,6 @@ export const Register = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Contraseña */}
                 <div className="mb-3">
                   <label htmlFor="contrasena" className="form-label">Contraseña *</label>
                   <input
@@ -199,8 +232,6 @@ export const Register = () => {
                   )}
                   <div className="form-text">La contraseña debe tener al menos 6 caracteres</div>
                 </div>
-
-                {/* Dirección */}
                 <div className="mb-3">
                   <label htmlFor="direccion" className="form-label">Dirección *</label>
                   <input
@@ -218,8 +249,6 @@ export const Register = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Teléfono */}
                 <div className="mb-3">
                   <label htmlFor="telefono" className="form-label">Teléfono *</label>
                   <input
@@ -238,8 +267,6 @@ export const Register = () => {
                   )}
                   <div className="form-text">Solo números, entre 7 y 15 dígitos</div>
                 </div>
-
-                {/* Botón Submit */}
                 <button
                   type="submit"
                   className="btn btn-primary w-100"
@@ -255,7 +282,6 @@ export const Register = () => {
                   )}
                 </button>
               </form>
-
               <div className="text-center mt-3">
                 <p>¿Ya tienes cuenta? <Link to="/login">Inicia sesión aquí</Link></p>
               </div>

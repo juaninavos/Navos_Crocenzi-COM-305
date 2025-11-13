@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBids } from '../../hooks/useBids';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Oferta } from '../../types';
+import { getImageUrl } from '../../utils/api-config';
 
 export const MyBidsPage: React.FC = () => {
   const { obtenerMisOfertas, loading } = useBids();
@@ -72,10 +73,10 @@ export const MyBidsPage: React.FC = () => {
                     <div className="col-4">
                       {camiseta.imagen ? (
                         <img 
-                          src={camiseta.imagen} 
+                          src={getImageUrl(camiseta.imagen)}
                           alt={camiseta.titulo}
                           className="img-fluid h-100"
-                          style={{ objectFit: 'cover' }}
+                          style={{ objectFit: 'cover', width: '100%', height: 'auto', maxHeight: 180, background: '#fff' }}
                         />
                       ) : (
                         <div 

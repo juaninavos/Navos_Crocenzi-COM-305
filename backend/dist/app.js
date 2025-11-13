@@ -26,6 +26,7 @@ const errorHandler_1 = require("./middleware/errorHandler");
 const AuthController_1 = __importDefault(require("./controllers/AuthController"));
 const auth_1 = __importDefault(require("./middleware/auth"));
 const roleGuard_1 = __importDefault(require("./middleware/roleGuard"));
+const imagenRoutes_1 = __importDefault(require("./routes/imagenRoutes"));
 let app;
 let orm;
 async function createApp() {
@@ -75,6 +76,7 @@ async function createApp() {
     app.use('/api/pagos', pagoRoutes_1.default);
     app.use('/api/descuentos', descuentoRoutes_1.default);
     app.use('/api/metodos-pago', metodoPagoRoutes_1.default);
+    app.use('/api/imagenes', imagenRoutes_1.default);
     app.use('/api/admin', adminRoutes_1.default);
     app.get('/api/health', (req, res) => {
         res.json({

@@ -17,11 +17,11 @@ import pagoRoutes from './routes/pagoRoutes';
 import descuentoRoutes from './routes/descuentoRoutes';
 import metodoPagoRoutes from './routes/metodoPagoRoutes';
 import adminRoutes from './routes/adminRoutes';
-import imagenRoutes from './routes/imagenRoutes'; // ✅ AGREGAR
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import authRouter from './controllers/AuthController';
 import authMiddleware from './middleware/auth';
 import roleGuard from './middleware/roleGuard';
+import imagenRoutes from './routes/imagenRoutes';
 
 let app: express.Express;
 let orm: MikroORM;

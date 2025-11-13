@@ -4,6 +4,7 @@ import { subastaService } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuctionTimer } from '../../components/auction/AuctionTimer';
 import type { Subasta } from '../../types';
+import { getImageUrl } from '../../utils/api-config';
 
 export const MyAuctionsPage: React.FC = () => {
   const { usuario } = useAuth();
@@ -83,10 +84,10 @@ export const MyAuctionsPage: React.FC = () => {
                   <div className="position-relative">
                     {camiseta.imagen ? (
                       <img
-                        src={camiseta.imagen}
+                        src={getImageUrl(camiseta.imagen)}
                         alt={camiseta.titulo}
                         className="card-img-top"
-                        style={{ height: '200px', objectFit: 'cover' }}
+                        style={{ width: '100%', height: '200px', objectFit: 'cover', background: '#fff' }}
                       />
                     ) : (
                       <div

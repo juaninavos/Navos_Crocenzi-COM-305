@@ -12,6 +12,8 @@ interface JWTPayload {
 }
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  console.log('🔒 authMiddleware ejecutado, header:', req.headers.authorization);
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {

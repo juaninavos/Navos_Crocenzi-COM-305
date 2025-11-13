@@ -1,5 +1,8 @@
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
+import Swal from 'sweetalert2';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
@@ -275,16 +278,37 @@ export const MyProductsPage: React.FC = () => {
   };
 
   const deleteItem = async (id: number) => {
-    if (!confirm('¿Seguro que deseas eliminar esta publicación?')) return;
+    const result = await Swal.fire({
+      title: '¿Eliminar publicación?',
+      text: 'Esta acción no se puede deshacer. ¿Seguro que deseas eliminar esta publicación?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
     try {
       await camisetaService.delete(id);
       setCamisetas(prev => prev.filter(c => c.id !== id));
       if (isAdmin) {
         setTodasLasCamisetas(prev => prev.filter(c => c.id !== id));
       }
+      Swal.fire({
+        title: 'Eliminado',
+        text: 'La publicación ha sido eliminada correctamente.',
+        icon: 'success',
+        timer: 1800,
+        showConfirmButton: false,
+      });
     } catch (e) {
       console.error('Error eliminando publicación', e);
-      toast.error('No se pudo eliminar la publicación');
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo eliminar la publicación',
+        icon: 'error',
+      });
     }
   };
 
@@ -478,13 +502,13 @@ export const MyProductsPage: React.FC = () => {
               </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Talle *</label>
-                <select className="form-select" value={form.talle} onChange={e => setForm(f => ({ ...f, talle: e.target.value as Talle }))}>
+                <select className="form-select" value={form.talle} onChange={e => setForm(f => ({ ...f, talle: e.target.value as typeof form.talle }))}>
                   {['XS','S','M','L','XL','XXL'].map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="col-6 col-md-3">
                 <label className="form-label">Condición *</label>
-                <select className="form-select" value={form.condicion} onChange={e => setForm(f => ({ ...f, condicion: e.target.value as CondicionCamiseta }))}>
+                <select className="form-select" value={form.condicion} onChange={e => setForm(f => ({ ...f, condicion: e.target.value as typeof form.condicion }))}>
                   {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
@@ -503,75 +527,32 @@ export const MyProductsPage: React.FC = () => {
                 }} required />
               </div>
               <div className="col-12 col-md-6">
-                {/* ✅ CAMBIAR: Permitir tanto archivo como URL */}
                 <label className="form-label">Imagen de la camiseta *</label>
-                
-                {/* Tabs para elegir entre archivo o URL */}
-                <ul className="nav nav-tabs mb-2" role="tablist">
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${!form.imagen ? 'active' : ''}`} 
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, imagen: '' }))}
-                    >
-                      📁 Subir Archivo
-                    </button>
-                  </li>
-                  <li className="nav-item">
-                    <button 
-                      className={`nav-link ${form.imagen ? 'active' : ''}`} 
-                      type="button"
-                      onClick={() => {
-                        setImagenArchivo(null);
-                        setImagenPreview('');
-                      }}
-                    >
-                      🔗 URL Externa
-                    </button>
-                  </li>
-                </ul>
-
-                {/* Input de archivo */}
-                {!form.imagen && (
-                  <div>
-                    <input 
-                      type="file" 
-                      className="form-control mb-2" 
-                      accept="image/*"
-                      onChange={handleImagenChange}
+                <input 
+                  type="file" 
+                  className="form-control mb-2" 
+                  accept="image/*"
+                  onChange={handleImagenChange}
+                />
+                <small className="text-muted d-block">
+                  Formatos: JPG, PNG, GIF, WEBP • Máx 5MB
+                </small>
+                {/* Preview de la imagen */}
+                {imagenPreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={imagenPreview} 
+                      alt="Preview" 
+                      style={{ 
+                        maxWidth: '200px', 
+                        maxHeight: '200px', 
+                        objectFit: 'contain',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px',
+                        padding: '8px'
+                      }} 
                     />
-                    <small className="text-muted d-block">
-                      Formatos: JPG, PNG, GIF, WEBP • Máx 5MB
-                    </small>
-                    
-                    {/* Preview de la imagen */}
-                    {imagenPreview && (
-                      <div className="mt-2">
-                        <img 
-                          src={imagenPreview} 
-                          alt="Preview" 
-                          style={{ 
-                            maxWidth: '200px', 
-                            maxHeight: '200px', 
-                            objectFit: 'contain',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            padding: '8px'
-                          }} 
-                        />
-                      </div>
-                    )}
                   </div>
-                )}
-
-                {/* Input de URL */}
-                {form.imagen !== undefined && !imagenArchivo && (
-                  <input 
-                    className="form-control" 
-                    value={form.imagen} 
-                    onChange={e => setForm(f => ({ ...f, imagen: e.target.value }))} 
-                    placeholder="https://ejemplo.com/imagen.jpg" 
-                  />
                 )}
               </div>
               <div className="col-12">
@@ -595,12 +576,23 @@ export const MyProductsPage: React.FC = () => {
               {form.esSubasta && (
                 <div className="col-12">
                   <label className="form-label">Fecha de fin de subasta *</label>
-                  <input 
-                    type="datetime-local" 
-                    className="form-control" 
-                    value={form.fechaFinSubasta || ''} 
-                    onChange={e => setForm(f => ({ ...f, fechaFinSubasta: e.target.value }))}
-                    min={new Date().toISOString().slice(0, 16)}
+                  <DatePicker
+                    selected={form.fechaFinSubasta ? new Date(form.fechaFinSubasta) : null}
+                    onChange={date => {
+                      if (!date || date <= new Date()) {
+                        setFormError('La fecha de fin debe ser posterior a la actual.');
+                        setForm(f => ({ ...f, fechaFinSubasta: '' }));
+                        return;
+                      }
+                      setFormError('');
+                      setForm(f => ({ ...f, fechaFinSubasta: date.toISOString() }));
+                    }}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    dateFormat="yyyy-MM-dd HH:mm"
+                    minDate={new Date()}
+                    className="form-control"
                     required
                   />
                   <small className="text-muted">
@@ -616,18 +608,22 @@ export const MyProductsPage: React.FC = () => {
               <button 
                 className="btn btn-outline-secondary" 
                 type="button" 
-                onClick={() => setForm({ 
-                  titulo: '', 
-                  equipo: '', 
-                  temporada: '', 
-                  talle: 'M' as Talle, 
-                  condicion: 'Nueva' as CondicionCamiseta, 
-                  imagen: '', 
-                  precioInicial: 0, 
-                  stock: 1, 
-                  esSubasta: false,
-                  fechaFinSubasta: undefined 
-                })}
+                onClick={() => {
+                  setForm({ 
+                    titulo: '', 
+                    equipo: '', 
+                    temporada: '', 
+                    talle: 'M' as Talle, 
+                    condicion: 'Nueva' as CondicionCamiseta, 
+                    imagen: '', 
+                    precioInicial: 0, 
+                    stock: 1, 
+                    esSubasta: false,
+                    fechaFinSubasta: undefined 
+                  });
+                  setImagenArchivo(null);
+                  setImagenPreview('');
+                }}
               >
                 Limpiar
               </button>

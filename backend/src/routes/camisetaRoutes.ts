@@ -1,3 +1,4 @@
+// DEBUG: Endpoint para consultar vendedor de una camiseta
 import express from 'express';
 import type { Router } from 'express';
 import { CamisetaController } from '../controllers/CamisetaController';
@@ -13,7 +14,7 @@ router.get('/:id', CamisetaController.getOne);
 router.post('/', CamisetaController.create);
 router.post('/by-ids', CamisetaController.getByIds); // ✅ NUEVO ENDPOINT
 router.put('/:id', CamisetaController.update);
-router.delete('/:id', CamisetaController.delete);
+router.delete('/:id', authMiddleware, CamisetaController.delete);
 
 // 🚀 CASO DE USO para REGULARIDAD
 router.post('/publicar', authMiddleware, CamisetaController.publicarParaVenta);
