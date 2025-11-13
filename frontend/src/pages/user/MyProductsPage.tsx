@@ -634,7 +634,7 @@ export const MyProductsPage: React.FC = () => {
             <div className="d-flex justify-content-end mt-3">
               <button
                 type="button"
-                className="btn btn-outline-secondary"
+                className="btn btn-outline-secondary me-2"
                 onClick={() => {
                   setForm({
                     titulo: '',
@@ -654,6 +654,13 @@ export const MyProductsPage: React.FC = () => {
                 }}
               >
                 Limpiar
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={!canCreate}
+              >
+                {form.esSubasta ? '🔨 Publicar Subasta' :  'Publicar'}
               </button>
             </div>
           </form>
