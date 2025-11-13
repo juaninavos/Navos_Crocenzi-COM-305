@@ -141,7 +141,11 @@ export class CamisetaController {
           const n = Number(v);
           return Number.isNaN(n) ? undefined : Math.max(1, Math.trunc(n));
         }, z.number().min(1).optional()),
-        sort: z.string().optional()
+        sort: z.string().optional(),
+        categoriaId: z.preprocess((v) => {
+          const n = Number(v);
+          return Number.isNaN(n) ? undefined : Math.trunc(n);
+        }, z.number().int().positive().optional()),
       });
 
       const parseResult = filtrosSchema.safeParse(req.query);
@@ -167,6 +171,7 @@ export class CamisetaController {
       if (parsed.condicion) where.condicion = parsed.condicion;
       if (typeof parsed.esSubasta === 'boolean') where.esSubasta = parsed.esSubasta;
       if (typeof parsed.vendedorId === 'number') where.vendedor = { id: parsed.vendedorId };
+        if (typeof parsed.categoriaId === 'number') where.categoria_id = parsed.categoriaId;
 
       const priceCond: any = {};
       if (typeof parsed.precioMin === 'number') priceCond.$gte = parsed.precioMin;
@@ -197,6 +202,8 @@ export class CamisetaController {
         em.find(Camiseta, where, { populate: ['categoria', 'vendedor'], limit, offset, orderBy }),
         em.count(Camiseta, where)
       ]);
+        // Log de los resultados obtenidos
+        console.log('🟢 Resultados camisetas:', camisetasList.map((c: Camiseta) => ({ id: c.id, titulo: c.titulo, categoria: c.categoria?.id })));
 
       // ✅ AGREGAR DESCUENTOS A CADA CAMISETA
       const camisetasConDescuentos = await Promise.all(

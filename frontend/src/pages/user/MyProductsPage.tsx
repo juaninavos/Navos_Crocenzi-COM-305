@@ -1,7 +1,6 @@
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
 import Swal from 'sweetalert2';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +8,20 @@ import { camisetaService } from '../../services/api';
 import type { Camiseta, Talle, CondicionCamiseta } from '../../types';
 import { getImageUrl } from '../../utils/api-config';
 export const MyProductsPage: React.FC = () => {
+    // Estado para categorías
+    const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
+
+    useEffect(() => {
+      (async () => {
+        try {
+          const { categoriaService } = await import('../../services/api');
+          const resp = await categoriaService.getAll();
+          setCategorias(resp.data);
+        } catch (err) {
+          console.error('Error cargando categorías', err);
+        }
+      })();
+    }, []);
   const { usuario, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -28,7 +41,6 @@ export const MyProductsPage: React.FC = () => {
     return result;
   }, [usuario]);
 
-  const [creating, setCreating] = useState(false);
 
   // ✅ AGREGAR: Estado para el archivo de imagen
   const [imagenArchivo, setImagenArchivo] = useState<File | null>(null);
@@ -45,6 +57,7 @@ export const MyProductsPage: React.FC = () => {
     stock: number;
     esSubasta: boolean;
     fechaFinSubasta?: string;
+    categoriaId?: number;
   }>({
     titulo: '',
     equipo: '',
@@ -56,6 +69,7 @@ export const MyProductsPage: React.FC = () => {
     stock: 1,
     esSubasta: false,
     fechaFinSubasta: undefined,
+    categoriaId: undefined,
   });
 
   const canCreate = useMemo(() => {
@@ -129,7 +143,6 @@ export const MyProductsPage: React.FC = () => {
     }
 
     try {
-      setCreating(true);
       let imagenFinal = form.imagen;
 
       // ✅ CAMBIO: Si hay un archivo, subirlo primero
@@ -161,6 +174,7 @@ export const MyProductsPage: React.FC = () => {
         precioInicial: Number(form.precioInicial),
         esSubasta: form.esSubasta,
         stock: form.stock,
+        categoriaId: form.categoriaId,
         ...(form.esSubasta && form.fechaFinSubasta ? { fechaFinSubasta: form.fechaFinSubasta } : {})
       };
       
@@ -200,8 +214,6 @@ export const MyProductsPage: React.FC = () => {
         msg = (e as { response: { data: { message: string } } }).response.data.message;
       }
       setFormError(msg);
-    } finally {
-      setCreating(false);
     }
   };
 
@@ -488,73 +500,93 @@ export const MyProductsPage: React.FC = () => {
           )}
           <form onSubmit={crearPublicacion}>
             <div className="row g-3">
+              {/* Primera fila: Categoría y Título */}
+              <div className="col-12 col-md-6">
+                <label className="form-label">Categoría (opcional)</label>
+                <select
+                  className="form-select"
+                  value={form.categoriaId ?? ''}
+                  onChange={e => setForm(f => ({ ...f, categoriaId: e.target.value === '' ? undefined : Number(e.target.value) }))}
+                >
+                  <option value="">Sin categoría</option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  ))}
+                </select>
+              </div>
               <div className="col-12 col-md-6">
                 <label className="form-label">Título *</label>
                 <input className="form-control" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} required />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Equipo *</label>
-                <input className="form-control" value={form.equipo} onChange={e => setForm(f => ({ ...f, equipo: e.target.value }))} required />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Temporada *</label>
-                <input className="form-control" value={form.temporada} onChange={e => setForm(f => ({ ...f, temporada: e.target.value }))} required />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Talle *</label>
-                <select className="form-select" value={form.talle} onChange={e => setForm(f => ({ ...f, talle: e.target.value as typeof form.talle }))}>
-                  {['XS','S','M','L','XL','XXL'].map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Condición *</label>
-                <select className="form-select" value={form.condicion} onChange={e => setForm(f => ({ ...f, condicion: e.target.value as typeof form.condicion }))}>
-                  {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Precio Inicial ($) *</label>
-                <input type="number" min={1} step="any" className="form-control" value={form.precioInicial === 0 ? '' : form.precioInicial} onChange={e => {
-                  const val = e.target.value;
-                  setForm(f => ({ ...f, precioInicial: val === '' ? 0 : Number(val) }));
-                }} required />
-              </div>
-              <div className="col-6 col-md-3">
-                <label className="form-label">Stock *</label>
-                <input type="number" min={1} step="any" className="form-control" value={form.stock === 0 ? '' : form.stock} onChange={e => {
-                  const val = e.target.value;
-                  setForm(f => ({ ...f, stock: val === '' ? 0 : Number(val) }));
-                }} required />
-              </div>
-              <div className="col-12 col-md-6">
-                <label className="form-label">Imagen de la camiseta *</label>
-                <input 
-                  type="file" 
-                  className="form-control mb-2" 
-                  accept="image/*"
-                  onChange={handleImagenChange}
-                />
-                <small className="text-muted d-block">
-                  Formatos: JPG, PNG, GIF, WEBP • Máx 5MB
-                </small>
-                {/* Preview de la imagen */}
-                {imagenPreview && (
-                  <div className="mt-2">
-                    <img 
-                      src={imagenPreview} 
-                      alt="Preview" 
-                      style={{ 
-                        maxWidth: '200px', 
-                        maxHeight: '200px', 
-                        objectFit: 'contain',
-                        border: '1px solid #ddd',
-                        borderRadius: '4px',
-                        padding: '8px'
-                      }} 
-                    />
-                  </div>
-                )}
-              </div>
+                </div>
+                {/* Segunda fila: Equipo, Temporada, Talle, Condición */}
+                <div className="col-6 col-md-3">
+                  <label className="form-label">Equipo *</label>
+                  <input className="form-control" value={form.equipo} onChange={e => setForm(f => ({ ...f, equipo: e.target.value }))} required />
+                </div>
+                <div className="col-6 col-md-3">
+                  <label className="form-label">Temporada *</label>
+                  <input className="form-control" value={form.temporada} onChange={e => setForm(f => ({ ...f, temporada: e.target.value }))} required />
+                </div>
+                <div className="col-6 col-md-3">
+                  <label className="form-label">Talle *</label>
+                  <select className="form-select" value={form.talle} onChange={e => setForm(f => ({ ...f, talle: e.target.value as typeof form.talle }))}>
+                    {['XS','S','M','L','XL','XXL'].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="col-6 col-md-3">
+                  <label className="form-label">Condición *</label>
+                  <select className="form-select" value={form.condicion} onChange={e => setForm(f => ({ ...f, condicion: e.target.value as typeof form.condicion }))}>
+                    {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                {/* Tercera fila: Precio, Stock, Imagen */}
+                <div className="col-12 col-md-6 order-md-1">
+                  <label className="form-label">Imagen de la camiseta *</label>
+                  <input 
+                    type="file" 
+                    className="form-control mb-2" 
+                    accept="image/*"
+                    onChange={handleImagenChange}
+                  />
+                  <small className="text-muted d-block">
+                    Formatos: JPG, PNG, GIF, WEBP • Máx 5MB
+                  </small>
+                  {/* Preview de la imagen */}
+                  {imagenPreview && (
+                    <div className="mt-2">
+                      <img 
+                        src={imagenPreview} 
+                        alt="Preview" 
+                        style={{ 
+                          maxWidth: '200px', 
+                          maxHeight: '200px', 
+                          objectFit: 'contain',
+                          border: '1px solid #ddd',
+                          borderRadius: '4px',
+                          padding: '8px'
+                        }} 
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="col-6 col-md-3 order-md-2">
+                  <label className="form-label">Precio Inicial ($) *</label>
+                  <input type="number" min={1} step="any" className="form-control" value={form.precioInicial === 0 ? '' : form.precioInicial} onChange={e => {
+                    const val = e.target.value;
+                    setForm(f => ({ ...f, precioInicial: val === '' ? 0 : Number(val) }));
+                  }} required />
+                </div>
+                <div className="col-6 col-md-3 order-md-3">
+                  <label className="form-label">Stock *</label>
+                  <input type="number" min={1} step="any" className="form-control" value={form.stock === 0 ? '' : form.stock} onChange={e => {
+                    const val = e.target.value;
+                    setForm(f => ({ ...f, stock: val === '' ? 0 : Number(val) }));
+                  }} required />
+                </div>
+                {/* Cuarta fila: Subasta y fecha */}
+            </div>
+            {/* Subasta: debajo de todo */}
+            <div className="row mt-3">
               <div className="col-12">
                 <div className="form-check">
                   <input 
@@ -571,10 +603,8 @@ export const MyProductsPage: React.FC = () => {
                   <label htmlFor="esSub" className="form-check-label">Publicar como subasta</label>
                 </div>
               </div>
-              
-              {/* ✅ AGREGAR: Campo de fecha cuando es subasta */}
               {form.esSubasta && (
-                <div className="col-12">
+                <div className="col-12 mt-2">
                   <label className="form-label">Fecha de fin de subasta *</label>
                   <DatePicker
                     selected={form.fechaFinSubasta ? new Date(form.fechaFinSubasta) : null}
@@ -601,25 +631,23 @@ export const MyProductsPage: React.FC = () => {
                 </div>
               )}
             </div>
-            <div className="mt-3 d-flex gap-2">
-              <button className="btn btn-primary" type="submit" disabled={!canCreate || creating}>
-                {creating ? (<><span className="spinner-border spinner-border-sm me-2"></span> Publicando...</>) : 'Publicar'}
-              </button>
-              <button 
-                className="btn btn-outline-secondary" 
-                type="button" 
+            <div className="d-flex justify-content-end mt-3">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
                 onClick={() => {
-                  setForm({ 
-                    titulo: '', 
-                    equipo: '', 
-                    temporada: '', 
-                    talle: 'M' as Talle, 
-                    condicion: 'Nueva' as CondicionCamiseta, 
-                    imagen: '', 
-                    precioInicial: 0, 
-                    stock: 1, 
+                  setForm({
+                    titulo: '',
+                    equipo: '',
+                    temporada: '',
+                    talle: 'M' as Talle,
+                    condicion: 'Nueva' as CondicionCamiseta,
+                    imagen: '',
+                    precioInicial: 0,
+                    stock: 1,
                     esSubasta: false,
-                    fechaFinSubasta: undefined 
+                    fechaFinSubasta: undefined,
+                    categoriaId: undefined
                   });
                   setImagenArchivo(null);
                   setImagenPreview('');
@@ -629,8 +657,8 @@ export const MyProductsPage: React.FC = () => {
               </button>
             </div>
           </form>
+          </div>
         </div>
-      </div>
 
       {loading ? (
         <div className="text-center py-5">
@@ -699,7 +727,15 @@ export const MyProductsPage: React.FC = () => {
                       </div>
                     </>
                   ) : (
-                    <h5 className="card-title">{c.titulo}</h5>
+                    <>
+                      <h5 className="card-title">{c.titulo}</h5>
+                      {/* Mostrar categoría si existe */}
+                      {c.categoria && (
+                        <div className="mb-1">
+                          <span className="badge bg-secondary">{c.categoria.nombre}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                   <div className="text-muted mb-2"><small>{c.equipo} • {c.temporada}</small></div>
                   <div className="mb-2"><span className="badge bg-info">{c.condicion}</span></div>

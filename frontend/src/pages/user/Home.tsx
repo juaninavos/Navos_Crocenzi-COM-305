@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
+import type { Categoria } from '../../types';
 import { useCart } from '../../context/useCart';
 import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
 import { API_BASE_URL } from '../../utils/constants'; // ✅ IMPORTAR
@@ -17,6 +18,8 @@ import type {
 } from '../../types';
 
 export const Home = () => {
+    // Estado para categorías y filtro
+    const [categorias, setCategorias] = useState<Categoria[]>([]);
   const PAGE_SIZE = 9;
   const { addToCart } = useCart();
   const navigate = useNavigate();
@@ -38,6 +41,7 @@ export const Home = () => {
     esSubasta: boolean;
     precioMin: string | null;
     precioMax: string | null;
+    categoriaId: number | null;
   } = {
     equipo: null,
     talle: null,
@@ -46,6 +50,7 @@ export const Home = () => {
     esSubasta: false,
     precioMin: null,
     precioMax: null,
+    categoriaId: null,
   };
 
   const [filtros, setFiltros] = useState<typeof filtrosIniciales>(filtrosIniciales);
@@ -66,11 +71,22 @@ export const Home = () => {
   const filtrosActivosCount = Object.entries(filtros)
     .filter(([key, value]) => {
       if (key === 'esSubasta') return value !== false;
+      if (key === 'categoriaId') return value !== null;
       return value !== null;
     }).length;
 
   // Debounce filters changes
   useEffect(() => {
+        // Cargar categorías al montar
+        (async () => {
+          try {
+            const { categoriaService } = await import('../../services/api');
+            const resp = await categoriaService.getAll();
+            setCategorias(resp.data);
+          } catch (err) {
+            console.error('Error cargando categorías', err);
+          }
+        })();
     const t = setTimeout(() => {
       setAppliedFiltros(filtros);
     }, 300);
@@ -106,7 +122,9 @@ export const Home = () => {
         page,
         limit: PAGE_SIZE, // ✅ USAR constante
         sort,
+        categoriaId: appliedFiltros.categoriaId ?? undefined,
       };
+      console.log('🟡 GET camisetas params:', params);
       if ('equipo' in filtrosActivos) params.equipo = filtrosActivos.equipo as string;
       if ('temporada' in filtrosActivos) params.temporada = filtrosActivos.temporada as string;
       if ('talle' in filtrosActivos && typeof filtrosActivos.talle === 'string') {
@@ -118,6 +136,7 @@ export const Home = () => {
       if ('esSubasta' in filtrosActivos) params.esSubasta = filtrosActivos.esSubasta as boolean;
       if ('precioMin' in filtrosActivos && filtrosActivos.precioMin != null) params.precioMin = filtrosActivos.precioMin as string | number;
       if ('precioMax' in filtrosActivos && filtrosActivos.precioMax != null) params.precioMax = filtrosActivos.precioMax as string | number;
+      if ('categoriaId' in filtrosActivos && filtrosActivos.categoriaId != null) params.categoriaId = filtrosActivos.categoriaId as number;
 
       const result = await camisetaService.getAll(params);
   setCamisetas(result.data);
@@ -247,7 +266,7 @@ export const Home = () => {
         {/* Filtros básicos */}
         <div className="card mb-4">
           <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center mb-2">
+            <div className="d-flex justify-content-between align-items-center mb-3">
               <h6 className="mb-0">Filtros</h6>
               <div className="d-flex align-items-center gap-2">
                 {filtrosActivosCount > 0 && (
@@ -258,80 +277,100 @@ export const Home = () => {
                   type="button"
                   onClick={() => setFiltros(filtrosIniciales)}
                   disabled={JSON.stringify(filtros) === JSON.stringify(filtrosIniciales)}
+                  style={{ marginLeft: '8px' }}
                 >
                   Limpiar filtros
                 </button>
               </div>
             </div>
-            <div className="mb-2 d-flex align-items-center gap-2">
-              <label className="mb-0">Ordenar por:</label>
-              <select className="form-select form-select-sm w-auto" value={sort} onChange={e => setSort(e.target.value as 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc')}>
-                <option value="fechaDesc">Más nuevos</option>
-                <option value="fechaAsc">Más antiguos</option>
-                <option value="precioAsc">Precio: menor a mayor</option>
-                <option value="precioDesc">Precio: mayor a menor</option>
-              </select>
-            </div>
-            <div className="row">
-              <div className="col-md-3 mb-2 mb-md-0">
+            <div className="row g-2 mb-2">
+              <div className="col-md-2">
+                <label className="form-label mb-1">Ordenar por</label>
+                <select className="form-select form-select-sm" value={sort} onChange={e => setSort(e.target.value as 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc')}>
+                  <option value="fechaDesc">Más nuevos</option>
+                  <option value="fechaAsc">Más antiguos</option>
+                  <option value="precioAsc">Precio: menor a mayor</option>
+                  <option value="precioDesc">Precio: mayor a menor</option>
+                </select>
+              </div>
+              <div className="col-md-2">
+                <label className="form-label mb-1">Categoría</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
+                  value={filtros.categoriaId ?? ''}
+                  onChange={e => updateFiltro({ categoriaId: e.target.value === '' ? null : Number(e.target.value) })}
+                  onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
+                >
+                  <option value="">Todas</option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-md-2">
+                <label className="form-label mb-1">Equipo</label>
+                <select
+                  className="form-select form-select-sm"
                   value={filtros.equipo ?? ''}
                   onChange={e => updateFiltro({ equipo: e.target.value || null })}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 >
-                  <option value="">Todos los equipos</option>
+                  <option value="">Todos</option>
                   {[...new Set(camisetas.map(c => c.equipo))].map(equipo => (
                     <option key={equipo} value={equipo}>{equipo}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-md-3 mb-2 mb-md-0">
+              <div className="col-md-2">
+                <label className="form-label mb-1">Talle</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filtros.talle ?? ''}
                   onChange={e => updateFiltro({ talle: (e.target.value || null) as Talle | null })}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 >
-                  <option value="">Todos los talles</option>
+                  <option value="">Todos</option>
                   {Object.values(Talle).map(talle => (
                     <option key={talle} value={talle}>{talle}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-md-3 mb-2 mb-md-0">
+              <div className="col-md-2">
+                <label className="form-label mb-1">Temporada</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filtros.temporada ?? ''}
                   onChange={e => updateFiltro({ temporada: e.target.value || null })}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 >
-                  <option value="">Todas las temporadas</option>
+                  <option value="">Todas</option>
                   {[...new Set(camisetas.map(c => c.temporada))].map(temporada => (
                     <option key={temporada} value={temporada}>{temporada}</option>
                   ))}
                 </select>
               </div>
-              <div className="col-md-3 mb-2 mb-md-0">
+              <div className="col-md-2">
+                <label className="form-label mb-1">Condición</label>
                 <select
-                  className="form-select"
+                  className="form-select form-select-sm"
                   value={filtros.condicion ?? ''}
                   onChange={e => updateFiltro({ condicion: (e.target.value || null) as CondicionCamiseta | null })}
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 >
-                  <option value="">Todas las condiciones</option>
+                  <option value="">Todas</option>
                   {Object.values(CondicionCamiseta).map(condicion => (
                     <option key={condicion} value={condicion}>{condicion}</option>
                   ))}
                 </select>
               </div>
             </div>
-            <div className="row mt-2">
-              <div className="col-md-6 mb-2 mb-md-0">
+            <div className="row g-2 mt-1">
+              <div className="col-md-3">
+                <label className="form-label mb-1">Precio mínimo</label>
                 <input
                   type="number"
-                  className="form-control"
-                  placeholder="Precio mínimo"
+                  className="form-control form-control-sm"
+                  placeholder="Min"
                   min={0}
                   step="any"
                   value={filtros.precioMin ?? ''}
@@ -342,11 +381,12 @@ export const Home = () => {
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 />
               </div>
-              <div className="col-md-6">
+              <div className="col-md-3">
+                <label className="form-label mb-1">Precio máximo</label>
                 <input
                   type="number"
-                  className="form-control"
-                  placeholder="Precio máximo"
+                  className="form-control form-control-sm"
+                  placeholder="Max"
                   min={0}
                   step="any"
                   value={filtros.precioMax ?? ''}
@@ -357,24 +397,28 @@ export const Home = () => {
                   onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
                 />
               </div>
-            </div>
-            {/* Mensaje si el rango de precio es inválido */}
-            {filtros.precioMin !== null && filtros.precioMax !== null &&
-              filtros.precioMin !== '' && filtros.precioMax !== '' &&
-              Number(filtros.precioMin) > Number(filtros.precioMax) && (
-                <div className="alert alert-warning mt-2">Precio mínimo no puede ser mayor que precio máximo.</div>
-            )}
-            <div className="form-check mt-3">
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id="esSubastaCheck"
-                checked={filtros.esSubasta}
-                onChange={e => updateFiltro({ esSubasta: e.target.checked })}
-              />
-              <label className="form-check-label" htmlFor="esSubastaCheck">
-                Solo subastas
-              </label>
+              <div className="col-md-3 d-flex align-items-end">
+                <div className="form-check">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="esSubastaCheck"
+                    checked={filtros.esSubasta}
+                    onChange={e => updateFiltro({ esSubasta: e.target.checked })}
+                  />
+                  <label className="form-check-label" htmlFor="esSubastaCheck">
+                    Solo subastas
+                  </label>
+                </div>
+              </div>
+              <div className="col-md-3 d-flex align-items-end">
+                {/* Mensaje si el rango de precio es inválido */}
+                {filtros.precioMin !== null && filtros.precioMax !== null &&
+                  filtros.precioMin !== '' && filtros.precioMax !== '' &&
+                  Number(filtros.precioMin) > Number(filtros.precioMax) && (
+                    <div className="alert alert-warning py-1 px-2 mb-0 w-100">Min {'>'} Max</div>
+                )}
+              </div>
             </div>
           </div>
         </div>

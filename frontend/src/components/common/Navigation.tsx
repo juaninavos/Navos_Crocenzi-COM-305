@@ -1,20 +1,15 @@
 // src/components/common/Navigation.tsx
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../context/useCart';
 
 export const Navigation: React.FC = () => {
-  const { usuario, logout, isAuthenticated } = useAuth();
+  const { usuario, isAuthenticated } = useAuth();
   const { items } = useCart();
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   const totalItems = items.reduce((sum, item) => sum + item.cantidad, 0);
 
@@ -65,69 +60,51 @@ export const Navigation: React.FC = () => {
           ☰
         </button>
 
-        <div className={linksClass} style={{ gap: '24px' }}>
-          <Link to="/catalog" className="hover:underline">
-            <span onClick={() => setMenuOpen(false)}>Catálogo</span>
+        <div className={linksClass} style={{ gap: '32px', fontSize: '1.08rem', justifyContent: 'flex-end', width: '100%' }}>
+          <Link to="/catalog" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
+            Catálogo
           </Link>
           
           {/* ✅ UNA SOLA PESTAÑA DE SUBASTAS */}
           {isAuthenticated && (
-            <Link to="/auctions" className="hover:underline" onClick={() => setMenuOpen(false)}>
-              <span>🔨 Subastas</span>
+            <Link to="/auctions" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
+              🔨 Subastas
             </Link>
           )}
           
-          <Link to="/cart" className="hover:underline" style={{ position: 'relative', display: 'inline-block' }} onClick={() => setMenuOpen(false)}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              🛒 Carrito
-              {totalItems > 0 && (
-                <span style={{
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  borderRadius: '12px',
-                  padding: '4px 8px',
-                  minWidth: '20px',
-                  textAlign: 'center',
-                  display: 'inline-block',
-                  lineHeight: '1'
-                }}>
-                  {totalItems}
-                </span>
-              )}
-            </span>
+          <Link to="/cart" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif', position: 'relative', display: 'inline-block' }} onClick={() => setMenuOpen(false)}>
+            🛒 Carrito
+            {totalItems > 0 && (
+              <span style={{ backgroundColor: '#ef4444', color: 'white', fontSize: '11px', fontWeight: 'bold', borderRadius: '12px', padding: '4px 8px', minWidth: '20px', textAlign: 'center', display: 'inline-block', lineHeight: '1', marginLeft: '4px' }}>
+                {totalItems}
+              </span>
+            )}
           </Link>
 
           {isAuthenticated ? (
             <>
-              <Link to="/orders" className="hover:underline" onClick={() => setMenuOpen(false)}>
+              <Link to="/orders" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                 📋 Órdenes
               </Link>
-              
-              <Link to="/profile" className="hover:underline" onClick={() => setMenuOpen(false)}>
+              <Link to="/profile" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                 👤 Perfil
               </Link>
-              <Link to="/my-products" className="hover:underline" onClick={() => setMenuOpen(false)}>
+              <Link to="/my-products" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                 🧾 Mis Publicaciones
               </Link>
-              
               {usuario?.rol === 'administrador' && (
-                <Link to="/admin/dashboard" className="hover:underline" onClick={() => setMenuOpen(false)}>
+                <Link to="/admin/dashboard" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                   👨‍💼 Admin
                 </Link>
               )}
-              <span className="d-block d-md-inline">Hola, {usuario?.nombre}</span>
-              <button onClick={() => { setMenuOpen(false); handleLogout(); }} className="btn btn-link p-0 text-white text-decoration-underline">
-                Cerrar Sesión
-              </button>
+              {/* Eliminado saludo y botón cerrar sesión */}
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:underline" onClick={() => setMenuOpen(false)}>
+              <Link to="/login" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                 Iniciar Sesión
               </Link>
-              <Link to="/register" className="hover:underline" onClick={() => setMenuOpen(false)}>
+              <Link to="/register" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
                 Registrarse
               </Link>
             </>
