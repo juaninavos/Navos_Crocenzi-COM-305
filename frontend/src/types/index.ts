@@ -1,8 +1,3 @@
-// src/types/index.ts - CORREGIDO PARA erasableSyntaxOnly
-
-// =========================
-// 🎯 TIPOS EXACTOS DEL BACKEND (const objects en lugar de enums)
-// =========================
 
 export const UsuarioRol = {
   USUARIO: 'usuario',
@@ -54,9 +49,7 @@ export const EstadoPago = {
 } as const;
 export type EstadoPago = typeof EstadoPago[keyof typeof EstadoPago];
 
-// =========================
-// 🏗️ INTERFACES EXACTAS DEL BACKEND
-// =========================
+
 
 export interface Usuario {
   id: number;
@@ -64,7 +57,7 @@ export interface Usuario {
   apellido: string;
   email: string;
   email_normalized: string;
-  contrasena?: string;  // Solo para backend, nunca se envía al frontend
+  contrasena?: string;  
   direccion: string;
   telefono: string;
   rol: UsuarioRol;
@@ -109,7 +102,6 @@ export interface Camiseta {
   };
   vendedorId?: number;
   categoriaId?: number;
-  // ✅ ACTUALIZAR CAMPOS DE DESCUENTO (ahora es array)
   tieneDescuento?: boolean;
   descuentos?: Array<{
     id: number;
@@ -119,7 +111,7 @@ export interface Camiseta {
   }>;
   precioOriginal?: number;
   precioConDescuento?: number;
-  porcentajeTotal?: number; // Porcentaje total acumulado
+  porcentajeTotal?: number; 
 }
 
 export interface Subasta {
@@ -157,9 +149,8 @@ export interface Compra {
   direccionEnvio?: string;
   notas?: string;
   comprador: Usuario;
-  items?: CompraItem[]; // ✅ AGREGAR: Array de items (compras nuevas)
-  camiseta?: Camiseta; // Opcional: para compatibilidad con vistas que acceden a compra.camiseta
-  metodoPago: MetodoPago;
+  items?: CompraItem[]; 
+  camiseta?: Camiseta; 
 }
 
 export interface MetodoPago {
@@ -180,9 +171,7 @@ export interface Pago {
   metodoPago: MetodoPago;
 }
 
-// =========================
-// 📡 RESPUESTAS DE API
-// =========================
+
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -193,13 +182,11 @@ export interface ApiResponse<T> {
 }
 
 export interface AuthResponse {
-  usuario: Usuario;  // ✅ Usar interface Usuario completa
+  usuario: Usuario;  
   token: string;
 }
 
-// =========================
-// 📝 DTOs PARA FORMULARIOS
-// =========================
+
 
 export interface LoginData {
   email: string;
@@ -235,9 +222,7 @@ export interface UpdateCamisetaData extends Partial<CreateCamisetaData> {
   stock?: number;
 }
 
-// =========================
-// 🔍 FILTROS Y BÚSQUEDAS
-// =========================
+
 
 export interface CamisetaFiltro {
   equipo?: string;
@@ -252,14 +237,12 @@ export interface CamisetaFiltro {
   page?: number;
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
-  usuarioId?: number; // Permite filtrar por usuario (vendedor)
-  vendedorId?: number; // ✅ AGREGAR ESTA LÍNEA (alias de usuarioId)
-  categoriaId?: number; // ✅ AGREGAR ESTA LÍNEA TAMBIÉN
+  usuarioId?: number; 
+  vendedorId?: number; 
+  categoriaId?: number; 
 }
 
-// =========================
-// 📊 DASHBOARD Y ESTADÍSTICAS
-// =========================
+
 
 export interface DashboardData {
   totalUsuarios: number;
@@ -279,9 +262,7 @@ export interface DashboardData {
   }>;
 }
 
-// =========================
-// 🛒 CARRITO DE COMPRAS
-// =========================
+
 
 export interface CartItem {
   id: number;
@@ -296,22 +277,16 @@ export interface Cart {
   count: number;
 }
 
-// =========================
-// 🎯 TYPES AUXILIARES
-// =========================
 
-// ✅ Tipos auxiliares para compatibilidad
 export type TalleType = Talle;
 export type CondicionCamisetaType = CondicionCamiseta;
 export type EstadoCamisetaType = EstadoCamiseta;
 export type UsuarioRolType = UsuarioRol;
 
-// ✅ AGREGAR User para compatibilidad (alias de Usuario)
+
 export type User = Usuario;
 
-// =========================
-// 🔨 Tipos para Subastas
-// =========================
+
 export interface CreateSubastaData {
   camisetaId: number;
   precioInicial: number;
@@ -326,16 +301,14 @@ export interface SubastaFiltro {
   camisetaId?: number;
 }
 
-// =========================
-// 💰 Tipos para Ofertas
-// =========================
+
 export interface CreateOfertaData {
   subastaId: number;
   usuarioId: number;
   monto: number;
 }
 
-// ✅ AGREGAR AL FINAL DEL ARCHIVO
+
 export const TipoAplicacionDescuento = {
   TODAS: 'TODAS',
   CATEGORIA: 'CATEGORIA',

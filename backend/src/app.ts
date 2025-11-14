@@ -21,7 +21,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import authRouter from './controllers/AuthController';
 import authMiddleware from './middleware/auth';
 import roleGuard from './middleware/roleGuard';
-import imagenRoutes from './routes/imagenRoutes';
+import imagenRoutes from './routes/ImagenRoutes';
 
 let app: express.Express;
 let orm: MikroORM;
@@ -126,10 +126,9 @@ if (require.main === module) {
   const PORT = Number(process.env.PORT) || 3000;
     const HOST = process.env.HOST || '0.0.0.0';
     app.listen(PORT, HOST, () => {
-      console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-      console.log(`📋 Fase actual: REGULARIDAD`);
-      console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
-      console.log(`🌐 Escuchando en interfaces: ${HOST}`);
+      console.log(`Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+      console.log(`Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
+      console.log(`Escuchando en interfaces: ${HOST}`);
     });
   })();
 }

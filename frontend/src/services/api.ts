@@ -29,15 +29,13 @@ export class ApiAuthError extends Error {
   }
 }
 
-// =========================
-// 🔧 Configuración base de Axios
-// =========================
+
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// ✅ INTERCEPTOR DE TOKEN - ACTIVADO
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -46,9 +44,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// =========================
-// ⚠️ Interceptor de respuestas (manejo global de errores)
-// =========================
+
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -68,9 +64,7 @@ api.interceptors.response.use(
   }
 );
 
-// =========================
-// 🧍 Servicios de autenticación
-// =========================
+
 export const authService = {
   login: async (data: LoginData): Promise<AuthResponse> => {
     const response = await api.post<ApiResponse<AuthResponse>>('/auth/login', data);
@@ -92,9 +86,7 @@ export const authService = {
   },
 };
 
-// =========================
-// 👕 Servicios de camisetas
-// =========================
+
 export const camisetaService = {
   async getAll(filtros?: CamisetaFiltro) {
     const params: Record<string, unknown> = {};
@@ -127,7 +119,7 @@ export const camisetaService = {
     return response.data.data;
   },
 
-  // ✅ NUEVO: Obtener múltiples camisetas por IDs (con descuentos actualizados)
+ 
   getByIds: async (ids: number[]): Promise<Camiseta[]> => {
     const response = await api.post<ApiResponse<Camiseta[]>>('/camisetas/by-ids', { ids });
     return response.data.data;
@@ -161,9 +153,7 @@ export const camisetaService = {
   }
 };
 
-// =========================
-// 👑 Servicios de administración
-// =========================
+
 export const adminService = {
   getDashboard: async (): Promise<DashboardData> => {
     const response = await api.get<ApiResponse<DashboardData>>('/admin/dashboard');
@@ -191,9 +181,7 @@ export const adminService = {
   },
 };
 
-// =========================
-// 🔨 Servicios de subastas
-// =========================
+
 export const subastaService = {
   getAll: async (filtros: SubastaFiltro = {}): Promise<{ data: Subasta[]; count: number }> => {
     console.log('🌐 subastaService.getAll llamado con:', filtros);
@@ -202,12 +190,12 @@ export const subastaService = {
       Object.entries(filtros).filter(([, v]) => v !== undefined && v !== null)
     );
     
-    console.log('📤 Params enviados:', params);
+    console.log(' Params enviados:', params);
     
     try {
       const response = await api.get<ApiResponse<Subasta[]>>('/subastas', { params });
       
-      console.log('📥 Respuesta:', {
+      console.log('Respuesta:', {
         status: response.status,
         count: response.data.count,
         cantidad: response.data.data?.length
@@ -218,7 +206,7 @@ export const subastaService = {
         count: response.data.count ?? response.data.data.length
       };
     } catch (error) {
-      console.error('❌ Error en subastaService.getAll:', error);
+      console.error(' Error en subastaService.getAll:', error);
       throw error;
     }
   },
@@ -246,9 +234,7 @@ export const subastaService = {
   },
 };
 
-// =========================
-// 💰 Servicios de ofertas
-// =========================
+
 export const ofertaService = {
   getAll: async (): Promise<Oferta[]> => {
     const response = await api.get<ApiResponse<Oferta[]>>('/ofertas');
@@ -280,9 +266,7 @@ export const ofertaService = {
   },
 };
 
-// =========================
-// 📂 Servicios de categorías
-// =========================
+
 export const categoriaService = {
   getAll: async (): Promise<{ data: Categoria[]; count: number }> => {
     const response = await api.get<ApiResponse<Categoria[]>>('/categorias');
@@ -313,9 +297,7 @@ export const categoriaService = {
   },
 };
 
-// =========================
-// 💰 Servicios de descuentos
-// =========================
+
 export const descuentoService = {
   getAll: async (params?: { activos?: boolean; vigentes?: boolean }): Promise<{ data: Descuento[]; count: number }> => {
     const response = await api.get<ApiResponse<Descuento[]>>('/descuentos', { params });
@@ -380,11 +362,8 @@ export const descuentoService = {
   },
 };
 
-// =========================
-// 🖼️ Servicio de imágenes
-// =========================
+
 export const imagenService = {
-  // ✅ NUEVO: Subir archivo de imagen
   upload: async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append('imagen', file);
@@ -429,7 +408,7 @@ export const services = {
   oferta: ofertaService,
   categoria: categoriaService,
   descuento: descuentoService,
-  imagen: imagenService, // ✅ AGREGAR
+  imagen: imagenService, 
 };
 
 export default api;
