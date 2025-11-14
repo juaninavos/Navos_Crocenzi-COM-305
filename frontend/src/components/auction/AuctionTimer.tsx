@@ -7,7 +7,7 @@ interface AuctionTimerProps {
 }
 
 export const AuctionTimer: React.FC<AuctionTimerProps> = ({ fechaFin, className = '' }) => {
-  const { tiempoRestante, finalizada } = useAuctionTimer(fechaFin); // ✅ QUITAR puedeOfertar
+  const { tiempoRestante, finalizada } = useAuctionTimer(fechaFin);
 
   if (finalizada) {
     return (
@@ -20,8 +20,8 @@ export const AuctionTimer: React.FC<AuctionTimerProps> = ({ fechaFin, className 
   const { dias, horas, minutos, segundos } = tiempoRestante;
 
   // Cambiar color según tiempo restante
-  const isUrgent = tiempoRestante.total < 3600000; // menos de 1 hora
-  const isWarning = tiempoRestante.total < 86400000; // menos de 1 día
+  const isUrgent = tiempoRestante.total < 3600000; 
+  const isWarning = tiempoRestante.total < 86400000;
 
   const colorClass = isUrgent 
     ? 'text-red-600 animate-pulse' 

@@ -14,7 +14,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return stored ? JSON.parse(stored) : [];
   });
 
-  // ✅ NUEVO: Refrescar precios al montar
   useEffect(() => {
     const refrescarPrecios = async () => {
       if (items.length === 0) return;
@@ -91,7 +90,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems([]);
   };
 
-  // ✅ CORREGIR: Usar precioConDescuento si existe
   const total = items.reduce((sum, i) => {
     const precio = i.producto.tieneDescuento && i.producto.precioConDescuento 
       ? i.producto.precioConDescuento 

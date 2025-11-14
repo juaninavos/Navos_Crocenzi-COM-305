@@ -6,7 +6,7 @@ const Camiseta_1 = require("./entities/Camiseta");
 const Subasta_1 = require("./entities/Subasta");
 const Oferta_1 = require("./entities/Oferta");
 const Compra_1 = require("./entities/Compra");
-const CompraItem_1 = require("./entities/CompraItem"); // ✅ AGREGAR
+const CompraItem_1 = require("./entities/CompraItem");
 const MetodoPago_1 = require("./entities/MetodoPago");
 const Pago_1 = require("./entities/Pago");
 const Categoria_1 = require("./entities/Categoria");
@@ -23,7 +23,7 @@ exports.default = (0, mysql_1.defineConfig)({
         Subasta_1.Subasta,
         Oferta_1.Oferta,
         Compra_1.Compra,
-        CompraItem_1.CompraItem, // ✅ AGREGAR
+        CompraItem_1.CompraItem,
         MetodoPago_1.MetodoPago,
         Pago_1.Pago,
         Categoria_1.Categoria,

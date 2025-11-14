@@ -26,7 +26,7 @@ const errorHandler_1 = require("./middleware/errorHandler");
 const AuthController_1 = __importDefault(require("./controllers/AuthController"));
 const auth_1 = __importDefault(require("./middleware/auth"));
 const roleGuard_1 = __importDefault(require("./middleware/roleGuard"));
-const imagenRoutes_1 = __importDefault(require("./routes/imagenRoutes"));
+const ImagenRoutes_1 = __importDefault(require("./routes/ImagenRoutes"));
 let app;
 let orm;
 async function createApp() {
@@ -76,7 +76,7 @@ async function createApp() {
     app.use('/api/pagos', pagoRoutes_1.default);
     app.use('/api/descuentos', descuentoRoutes_1.default);
     app.use('/api/metodos-pago', metodoPagoRoutes_1.default);
-    app.use('/api/imagenes', imagenRoutes_1.default);
+    app.use('/api/imagenes', ImagenRoutes_1.default);
     app.use('/api/admin', adminRoutes_1.default);
     app.get('/api/health', (req, res) => {
         res.json({
@@ -116,10 +116,9 @@ if (require.main === module) {
         const PORT = Number(process.env.PORT) || 3000;
         const HOST = process.env.HOST || '0.0.0.0';
         app.listen(PORT, HOST, () => {
-            console.log(`🚀 Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
-            console.log(`📋 Fase actual: REGULARIDAD`);
-            console.log(`🔗 Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
-            console.log(`🌐 Escuchando en interfaces: ${HOST}`);
+            console.log(`Servidor corriendo en http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+            console.log(`Health check: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/api/health`);
+            console.log(`Escuchando en interfaces: ${HOST}`);
         });
     })();
 }

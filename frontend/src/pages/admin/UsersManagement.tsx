@@ -16,7 +16,6 @@ const UsersManagement: React.FC = () => {
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activos' | 'inactivos'>('todos');
 
   useEffect(() => {
-    // ✅ ESPERAR A QUE TERMINE DE CARGAR EL AUTH
     if (authLoading) {
       console.log('⏳ Esperando a que termine de cargar auth...');
       return;

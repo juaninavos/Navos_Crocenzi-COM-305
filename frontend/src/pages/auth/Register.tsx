@@ -6,7 +6,6 @@ import type { RegisterData } from '../../types';
 
 export const Register = () => {
     React.useEffect(() => {
-      // Oculta la barra de scroll vertical solo en esta página
       const originalOverflow = document.body.style.overflowY;
       document.body.style.overflowY = 'hidden';
       return () => {
@@ -110,7 +109,6 @@ export const Register = () => {
 
   return (
     <div className="container mt-5 position-relative">
-      {/* Botón Tienda Retro arriba a la izquierda, igual que en login */}
       <Link to="/" style={{ position: 'absolute', top: 0, left: 10, zIndex: 10, textDecoration: 'none' }} title="Ir a inicio">
         <button
           type="button"
@@ -159,7 +157,6 @@ export const Register = () => {
                 </div>
               )}
               <form onSubmit={handleSubmit}>
-                {/* ...existing code... */}
                 <div className="row mb-3">
                   <div className="col-md-6">
                     <label htmlFor="nombre" className="form-label">Nombre *</label>
@@ -196,7 +193,6 @@ export const Register = () => {
                     )}
                   </div>
                 </div>
-                {/* ...existing code... */}
                 <div className="mb-3">
                   <label htmlFor="email" className="form-label">Email *</label>
                   <input

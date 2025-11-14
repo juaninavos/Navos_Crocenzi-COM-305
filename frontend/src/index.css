@@ -4,7 +4,6 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  /* color: rgba(255, 255, 255, 0.87); */
   background-color: #fff;
 
   font-synthesis: none;
@@ -24,8 +23,6 @@ a:hover {
 
 body {
   margin: 0;
-  /* allow the layout to flow naturally so Bootstrap containers can control width
-     Removing global flex centering prevents pages from appearing narrow on desktop */
   min-width: 320px;
   min-height: 100vh;
 }

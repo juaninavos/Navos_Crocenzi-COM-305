@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { AuctionTimer } from '../../components/auction/AuctionTimer';
 import { BidForm } from '../../components/auction/BidForm';
 import { BidHistory } from '../../components/auction/BidHistory';
-import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
+import { getImageUrl } from '../../utils/api-config'; 
 
 export const AuctionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -43,7 +43,6 @@ export const AuctionDetailPage: React.FC = () => {
 
   return (
     <div className="container mt-4 mb-5">
-      {/* Breadcrumb */}
       <nav aria-label="breadcrumb">
         <ol className="breadcrumb">
           <li className="breadcrumb-item">
@@ -62,13 +61,11 @@ export const AuctionDetailPage: React.FC = () => {
       </div>
 
       <div className="row">
-        {/* Columna izquierda: Imagen y detalles */}
         <div className="col-lg-7">
-          {/* Imagen */}
           <div className="card mb-4">
             {camiseta.imagen ? (
               <img
-                src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+                src={getImageUrl(camiseta.imagen)} 
                 alt={camiseta.titulo}
                 className="card-img-top"
                 style={{ maxHeight: '500px', objectFit: 'contain', background: '#fff', width: '100%' }}
@@ -139,7 +136,7 @@ export const AuctionDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Columna derecha: Ofertas */}
+        {/* Ofertas */}
         <div className="col-lg-5">
           {/* Precio actual */}
           <div className="card mb-3 border-success">

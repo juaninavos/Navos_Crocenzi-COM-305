@@ -4,7 +4,6 @@ import authMiddleware from '../middleware/auth';
 
 const router = express.Router();
 
-// POST /api/imagenes/upload - Subir imagen (requiere autenticación)
 router.post('/upload', authMiddleware, upload.single('imagen'), ImagenController.uploadImagen);
 
 export default router;

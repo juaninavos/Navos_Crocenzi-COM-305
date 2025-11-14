@@ -1,12 +1,11 @@
 // src/components/common/ProductCard.tsx
-
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import type { Camiseta } from '../../types';
 import { useCart } from '../../context/useCart';
 import { getImageUrl } from '../../utils/api-config';
-import { API_BASE_URL } from '../../utils/constants'; // ✅ IMPORTAR
+import { API_BASE_URL } from '../../utils/constants'; 
 
 interface ProductCardProps {
   camiseta: Camiseta;
@@ -27,8 +26,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
     
     try {
       setLoading(true);
-      
-      // ✅ CAMBIAR: usar API_BASE_URL
       const response = await fetch(`${API_BASE_URL}/subastas/camiseta/${camiseta.id}`);
       
       if (!response.ok) {
@@ -79,7 +76,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ camiseta, onAddToCart,
         >
           {camiseta.imagen ? (
             <img
-              src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+              src={getImageUrl(camiseta.imagen)}
               alt={camiseta.titulo}
               style={{
                 maxWidth: '90%',

@@ -18,7 +18,6 @@ export const Navigation: React.FC = () => {
   return (
     <nav className="bg-blue-600 text-white p-3 p-md-4">
       <div className="container d-flex align-items-center justify-content-between">
-        {/* Logo Home estilizado con texto en dos líneas */}
         <Link to="/" className="text-decoration-none d-flex align-items-center" onClick={() => setMenuOpen(false)} style={{ gap: '10px' }}>
           <button
             type="button"
@@ -50,7 +49,7 @@ export const Navigation: React.FC = () => {
           </button>
         </Link>
 
-        {/* Toggle móvil */}
+        {}
         <button 
           className="btn btn-outline-light d-md-none"
           aria-label="Abrir menú"
@@ -65,7 +64,6 @@ export const Navigation: React.FC = () => {
             Catálogo
           </Link>
           
-          {/* ✅ UNA SOLA PESTAÑA DE SUBASTAS */}
           {isAuthenticated && (
             <Link to="/auctions" className="nav-link px-2" style={{ color: '#2563eb', fontWeight: 600, letterSpacing: '0.5px', fontFamily: 'Inter, Arial, sans-serif' }} onClick={() => setMenuOpen(false)}>
               🔨 Subastas
@@ -97,7 +95,6 @@ export const Navigation: React.FC = () => {
                   👨‍💼 Admin
                 </Link>
               )}
-              {/* Eliminado saludo y botón cerrar sesión */}
             </>
           ) : (
             <>

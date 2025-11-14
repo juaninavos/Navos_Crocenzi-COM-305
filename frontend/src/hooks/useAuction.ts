@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { subastaService } from '../services/api'; // ✅ QUITAR ofertaService del import
+import { subastaService } from '../services/api';
 import type { Subasta, Oferta } from '../types';
 
 export const useAuction = (id: number) => {

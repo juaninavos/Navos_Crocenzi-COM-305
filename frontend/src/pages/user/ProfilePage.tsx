@@ -21,7 +21,7 @@ export const ProfilePage: React.FC = () => {
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
 
-  // Historial (actividad simple): últimas compras
+  // Historial compras
     const [compras, setCompras] = useState<Compra[]>([]);
     const [loadingCompras, setLoadingCompras] = useState(false);
 
@@ -61,11 +61,10 @@ export const ProfilePage: React.FC = () => {
             headers: { Authorization: `Bearer ${tk}` }
         });
         const arr: Compra[] = resp.data.data || [];
-        // Ordenar por fecha compra desc y limitar a 5
+        // Ordenar por fecha compra desc
         const sorted = arr.sort((a, b) => new Date(b.fechaCompra).getTime() - new Date(a.fechaCompra).getTime());
         setCompras(sorted.slice(0, 5));
         } catch (e) {
-        // Silencioso: sección secundaria
         console.error('Error cargando compras del perfil', e);
         } finally {
         setLoadingCompras(false);
@@ -101,7 +100,6 @@ export const ProfilePage: React.FC = () => {
             headers: { Authorization: `Bearer ${tk}` }
         });
         const updated: Usuario = resp.data.data as Usuario;
-      // Actualizar AuthContext reutilizando login para sincronizar localStorage
         const currentToken = tk || '';
         login({
             id: updated.id,
@@ -124,7 +122,6 @@ export const ProfilePage: React.FC = () => {
         e.preventDefault();
         if (!usuario) return;
 
-        // Validaciones
         if (passwordForm.nueva !== passwordForm.confirmar) {
             setPasswordError('Las contraseñas nuevas no coinciden');
             return;
@@ -151,7 +148,6 @@ export const ProfilePage: React.FC = () => {
             setPasswordSuccess('✅ Contraseña actualizada correctamente');
             setPasswordForm({ actual: '', nueva: '', confirmar: '' });
             
-            // Auto-limpiar mensaje después de 5 segundos
             setTimeout(() => setPasswordSuccess(''), 5000);
         } catch (e: unknown) {
             console.error('Error cambiando contraseña', e);

@@ -128,8 +128,9 @@ export default function authRouter(orm: MikroORM): Router {
         error: 'Datos obligatorios',
         code: 'INVALID_DATA'
       });
-        const email = emailRaw; // tal como lo ingresó el usuario
-        const email_normalized = emailRaw.toLowerCase().trim(); // normalizado para unicidad
+
+      const email = emailRaw;
+      const email_normalized = emailRaw.toLowerCase().trim();
 
       if (!isValidEmail(email)) return res.status(400).json({
         success: false,
@@ -167,7 +168,6 @@ export default function authRouter(orm: MikroORM): Router {
       try {
         await em.persistAndFlush(user);
       } catch (e: any) {
-        // Manejo de constraint unique (Postgres: code === '23505', sqlite: message contiene 'UNIQUE')
         const msg = String(e?.message || '');
         if (e?.code === '23505' || /unique/i.test(msg) || /UNIQUE constraint failed/i.test(msg)) {
           return res.status(409).json({
@@ -188,21 +188,19 @@ export default function authRouter(orm: MikroORM): Router {
           code: 'REGISTER_ERROR'
         });
       }
-      // Serializar el usuario de forma segura usando wrap().toObject()
+
       const safeUser = wrap(user).toObject();
       delete (safeUser as any).contrasena;
 
       const token = createToken({ id: user.id, rol: user.rol }, String(user.id));
       const decoded = jwt.decode(token) as JwtPayload;
       const maxAge = decoded?.exp ? decoded.exp * 1000 - Date.now() : undefined;
-
-      // Opcional: setear cookie HttpOnly si lo configuraste
       if (JWT_USE_COOKIE) {
         res.cookie(COOKIE_NAME, token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-          maxAge, // directamente desde decoded.exp
+          maxAge,
   });
 }
 
@@ -248,7 +246,6 @@ export default function authRouter(orm: MikroORM): Router {
       });
 
       const user = await em.findOne(Usuario, { email });
-
       if (!user) return res.status(401).json({
         success: false,
         message: 'No se pudo iniciar sesión: credenciales inválidas.',
@@ -281,8 +278,8 @@ export default function authRouter(orm: MikroORM): Router {
       return res.json({
         success: true,
         message: 'Inicio de sesión realizado correctamente.',
-        data: {  
-          usuario: safeUser,  // 
+        data: {  // ✅ AGREGAR: envolver en 'data'
+          usuario: safeUser,  // ✅ CAMBIAR: 'user' → 'usuario'
           token
         }
       });

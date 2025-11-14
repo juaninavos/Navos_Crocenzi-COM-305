@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { useBids } from '../../hooks/useBids';
-import { useAuth } from '../../contexts/AuthContext'; // ✅ AGREGAR
+import { useAuth } from '../../contexts/AuthContext'; 
 import type { Subasta } from '../../types';
 
 interface BidFormProps {
@@ -11,17 +11,16 @@ interface BidFormProps {
 
 export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
   const { crearOferta, loading, error } = useBids();
-  const { usuario } = useAuth(); // ✅ AGREGAR
+  const { usuario } = useAuth(); 
   const [monto, setMonto] = useState<string>('');
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const montoMinimo = subasta.precioActual + 100; // Incremento mínimo de $100
+  const montoMinimo = subasta.precioActual + 100; 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
 
-    // ✅ AGREGAR: Verificar que haya usuario logueado
     if (!usuario) {
       setLocalError('Debes iniciar sesión para hacer una oferta');
       return;
@@ -45,7 +44,6 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
       return;
     }
 
-    // ✅ CAMBIAR: Pasar usuario.id al crear oferta
     const resultado = await crearOferta(subasta.id, montoNum, usuario.id);
 
     if (resultado) {
@@ -57,7 +55,6 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
 
   const handleMontoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const valor = e.target.value;
-    // Solo permitir números y punto decimal
     if (valor === '' || /^\d*\.?\d*$/.test(valor)) {
       setMonto(valor);
       setLocalError(null);
@@ -68,7 +65,6 @@ export const BidForm: React.FC<BidFormProps> = ({ subasta, onBidSuccess }) => {
     setMonto(montoMinimo.toString());
   };
 
-  // ✅ AGREGAR: Validar que el usuario esté logueado
   if (!usuario) {
     return (
       <div className="card">

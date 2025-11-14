@@ -98,7 +98,6 @@ export const MyAuctionsPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Badge de estado */}
                     <span
                       className={`position-absolute top-0 end-0 m-2 badge ${
                         estaActiva ? 'bg-success' : 'bg-secondary'
@@ -117,7 +116,6 @@ export const MyAuctionsPage: React.FC = () => {
                       </small>
                     </p>
 
-                    {/* Precios */}
                     <div className="mb-2">
                       <div className="d-flex justify-content-between">
                         <span className="text-muted">Precio inicial:</span>
@@ -131,7 +129,6 @@ export const MyAuctionsPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Estado de ofertas */}
                     {tieneOfertas ? (
                       <div className="alert alert-success py-2 mb-2">
                         <small>✅ Hay ofertas realizadas</small>
@@ -142,14 +139,12 @@ export const MyAuctionsPage: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Timer */}
                     {estaActiva && (
                       <div className="mb-3">
                         <AuctionTimer fechaFin={subasta.fechaFin} />
                       </div>
                     )}
 
-                    {/* Información de cierre */}
                     {!estaActiva && (
                       <p className="text-muted mb-3">
                         <small>

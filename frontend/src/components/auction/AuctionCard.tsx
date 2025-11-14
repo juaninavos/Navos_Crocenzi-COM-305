@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Subasta } from '../../types';
 import { AuctionTimer } from './AuctionTimer';
-import { getImageUrl } from '../../utils/api-config'; // ✅ IMPORTAR
+import { getImageUrl } from '../../utils/api-config'; 
 
 interface AuctionCardProps {
   subasta: Subasta;
@@ -28,7 +28,7 @@ export const AuctionCard: React.FC<AuctionCardProps> = ({ subasta }) => {
         >
           {camiseta.imagen ? (
             <img
-              src={getImageUrl(camiseta.imagen)} // ✅ USAR FUNCIÓN
+              src={getImageUrl(camiseta.imagen)} 
               alt={camiseta.titulo}
               style={{
                 maxWidth: '90%',

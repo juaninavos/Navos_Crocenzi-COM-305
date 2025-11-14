@@ -3,7 +3,6 @@ import { CategoriaController } from '../controllers/CategoriaController';
 
 const router: express.Router = express.Router();
 
-// Rutas para categorías
 router.get('/', CategoriaController.getAll);
 router.get('/:id', CategoriaController.getOne);
 router.post('/', CategoriaController.create);

@@ -21,7 +21,7 @@ export const AuctionsPage: React.FC = () => {
 
   return (
     <div className="container mt-4">
-      {/* ✅ TABS UNIFICADOS */}
+      
       <ul className="nav nav-tabs mb-4">
         <li className="nav-item">
           <button
@@ -49,7 +49,7 @@ export const AuctionsPage: React.FC = () => {
         </li>
       </ul>
 
-      {/* ✅ CONTENIDO SEGÚN TAB ACTIVO */}
+      
       {activeTab === 'explore' && <AuctionListPage />}
       {activeTab === 'my-bids' && <MyBidsPage />}
       {activeTab === 'my-auctions' && <MyAuctionsPage />}

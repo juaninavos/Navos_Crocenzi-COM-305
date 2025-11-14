@@ -42,7 +42,6 @@ export const MyProductsPage: React.FC = () => {
   }, [usuario]);
 
 
-  // ✅ AGREGAR: Estado para el archivo de imagen
   const [imagenArchivo, setImagenArchivo] = useState<File | null>(null);
   const [imagenPreview, setImagenPreview] = useState<string>('');
 
@@ -79,7 +78,6 @@ export const MyProductsPage: React.FC = () => {
       form.temporada.trim().length >= 2 &&
       Number(form.precioInicial) > 0 &&
       form.stock > 0 &&
-      // ✅ CAMBIO: Permitir que se pueda publicar si hay archivo O URL
       (imagenArchivo !== null || form.imagen.trim().length > 5);
     
     if (form.esSubasta) {
@@ -87,7 +85,7 @@ export const MyProductsPage: React.FC = () => {
     }
     
     return basicValidation;
-  }, [form, imagenArchivo]); // ✅ AGREGAR imagenArchivo a las dependencias
+  }, [form, imagenArchivo]); 
 
   const fetchMine = useCallback(async () => {
     if (!usuario) return;
@@ -145,14 +143,12 @@ export const MyProductsPage: React.FC = () => {
     try {
       let imagenFinal = form.imagen;
 
-      // ✅ CAMBIO: Si hay un archivo, subirlo primero
       if (imagenArchivo) {
         console.log('📤 Subiendo imagen desde archivo...');
         const { imagenService } = await import('../../services/api');
         imagenFinal = await imagenService.upload(imagenArchivo);
         console.log('✅ Imagen subida:', imagenFinal);
       }
-      // Si no hay archivo pero hay URL, descargar la imagen
       else if (/^https?:\/\//i.test(form.imagen)) {
         try {
           const { imagenService } = await import('../../services/api');
@@ -217,7 +213,6 @@ export const MyProductsPage: React.FC = () => {
     }
   };
 
-  // ✅ MEJORAR: Función para manejar cambio de archivo
   const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
@@ -230,18 +225,18 @@ export const MyProductsPage: React.FC = () => {
     // Validar tipo
     if (!file.type.startsWith('image/')) {
       setFormError('Solo se permiten archivos de imagen');
-      e.target.value = ''; // Limpiar el input
+      e.target.value = ''; 
       return;
     }
 
     // Validar tamaño (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setFormError('La imagen no debe superar los 5MB');
-      e.target.value = ''; // Limpiar el input
+      e.target.value = ''; 
       return;
     }
 
-    // ✅ Limpiar errores previos
+
     setFormError('');
 
     setImagenArchivo(file);
@@ -253,7 +248,6 @@ export const MyProductsPage: React.FC = () => {
     };
     reader.readAsDataURL(file);
 
-    // ✅ CAMBIO: Limpiar campo URL solo si se carga exitosamente el archivo
     setForm(f => ({ ...f, imagen: '' }));
   };
 
@@ -324,7 +318,7 @@ export const MyProductsPage: React.FC = () => {
     }
   };
 
-  // ✅ ESTADÍSTICAS GLOBALES DEL SISTEMA (solo para admin)
+  // ESTADÍSTICAS GLOBALES DEL SISTEMA (solo para admin)
   const estadisticasGlobales = useMemo(() => {
     console.log('📊 Calculando estadísticas globales - isAdmin:', isAdmin, '| Total camisetas:', todasLasCamisetas.length);
     
@@ -339,7 +333,7 @@ export const MyProductsPage: React.FC = () => {
     const vendidas = todasLasCamisetas.filter(c => c.estado === 'vendida').length;
     const stockTotal = todasLasCamisetas.reduce((sum, c) => sum + c.stock, 0);
     
-    // ✅ SEPARAR: camisetas publicadas por usuarios vs admin
+    // camisetas publicadas por usuarios vs admin
     const publicadasPorUsuarios = todasLasCamisetas.filter(c => c.vendedor?.rol === 'usuario').length;
     const publicadasPorAdmin = todasLasCamisetas.filter(c => c.vendedor?.rol === 'administrador').length;
     
@@ -356,7 +350,7 @@ export const MyProductsPage: React.FC = () => {
     return stats;
   }, [isAdmin, todasLasCamisetas]);
 
-  // ✅ ESTADÍSTICAS PERSONALES (mis publicaciones)
+  // ESTADÍSTICAS PERSONALES (mis publicaciones)
   const estadisticasPersonales = useMemo(() => {
     console.log('📊 Calculando estadísticas personales - Mis publicaciones:', camisetas.length);
     
@@ -381,7 +375,7 @@ export const MyProductsPage: React.FC = () => {
         <button className="btn btn-outline-secondary" onClick={fetchMine} type="button">🔄 Actualizar</button>
       </div>
 
-      {/* ✅ ESTADÍSTICAS GLOBALES DEL SISTEMA (solo admin) */}
+      {/* ESTADÍSTICAS GLOBALES DEL SISTEMA (solo admin) */}
       {isAdmin && estadisticasGlobales && (
         <>
           <div className="alert alert-info mb-3">
@@ -443,7 +437,7 @@ export const MyProductsPage: React.FC = () => {
         </>
       )}
 
-      {/* ✅ ESTADÍSTICAS PERSONALES (para todos) */}
+      {/* ESTADÍSTICAS PERSONALES (para todos) */}
       <div className="alert alert-secondary mb-3">
         <strong>{isAdmin ? '📝 Mis Publicaciones como Admin' : '📝 Mis Publicaciones'}</strong>
       </div>
@@ -500,7 +494,7 @@ export const MyProductsPage: React.FC = () => {
           )}
           <form onSubmit={crearPublicacion}>
             <div className="row g-3">
-              {/* Primera fila: Categoría y Título */}
+              {/* Categoría y Título */}
               <div className="col-12 col-md-6">
                 <label className="form-label">Categoría (opcional)</label>
                 <select
@@ -518,7 +512,7 @@ export const MyProductsPage: React.FC = () => {
                 <label className="form-label">Título *</label>
                 <input className="form-control" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} required />
                 </div>
-                {/* Segunda fila: Equipo, Temporada, Talle, Condición */}
+                {/* Equipo, Temporada, Talle, Condición */}
                 <div className="col-6 col-md-3">
                   <label className="form-label">Equipo *</label>
                   <input className="form-control" value={form.equipo} onChange={e => setForm(f => ({ ...f, equipo: e.target.value }))} required />
@@ -539,7 +533,7 @@ export const MyProductsPage: React.FC = () => {
                     {['Nueva','Usada','Vintage'].map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                {/* Tercera fila: Precio, Stock, Imagen */}
+                {/* Precio, Stock, Imagen */}
                 <div className="col-12 col-md-6 order-md-1">
                   <label className="form-label">Imagen de la camiseta *</label>
                   <input 
@@ -583,9 +577,9 @@ export const MyProductsPage: React.FC = () => {
                     setForm(f => ({ ...f, stock: val === '' ? 0 : Number(val) }));
                   }} required />
                 </div>
-                {/* Cuarta fila: Subasta y fecha */}
+                {/* Subasta y fecha */}
             </div>
-            {/* Subasta: debajo de todo */}
+            {/* Subasta */}
             <div className="row mt-3">
               <div className="col-12">
                 <div className="form-check">
@@ -747,7 +741,7 @@ export const MyProductsPage: React.FC = () => {
                   <div className="text-muted mb-2"><small>{c.equipo} • {c.temporada}</small></div>
                   <div className="mb-2"><span className="badge bg-info">{c.condicion}</span></div>
                   <div className="mb-3 d-flex justify-content-between align-items-center">
-                    {/* ✅ MOSTRAR DESCUENTO */}
+                    {/* MOSTRAR DESCUENTO */}
                     <div className="mb-3">
                       {c.tieneDescuento && c.precioConDescuento ? (
                         <div>

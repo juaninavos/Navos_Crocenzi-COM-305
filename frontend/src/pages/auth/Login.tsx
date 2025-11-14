@@ -35,7 +35,6 @@ export const Login = () => {
       setSuccess('¡Ingreso exitoso! Redirigiendo...');
       setTimeout(() => navigate('/'), 1200);
     } catch (err) {
-      // Type guard para error de axios
       const axiosErr = err as AxiosError;
       if (
         typeof err === 'object' &&
@@ -59,7 +58,6 @@ export const Login = () => {
 
   return (
     <>
-      {/* Header con logo y catálogo, igual estética que Navigation */}
       <nav className="bg-blue-600 text-white p-3 p-md-4 mb-4">
         <div className="container d-flex align-items-center justify-content-between">
           <Link to="/" className="text-decoration-none d-flex align-items-center" style={{ gap: '10px' }}>

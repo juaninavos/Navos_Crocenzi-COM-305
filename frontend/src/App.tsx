@@ -11,7 +11,7 @@ import { Catalog } from './pages/user/Catalog';
 import { AdminDashboard } from './pages/admin/Dashboard';
 import UsersManagement from './pages/admin/UsersManagement';
 import CategoriesManagement from './pages/admin/CategoriesManagement';
-import DiscountsManagement from './pages/admin/DiscountsManagement'; // ✅ AGREGAR
+import DiscountsManagement from './pages/admin/DiscountsManagement';
 
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -20,7 +20,6 @@ import ProductDetailPage from './pages/user/ProductDetailPage';
 import ProfilePage from './pages/user/ProfilePage';
 import MyProductsPage from './pages/user/MyProductsPage';
 
-// ✅ IMPORTAR páginas de subastas
 import { AuctionsPage } from './pages/auction/AuctionsPage';
 import { AuctionDetailPage } from './pages/auction/AuctionDetailPage';
 

@@ -52,10 +52,7 @@ export const useAuctionTimer = (fechaFin: Date | string) => {
   }, [fechaFin]);
 
   useEffect(() => {
-    // Cálculo inicial
     setStats(calcularTiempo());
-
-    // Actualizar cada segundo
     const intervalo = setInterval(() => {
       setStats(calcularTiempo());
     }, 1000);
