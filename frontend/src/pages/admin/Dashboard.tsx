@@ -1,15 +1,14 @@
 // src/pages/admin/Dashboard.tsx
 
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom'; // ✅ AGREGAR
+import Swal from 'sweetalert2';
+import { useNavigate } from 'react-router-dom';
 import { camisetaService } from '../../services/api';
-// ✅ CAMBIAR: Importar tipos con 'type'
-import type { DashboardData, Camiseta } from '../../types';
+import type { Camiseta } from '../../types';
 import { getImageUrl } from '../../utils/api-config';
 
 export const AdminDashboard: React.FC = () => {
-  const navigate = useNavigate(); // ✅ AGREGAR
+  const navigate = useNavigate();
   const [camisetas, setCamisetas] = useState<Camiseta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,7 +19,6 @@ export const AdminDashboard: React.FC = () => {
 
   const loadData = async () => {
     try {
-      // ✅ USAR LA ESTRUCTURA CORRECTA
       const camisetasResponse = await camisetaService.getAll();
       setCamisetas(camisetasResponse.data || []);
       
@@ -33,15 +31,34 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('¿Confirma eliminar esta camiseta?')) {
-      try {
-        await camisetaService.delete(id);
-        setCamisetas(camisetas.filter(c => c.id !== id));
-        toast.success('Camiseta eliminada exitosamente');
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Error al eliminar';
-        toast.error(`Error al eliminar: ${msg}`);
-      }
+    const result = await Swal.fire({
+      title: '¿Eliminar camiseta?',
+      text: 'Esta acción no se puede deshacer. ¿Seguro que deseas eliminar esta camiseta?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await camisetaService.delete(id);
+      setCamisetas(camisetas.filter(c => c.id !== id));
+      Swal.fire({
+        title: 'Eliminado',
+        text: 'La camiseta ha sido eliminada correctamente.',
+        icon: 'success',
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al eliminar';
+      Swal.fire({
+        title: 'Error',
+        text: `No se pudo eliminar la camiseta: ${msg}`,
+        icon: 'error',
+      });
     }
   };
 

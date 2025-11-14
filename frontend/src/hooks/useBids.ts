@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { AxiosError } from 'axios';
 import { ofertaService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import type { CreateOfertaData, Oferta } from '../types';
@@ -9,11 +10,10 @@ export const useBids = (subastaId?: number) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ ACTUALIZAR: Aceptar usuarioId como tercer parámetro
   const crearOferta = useCallback(async (
     subastaId: number, 
     monto: number,
-    usuarioId: number // ✅ AGREGAR
+    usuarioId: number
   ): Promise<Oferta | null> => {
     try {
       setLoading(true);
@@ -21,7 +21,7 @@ export const useBids = (subastaId?: number) => {
 
       const data: CreateOfertaData = {
         monto,
-        usuarioId, // ✅ Usar el usuarioId recibido por parámetro
+        usuarioId,
         subastaId
       };
 
@@ -32,20 +32,21 @@ export const useBids = (subastaId?: number) => {
       console.log('✅ Oferta creada exitosamente:', oferta);
       
       return oferta;
-    } catch (err: any) {
+    } catch (err) {
       console.error('❌ Error al crear oferta:', err);
-      
-      // Manejar errores específicos del backend
-      const mensaje = err.response?.data?.message || 
-                     err.message || 
-                     'Error al realizar la oferta';
-      
+      let mensaje = 'Error al realizar la oferta';
+      const axiosError = err as AxiosError<{ message?: string }>;
+      if (axiosError.response?.data?.message) {
+        mensaje = axiosError.response.data.message;
+      } else if (axiosError.message) {
+        mensaje = axiosError.message;
+      }
       setError(mensaje);
       return null;
     } finally {
       setLoading(false);
     }
-  }, []); // ✅ Quitar 'usuario' de las dependencias
+  }, []);
 
   const obtenerMisOfertas = useCallback(async (): Promise<Oferta[]> => {
     if (!usuario) {
@@ -67,7 +68,6 @@ export const useBids = (subastaId?: number) => {
     }
   }, [usuario]);
 
-  // ✅ AGREGAR: Cargar ofertas de una subasta específica
   const cargarOfertas = useCallback(async () => {
     if (!subastaId) return;
 

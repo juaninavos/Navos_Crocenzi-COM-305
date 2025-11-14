@@ -1,3 +1,20 @@
+<<<<<<< HEAD
+=======
+// Tipos para el temporizador de subastas
+export interface SubastaStats {
+  tiempoRestante: {
+    dias: number;
+    horas: number;
+    minutos: number;
+    segundos: number;
+    total: number;
+  };
+  finalizada: boolean;
+  puedeOfertar: boolean;
+}
+// src/types/index.ts
+
+>>>>>>> 55a37c2 (cambios en los hookes)
 
 export const UsuarioRol = {
   USUARIO: 'usuario',
@@ -49,15 +66,23 @@ export const EstadoPago = {
 } as const;
 export type EstadoPago = typeof EstadoPago[keyof typeof EstadoPago];
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 55a37c2 (cambios en los hookes)
 
+// INTERFACES DEL BACKEND
 export interface Usuario {
   id: number;
   nombre: string;
   apellido: string;
   email: string;
   email_normalized: string;
+<<<<<<< HEAD
   contrasena?: string;  
+=======
+  contrasena?: string;
+>>>>>>> 55a37c2 (cambios en los hookes)
   direccion: string;
   telefono: string;
   rol: UsuarioRol;
@@ -111,7 +136,11 @@ export interface Camiseta {
   }>;
   precioOriginal?: number;
   precioConDescuento?: number;
+<<<<<<< HEAD
   porcentajeTotal?: number; 
+=======
+  porcentajeTotal?: number;
+>>>>>>> 55a37c2 (cambios en los hookes)
 }
 
 export interface Subasta {
@@ -151,6 +180,10 @@ export interface Compra {
   comprador: Usuario;
   items?: CompraItem[]; 
   camiseta?: Camiseta; 
+<<<<<<< HEAD
+=======
+  metodoPago: MetodoPago;
+>>>>>>> 55a37c2 (cambios en los hookes)
 }
 
 export interface MetodoPago {
@@ -171,8 +204,12 @@ export interface Pago {
   metodoPago: MetodoPago;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 55a37c2 (cambios en los hookes)
 
+// RESPUESTAS DE API
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -186,8 +223,12 @@ export interface AuthResponse {
   token: string;
 }
 
+<<<<<<< HEAD
 
 
+=======
+// DATOS PARA FORMULARIOS
+>>>>>>> 55a37c2 (cambios en los hookes)
 export interface LoginData {
   email: string;
   contrasena: string;
@@ -222,8 +263,12 @@ export interface UpdateCamisetaData extends Partial<CreateCamisetaData> {
   stock?: number;
 }
 
+<<<<<<< HEAD
 
 
+=======
+// FILTROS Y BÚSQUEDAS
+>>>>>>> 55a37c2 (cambios en los hookes)
 export interface CamisetaFiltro {
   equipo?: string;
   temporada?: string;
@@ -237,13 +282,21 @@ export interface CamisetaFiltro {
   page?: number;
   limit?: number;
   sort?: 'precioAsc' | 'precioDesc' | 'fechaAsc' | 'fechaDesc';
+<<<<<<< HEAD
   usuarioId?: number; 
+=======
+  usuarioId?: number; // Permite filtrar por usuario (vendedor)
+>>>>>>> 55a37c2 (cambios en los hookes)
   vendedorId?: number; 
   categoriaId?: number; 
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 55a37c2 (cambios en los hookes)
 
+// DASHBOARD Y ESTADÍSTICAS
 export interface DashboardData {
   totalUsuarios: number;
   totalCamisetas: number;
@@ -262,8 +315,12 @@ export interface DashboardData {
   }>;
 }
 
+<<<<<<< HEAD
 
 
+=======
+// CARRITO DE COMPRAS
+>>>>>>> 55a37c2 (cambios en los hookes)
 export interface CartItem {
   id: number;
   camiseta: Camiseta;
@@ -277,16 +334,27 @@ export interface Cart {
   count: number;
 }
 
+<<<<<<< HEAD
 
+=======
+// TIPOS AUXILIARES
+>>>>>>> 55a37c2 (cambios en los hookes)
 export type TalleType = Talle;
 export type CondicionCamisetaType = CondicionCamiseta;
 export type EstadoCamisetaType = EstadoCamiseta;
 export type UsuarioRolType = UsuarioRol;
+<<<<<<< HEAD
 
 
 export type User = Usuario;
 
 
+=======
+export type User = Usuario;
+
+
+// Tipos para Subastas
+>>>>>>> 55a37c2 (cambios en los hookes)
 export interface CreateSubastaData {
   camisetaId: number;
   precioInicial: number;
@@ -301,14 +369,21 @@ export interface SubastaFiltro {
   camisetaId?: number;
 }
 
+<<<<<<< HEAD
 
+=======
+// Tipos para Ofertas
+>>>>>>> 55a37c2 (cambios en los hookes)
 export interface CreateOfertaData {
   subastaId: number;
   usuarioId: number;
   monto: number;
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 55a37c2 (cambios en los hookes)
 export const TipoAplicacionDescuento = {
   TODAS: 'TODAS',
   CATEGORIA: 'CATEGORIA',

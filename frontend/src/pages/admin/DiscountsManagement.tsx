@@ -3,18 +3,16 @@ import { toast } from 'react-toastify';
 import { descuentoService, categoriaService, camisetaService } from '../../services/api';
 import type { Descuento, Categoria, CamisetaSeleccion, TipoAplicacionDescuento as TipoAplicacionType } from '../../types';
 import { TipoAplicacionDescuento } from '../../types';
-import { useAuth } from '../../contexts/AuthContext'; // ✅ IMPORTAR
+import { useAuth } from '../../contexts/AuthContext';
 
 export const DiscountsManagement: React.FC = () => {
-  const { isLoading: authLoading } = useAuth(); // ✅ OBTENER ESTADO DE CARGA
+  const { isLoading: authLoading } = useAuth();
   
   const [descuentos, setDescuentos] = useState<Descuento[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [camisetasDisponibles, setCamisetasDisponibles] = useState<CamisetaSeleccion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  
-  // Estados para el formulario - ✅ CORREGIR EL TIPO
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<{
@@ -24,7 +22,7 @@ export const DiscountsManagement: React.FC = () => {
     fechaInicio: string;
     fechaFin: string;
     activo: boolean;
-    tipoAplicacion: TipoAplicacionType; // ✅ USAR EL TIPO CORRECTO
+    tipoAplicacion: TipoAplicacionType;
     categoriaId: number | undefined;
     camisetaIds: number[];
   }>({
@@ -34,18 +32,17 @@ export const DiscountsManagement: React.FC = () => {
     fechaInicio: '',
     fechaFin: '',
     activo: true,
-    tipoAplicacion: TipoAplicacionDescuento.TODAS, // ✅ USAR LA CONSTANTE
+    tipoAplicacion: TipoAplicacionDescuento.TODAS,
     categoriaId: undefined,
     camisetaIds: []
   });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // ✅ ESPERAR A QUE AuthContext TERMINE DE CARGAR
     if (!authLoading) {
       loadData();
     }
-  }, [authLoading]); // ✅ AGREGAR DEPENDENCIA
+  }, [authLoading]); 
 
   const loadData = async () => {
     try {
@@ -120,7 +117,6 @@ export const DiscountsManagement: React.FC = () => {
       return;
     }
 
-    // ✅ VALIDAR SEGÚN TIPO DE APLICACIÓN
     if (formData.tipoAplicacion === TipoAplicacionDescuento.CATEGORIA && !formData.categoriaId) {
       toast.error('Debe seleccionar una categoría');
       return;
@@ -143,7 +139,6 @@ export const DiscountsManagement: React.FC = () => {
         tipoAplicacion: formData.tipoAplicacion
       };
 
-      // ✅ AGREGAR categoriaId o camisetaIds según tipo
       if (formData.tipoAplicacion === TipoAplicacionDescuento.CATEGORIA) {
         dataToSend.categoriaId = formData.categoriaId;
       } else if (formData.tipoAplicacion === TipoAplicacionDescuento.ESPECIFICAS) {
@@ -237,7 +232,7 @@ export const DiscountsManagement: React.FC = () => {
       fechaInicio: '',
       fechaFin: '',
       activo: true,
-      tipoAplicacion: TipoAplicacionDescuento.TODAS, // ✅ USAR LA CONSTANTE
+      tipoAplicacion: TipoAplicacionDescuento.TODAS,
       categoriaId: undefined,
       camisetaIds: []
     });
@@ -271,7 +266,7 @@ export const DiscountsManagement: React.FC = () => {
     return descuento.activo && inicio <= ahora && fin >= ahora;
   };
 
-  // ✅ FILTRAR CAMISETAS POR CATEGORÍA
+  // FILTRAR CAMISETAS POR CATEGORÍA
   const camisetasPorCategoria = formData.categoriaId
     ? camisetasDisponibles.filter(c => c.categoria?.id === formData.categoriaId)
     : [];
@@ -291,7 +286,6 @@ export const DiscountsManagement: React.FC = () => {
     }
   };
 
-  // ✅ MOSTRAR LOADING MIENTRAS AuthContext CARGA
   if (authLoading) {
     return (
       <div className="container mt-5 text-center">
@@ -411,12 +405,11 @@ export const DiscountsManagement: React.FC = () => {
                   />
                 </div>
 
-                {/* ✅ SECCIÓN DE TIPO DE APLICACIÓN */}
                 <div className="col-12">
                   <hr />
                   <h6 className="mb-3">🎯 Aplicar descuento a:</h6>
                   
-                  {/* Opción 1: Todas las camisetas */}
+                  {/* Todas las camisetas */}
                   <div className="form-check mb-3">
                     <input
                       className="form-check-input"
@@ -438,7 +431,7 @@ export const DiscountsManagement: React.FC = () => {
                     </label>
                   </div>
 
-                  {/* Opción 2: Por categoría */}
+                  {/* Por categoría */}
                   <div className="form-check mb-3">
                     <input
                       className="form-check-input"
@@ -498,7 +491,7 @@ export const DiscountsManagement: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Opción 3: Camisetas específicas */}
+                  {/* Camisetas específicas */}
                   <div className="form-check mb-3">
                     <input
                       className="form-check-input"

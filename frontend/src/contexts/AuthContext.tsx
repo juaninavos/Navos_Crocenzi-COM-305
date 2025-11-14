@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    setIsLoading(false); // ✅ MARCAR COMO CARGADO
+    setIsLoading(false);
   }, []);
 
   const login = (userData: Usuario, authToken: string) => {
