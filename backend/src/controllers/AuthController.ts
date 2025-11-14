@@ -3,8 +3,6 @@ import bcrypt from 'bcryptjs';
 import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 import { MikroORM, wrap } from '@mikro-orm/core';
 import { Usuario } from '../entities/Usuario';
-
-
 import { AuthUser } from '../types/auth';
 
 const router: Router = express.Router();
@@ -16,10 +14,10 @@ if (!JWT_SECRET) throw new Error('JWT_SECRET no configurado. Define la variable 
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
 const JWT_ISSUER = process.env.JWT_ISSUER || 'mi-app';
 const BCRYPT_SALT_ROUNDS = Number(process.env.BCRYPT_SALT_ROUNDS || '10');
-const JWT_USE_COOKIE = process.env.JWT_USE_COOKIE === 'true'; // opcional: si quieres setear el token como cookie HttpOnly
+const JWT_USE_COOKIE = process.env.JWT_USE_COOKIE === 'true';
 const COOKIE_NAME = process.env.JWT_COOKIE_NAME || 'token';
 
-const ALLOWED_ROLES = ['usuario', 'administrador']; // ajusta según tu dominio
+const ALLOWED_ROLES = ['usuario', 'administrador'];
 
 function createToken(payload: object, subject?: string) {
   const opts: SignOptions = {
@@ -69,7 +67,6 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 }
 
 export default function authRouter(orm: MikroORM): Router {
-  // Cambiar contraseña
   router.post('/change-password', async (req: Request, res: Response) => {
     try {
       const em = orm.em.fork();
@@ -112,11 +109,11 @@ export default function authRouter(orm: MikroORM): Router {
       });
     }
   });
+
   // Registro
   router.post('/register', async (req: Request, res: Response) => {
     try {
       const em = orm.em.fork();
-      // Sanitizar y validar input
       const nombre = sanitizeString(req.body.nombre);
       const apellido = sanitizeString(req.body.apellido);
       const emailRaw = sanitizeString(req.body.email);
@@ -131,8 +128,8 @@ export default function authRouter(orm: MikroORM): Router {
         error: 'Datos obligatorios',
         code: 'INVALID_DATA'
       });
-      const email = emailRaw.toLowerCase();
-      const email_normalized = email;
+        const email = emailRaw; // tal como lo ingresó el usuario
+        const email_normalized = emailRaw.toLowerCase().trim(); // normalizado para unicidad
 
       if (!isValidEmail(email)) return res.status(400).json({
         success: false,
@@ -155,7 +152,6 @@ export default function authRouter(orm: MikroORM): Router {
         code: 'INVALID_DATA'
       });
 
-      // Evitar duplicados (check optimista). La defensa definitiva debe ser un UNIQUE en la BD.
       const exist = await em.findOne(Usuario, { email_normalized });
       if (exist) return res.status(409).json({
         success: false,
@@ -213,8 +209,8 @@ export default function authRouter(orm: MikroORM): Router {
       return res.status(201).json({
         success: true,
         message: 'Registro realizado correctamente.',
-        data: {  // ✅ AGREGAR: envolver en 'data'
-          usuario: safeUser,  // ✅ CAMBIAR: 'user' → 'usuario'
+        data: { 
+          usuario: safeUser,
           token
         }
       });
