@@ -39,9 +39,9 @@ export class AdminController {
       const compras = await em.find(Compra, {});
       const ingresosTotales = compras.reduce((suma: number, compra: Compra) => suma + Number(compra.total), 0);
 
-      // ✅ CORRECCIÓN: Usar 'compraItems' en lugar de 'compras'
+   
       const camisetas = await em.find(Camiseta, {}, {
-        populate: ['compraItems'], // ✅ CAMBIO AQUÍ
+        populate: ['compraItems'], 
         orderBy: { fechaCreacion: 'DESC' }
       });
 
@@ -52,7 +52,7 @@ export class AdminController {
           equipo: camiseta.equipo,
           imagen: camiseta.imagen,
           precioInicial: camiseta.precioInicial,
-          totalVentas: camiseta.compraItems?.length || 0 // ✅ USAR compraItems
+          totalVentas: camiseta.compraItems?.length || 0 
         }))
         .sort((a: any, b: any) => b.totalVentas - a.totalVentas)
         .slice(0, 5);
@@ -267,9 +267,9 @@ export class AdminController {
         };
       }
 
-      // ✅ CORRECCIÓN: Populate correcto para Compra
+     
       const compras = await em.find(Compra, filtros, {
-        populate: ['items.camiseta', 'items.camiseta.vendedor', 'usuario'], // ✅ CAMBIO AQUÍ
+        populate: ['items.camiseta', 'items.camiseta.vendedor', 'usuario'], 
         orderBy: { fechaCompra: 'DESC' }
       });
 

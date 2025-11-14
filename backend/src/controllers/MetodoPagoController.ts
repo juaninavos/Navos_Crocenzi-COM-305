@@ -5,7 +5,7 @@ export class MetodoPagoController {
   // GET /api/metodos-pago
   static async getAll(req: Request, res: Response) {
     try {
-      const orm = req.app.locals.orm; // ✅ Obtener orm de req.app.locals
+      const orm = req.app.locals.orm;
       const em = orm.em.fork();
       const metodosPago = await em.find(MetodoPago, {});
       

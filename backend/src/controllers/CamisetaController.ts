@@ -11,7 +11,7 @@ import fs from 'fs';
 import path from 'path';
 
 export class CamisetaController {
-  // ✅ FUNCIÓN AUXILIAR: Calcular TODOS los descuentos aplicables a una camiseta
+
   private static async calcularDescuentoAplicable(em: any, camiseta: Camiseta): Promise<{
     tieneDescuento: boolean;
     descuentos?: Array<{
@@ -81,8 +81,8 @@ export class CamisetaController {
       };
     }
 
-    // ✅ CALCULAR DESCUENTO ACUMULATIVO
-    // Fórmula: precio * (1 - desc1/100) * (1 - desc2/100) * ...
+  
+   
     let precioFinal = camiseta.precioInicial;
     let porcentajeTotal = 0;
 
@@ -205,7 +205,7 @@ export class CamisetaController {
         // Log de los resultados obtenidos
         console.log('🟢 Resultados camisetas:', camisetasList.map((c: Camiseta) => ({ id: c.id, titulo: c.titulo, categoria: c.categoria?.id })));
 
-      // ✅ AGREGAR DESCUENTOS A CADA CAMISETA
+     
       const camisetasConDescuentos = await Promise.all(
         camisetasList.map(async (camiseta) => {
           const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
@@ -251,7 +251,7 @@ export class CamisetaController {
         });
       }
 
-      // ✅ AGREGAR: Calcular descuentos
+    
       const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);
 
       res.json({
@@ -259,7 +259,7 @@ export class CamisetaController {
         message: 'Operación getOne realizada correctamente.',
         data: {
           ...camiseta,
-          ...infoDescuento // ✅ INCLUIR info de descuentos
+          ...infoDescuento 
         }
       });
     } catch (error) {
@@ -284,8 +284,7 @@ export class CamisetaController {
           code: 'UNAUTHORIZED'
         });
       }
-      
-      // ✅ CAMBIO: Permitir tanto 'usuario' como 'administrador'
+     
       if (req.user.rol !== UsuarioRol.USUARIO && req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -445,7 +444,7 @@ export class CamisetaController {
         });
       }
 
-      // ✅ AGREGAR: Eliminar archivo de imagen si existe
+   
       if (camiseta.imagen && camiseta.imagen.startsWith('/uploads/')) {
         try {
           const imagePath = path.resolve(__dirname, '../../public', camiseta.imagen.substring(1));
@@ -491,7 +490,7 @@ export class CamisetaController {
         });
       }
       
-      // ✅ CAMBIO: Permitir tanto 'usuario' como 'administrador'
+     
       if (req.user.rol !== UsuarioRol.USUARIO && req.user.rol !== UsuarioRol.ADMINISTRADOR) {
         return res.status(403).json({
           success: false,
@@ -534,7 +533,7 @@ export class CamisetaController {
 
       const { titulo, descripcion, equipo, temporada, talle, condicion, imagen, precioInicial, esSubasta, stock, categoriaId, fechaFinSubasta } = parseResult.data;
 
-      // ✅ VALIDAR: Si es subasta, DEBE tener fecha fin
+      
       if (esSubasta && !fechaFinSubasta) {
         console.error('❌ Subasta sin fecha fin');
         return res.status(400).json({
@@ -545,7 +544,7 @@ export class CamisetaController {
         });
       }
 
-      // ✅ VALIDAR: La fecha debe ser futura
+      
       if (esSubasta && fechaFinSubasta && fechaFinSubasta <= new Date()) {
         console.error('❌ Fecha de fin en el pasado');
         return res.status(400).json({
@@ -595,7 +594,7 @@ export class CamisetaController {
 
       console.log('✅ Camiseta creada:', nuevaCamiseta.id, 'esSubasta:', esSubasta);
 
-      // ✅ SI ES SUBASTA, CREAR LA ENTIDAD SUBASTA
+      
       let subastaCreada = null;
       if (esSubasta && fechaFinSubasta) {
         console.log('🔨 Creando subasta con fechaFin:', fechaFinSubasta);
@@ -717,7 +716,7 @@ export class CamisetaController {
     }
   }
 
-  // ✅ AGREGAR: Nuevo endpoint para obtener camisetas con descuentos para el carrito
+ 
   static async getByIds(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm as MikroORM;
@@ -737,7 +736,7 @@ export class CamisetaController {
         populate: ['categoria', 'vendedor'] 
       });
 
-      // ✅ Calcular descuentos para cada camiseta
+     
       const camisetasConDescuentos = await Promise.all(
         camisetas.map(async (camiseta) => {
           const infoDescuento = await CamisetaController.calcularDescuentoAplicable(em, camiseta);

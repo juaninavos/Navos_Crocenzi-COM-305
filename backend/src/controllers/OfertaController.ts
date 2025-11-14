@@ -8,7 +8,7 @@ export class OfertaController {
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      const em = orm.em.fork(); 
       
       const { subastaId, usuarioId } = req.query;
       
@@ -51,7 +51,7 @@ export class OfertaController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      const em = orm.em.fork(); 
       
       const oferta = await em.findOne(Oferta, { id: parseInt(id) }, { 
         populate: ['usuario', 'subasta', 'subasta.camiseta'] 
@@ -113,7 +113,7 @@ export class OfertaController {
       }
 
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      const em = orm.em.fork(); 
       
       // Verificar que el usuario existe
       const usuario = await em.findOne(Usuario, { id: usuarioId });
@@ -189,7 +189,7 @@ export class OfertaController {
       const { monto } = req.body;
       
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      const em = orm.em.fork(); 
       
       const oferta = await em.findOne(Oferta, { id: parseInt(id) });
       
@@ -229,7 +229,7 @@ export class OfertaController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR fork()
+      const em = orm.em.fork(); 
       
       const oferta = await em.findOne(Oferta, { id: parseInt(id) });
       

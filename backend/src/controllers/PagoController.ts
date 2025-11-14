@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { Pago, EstadoPago } from '../entities/Pago';  // ✅ AGREGAR: EstadoPago
-import { Compra, EstadoCompra } from '../entities/Compra';  // ✅ AGREGAR: EstadoCompra
+import { Pago, EstadoPago } from '../entities/Pago';  
+import { Compra, EstadoCompra } from '../entities/Compra';  
 import { MetodoPago } from '../entities/MetodoPago';
-import { EstadoCamiseta } from '../entities/Camiseta';  // ✅ AGREGAR: EstadoCamiseta
+import { EstadoCamiseta } from '../entities/Camiseta';  
 
 export class PagoController {
   // GET /api/pagos
@@ -11,7 +11,7 @@ export class PagoController {
       const orm = req.app.locals.orm;
   const em = orm.em.fork();
   const pagos = await em.find(Pago, {}, { 
-        populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  // CORREGIDO: 'comprador' no 'usuario'
+        populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  
       });
       
       res.json({
@@ -38,7 +38,7 @@ export class PagoController {
       
   const em = orm.em.fork();
   const pago = await em.findOne(Pago, { id: parseInt(id) }, { 
-        populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  // CORREGIDO
+        populate: ['compra', 'compra.comprador', 'compra.camiseta', 'metodoPago']  
       });
       
       if (!pago) {
@@ -139,7 +139,7 @@ export class PagoController {
         });
       }
       
-      // ✅ CORREGIDO: Usar enum
+
       if (compra.estado !== EstadoCompra.PENDIENTE) {
         return res.status(400).json({
           success: false,
@@ -180,11 +180,11 @@ export class PagoController {
       }
 
       // Simular procesamiento del pago
-      let estadoPago = EstadoPago.PENDIENTE;  // ✅ CORREGIDO: Usar enum
+      let estadoPago = EstadoPago.PENDIENTE;  // 
       let numeroTransaccion = this.generarNumeroTransaccion();
 
-      // Simular procesamiento básico (90% éxito)
-      estadoPago = Math.random() > 0.1 ? EstadoPago.COMPLETADO : EstadoPago.FALLIDO;  // ✅ CORREGIDO
+      
+      estadoPago = Math.random() > 0.1 ? EstadoPago.COMPLETADO : EstadoPago.FALLIDO;  
 
       const nuevoPago = new Pago(
         monto,                    
@@ -196,13 +196,13 @@ export class PagoController {
       // Asignar los objetos completos después de la creación
       nuevoPago.compra = compra;
       nuevoPago.metodoPago = metodoPago;
-      nuevoPago.estado = estadoPago;  // ✅ CORREGIDO: Ya es enum, no necesita casting
+      nuevoPago.estado = estadoPago;  
 
   await em.persistAndFlush(nuevoPago);
 
       // Si el pago fue exitoso, actualizar la compra
-      if (estadoPago === EstadoPago.COMPLETADO) {  // ✅ CORREGIDO: Usar enum
-        compra.estado = EstadoCompra.CONFIRMADA;   // ✅ CORREGIDO: Usar enum
+      if (estadoPago === EstadoPago.COMPLETADO) {  
+        compra.estado = EstadoCompra.CONFIRMADA;   
   await em.persistAndFlush(compra);
       }
 
@@ -248,7 +248,7 @@ export class PagoController {
         });
       }
 
-      // ✅ CORREGIDO: Usar enum
+   
       if (pago.estado !== EstadoPago.PENDIENTE) {
         return res.status(400).json({
           success: false,
@@ -258,7 +258,7 @@ export class PagoController {
         });
       }
 
-      // ✅ CORREGIDO: Usar enum
+   
       pago.estado = EstadoPago.COMPLETADO;
       
       if (numeroConfirmacion) {
@@ -269,11 +269,11 @@ export class PagoController {
 
       // Actualizar estado de la compra
       if (pago.compra) {
-        pago.compra.estado = EstadoCompra.CONFIRMADA;  // ✅ CORREGIDO: Usar enum
+        pago.compra.estado = EstadoCompra.CONFIRMADA; 
         
         // Marcar camiseta como vendida
         if (pago.compra.camiseta) {
-          pago.compra.camiseta.estado = EstadoCamiseta.VENDIDA;  // ✅ CORREGIDO: Usar enum
+          pago.compra.camiseta.estado = EstadoCamiseta.VENDIDA;  
         }
       }
 
@@ -317,7 +317,7 @@ export class PagoController {
         });
       }
 
-      // ✅ CORREGIDO: Usar enum
+      
       if (pago.estado !== EstadoPago.PENDIENTE) {
         return res.status(400).json({
           success: false,
@@ -327,7 +327,7 @@ export class PagoController {
         });
       }
 
-      // ✅ CORREGIDO: Usar enum
+    
       pago.estado = EstadoPago.FALLIDO;
       pago.notas = pago.notas 
         ? `${pago.notas} - Rechazado: ${motivo || 'Sin motivo especificado'}`

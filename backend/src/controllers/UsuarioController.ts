@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { MikroORM } from '@mikro-orm/core';
-import { Usuario, UsuarioRol } from '../entities/Usuario';  // ✅ CORREGIDO: Agregar .js y UsuarioRol
+import { Usuario, UsuarioRol } from '../entities/Usuario';  
 
 export class UsuarioController {
   
@@ -67,7 +67,7 @@ export class UsuarioController {
     try {
       const { nombre, apellido, email, contrasena, direccion, telefono, rol } = req.body;
       
-      // ✅ PERFECTO: Validaciones completas de todos los campos obligatorios
+      
       if (!nombre) {
         return res.status(400).json({
           success: false,
@@ -147,7 +147,7 @@ export class UsuarioController {
         });
       }
 
-      // ✅ MEJORADO: Validar rol si se proporciona
+      
       if (rol && !Object.values(UsuarioRol).includes(rol)) {
         return res.status(400).json({
           success: false,
@@ -171,7 +171,7 @@ export class UsuarioController {
         });
       }
 
-      // ✅ PERFECTO: Constructor perfectamente alineado
+     
       const nuevoUsuario = new Usuario(
         nombre,
         apellido,
@@ -179,7 +179,7 @@ export class UsuarioController {
         contrasena,
         direccion,
         telefono,
-        rol as UsuarioRol || UsuarioRol.USUARIO  // ✅ MEJORADO: Cast al enum
+        rol as UsuarioRol || UsuarioRol.USUARIO  
       );
 
       em.persist(nuevoUsuario);
@@ -205,7 +205,7 @@ export class UsuarioController {
   static async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { nombre, apellido, email, direccion, telefono, rol } = req.body;  // ✅ AGREGAR: rol
+      const { nombre, apellido, email, direccion, telefono, rol } = req.body; 
       const orm = req.app.locals.orm as MikroORM;
       const em = orm.em.fork();
       
@@ -220,7 +220,7 @@ export class UsuarioController {
         });
       }
 
-      // ✅ MEJORADO: Validaciones en update
+     
       if (email && email !== usuario.email) {
         // Validar formato de email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -248,7 +248,7 @@ export class UsuarioController {
         }
       }
 
-      // ✅ AGREGAR: Validar rol si se proporciona
+   
       if (rol && !Object.values(UsuarioRol).includes(rol)) {
         return res.status(400).json({
           success: false,
@@ -264,7 +264,7 @@ export class UsuarioController {
       if (email) usuario.email = email;
       if (direccion) usuario.direccion = direccion;
       if (telefono) usuario.telefono = telefono;
-      if (rol) usuario.rol = rol as UsuarioRol;  // ✅ AGREGAR: Actualizar rol
+      if (rol) usuario.rol = rol as UsuarioRol;  
 
       await em.flush();
 
@@ -284,7 +284,7 @@ export class UsuarioController {
     }
   }
 
-  // DELETE /api/usuarios/:id (soft delete) - ✅ PERFECTO
+  // DELETE /api/usuarios/:id (soft delete)
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
@@ -321,7 +321,7 @@ export class UsuarioController {
     }
   }
 
-  // ✅ AGREGAR: Método para toggle estado (activar/desactivar)
+
   static async toggleEstado(req: Request, res: Response) {
     try {
       const { id } = req.params;

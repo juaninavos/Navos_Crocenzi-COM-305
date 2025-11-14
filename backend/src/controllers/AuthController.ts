@@ -248,7 +248,7 @@ export default function authRouter(orm: MikroORM): Router {
       });
 
       const user = await em.findOne(Usuario, { email });
-      // No revelar si el usuario existe o no: responder igual para credenciales invalidas
+
       if (!user) return res.status(401).json({
         success: false,
         message: 'No se pudo iniciar sesión: credenciales inválidas.',
@@ -281,8 +281,8 @@ export default function authRouter(orm: MikroORM): Router {
       return res.json({
         success: true,
         message: 'Inicio de sesión realizado correctamente.',
-        data: {  // ✅ AGREGAR: envolver en 'data'
-          usuario: safeUser,  // ✅ CAMBIAR: 'user' → 'usuario'
+        data: {  
+          usuario: safeUser,  // 
           token
         }
       });

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { Compra, EstadoCompra } from '../entities/Compra';         // ✅ AGREGAR EstadoCompra
+import { Compra, EstadoCompra } from '../entities/Compra';        
 import { Usuario } from '../entities/Usuario';
-import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';   // ✅ AGREGAR EstadoCamiseta
+import { Camiseta, EstadoCamiseta } from '../entities/Camiseta';   
 import { Descuento } from '../entities/Descuento';
 import { MetodoPago } from '../entities/MetodoPago';
 import { CompraItem } from '../entities/CompraItem';
@@ -11,8 +11,8 @@ export class CompraController {
   static async getAll(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR
-      const compras = await em.find(Compra, {}, { // ✅ CAMBIAR orm.em por em
+      const em = orm.em.fork(); 
+      const compras = await em.find(Compra, {}, { 
         populate: ['comprador', 'camiseta', 'camiseta.categoria', 'metodoPago']
       });
       res.json({
@@ -36,7 +36,7 @@ export class CompraController {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR
+      const em = orm.em.fork();
       const compra = await em.findOne(Compra, { id: parseInt(id) }, { // ✅ CAMBIAR
         populate: ['comprador', 'camiseta', 'camiseta.categoria', 'metodoPago', 'pagos']
       });
@@ -83,7 +83,7 @@ export class CompraController {
         });
       }
       
-      // ✅ CORREGIR: Popular items y sus camisetas
+      
       const compras = await em.find(Compra, 
         { comprador: { id } },
         { 
@@ -120,14 +120,14 @@ export class CompraController {
     }
   }
 
-  // POST /api/compras - CORREGIDO COMPLETO
+  // POST /api/compras
   static async create(req: Request, res: Response) {
     try {
       const { usuarioId, direccionEnvio, metodoPagoId, items, notas } = req.body;
       
       console.log('📦 Datos recibidos:', { usuarioId, direccionEnvio, metodoPagoId, items: items?.length, notas }); // ✅ DEBUG
       
-      // ✅ Validaciones
+   
       if (!usuarioId) {
         return res.status(400).json({
           success: false,
@@ -158,7 +158,7 @@ export class CompraController {
       const orm = req.app.locals.orm;
       const em = orm.em.fork();
       
-      // ✅ Buscar usuario
+     
       const usuario = await em.findOne(Usuario, { id: usuarioId });
       if (!usuario) {
         return res.status(404).json({
@@ -169,7 +169,7 @@ export class CompraController {
         });
       }
       
-      // ✅ Buscar o crear método de pago
+    
       let metodoPago = metodoPagoId 
         ? await em.findOne(MetodoPago, { id: metodoPagoId }) 
         : await em.findOne(MetodoPago, { nombre: 'Efectivo' });
@@ -180,7 +180,7 @@ export class CompraController {
         console.log('✅ Método de pago "Efectivo" creado');
       }
       
-      // ✅ Crear la compra SIN camiseta (usamos items para carrito)
+      
       const nuevaCompra = em.create(Compra, {
         total: 0,
         comprador: usuario,
@@ -188,14 +188,14 @@ export class CompraController {
         direccionEnvio: direccionEnvio.trim(),
         estado: EstadoCompra.PENDIENTE,
         notas: notas?.trim() || undefined
-        // ❌ NO incluir camiseta aquí
+        
       });
       
       let total = 0;
       const itemsValidos: any[] = [];
       const errores: string[] = [];
       
-      // ✅ Procesar cada item del carrito
+    
       for (const item of items) {
         if (!item.camisetaId || !item.cantidad || item.cantidad <= 0) {
           console.warn('⚠️ Item inválido:', item);
@@ -226,7 +226,7 @@ export class CompraController {
         const subtotal = precioUnitario * item.cantidad;
         total += subtotal;
         
-        // ✅ Crear CompraItem con precio y subtotal
+       
         const compraItem = em.create(CompraItem, {
           compra: nuevaCompra,
           camiseta,
@@ -238,7 +238,7 @@ export class CompraController {
         nuevaCompra.items.add(compraItem);
         itemsValidos.push({ camiseta: camiseta.titulo, cantidad: item.cantidad, subtotal });
         
-        // ✅ Reducir stock
+      
         camiseta.stock -= item.cantidad;
         if (camiseta.stock === 0) {
           camiseta.estado = EstadoCamiseta.VENDIDA;
@@ -246,7 +246,7 @@ export class CompraController {
         }
       }
       
-      // ✅ Validar que al menos 1 item sea válido
+     
       if (nuevaCompra.items.length === 0) {
         return res.status(400).json({
           success: false,
@@ -292,13 +292,13 @@ export class CompraController {
     }
   }
 
-  // PUT /api/compras/:id - CORREGIDO
+  
   static async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const { estado } = req.body;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR
+      const em = orm.em.fork(); 
       const compra = await em.findOne(Compra, { id: parseInt(id) }); // ✅ CAMBIAR
       if (!compra) {
         return res.status(404).json({
@@ -319,7 +319,7 @@ export class CompraController {
       if (estado) {
         compra.estado = estado as EstadoCompra;
       }
-      await em.persistAndFlush(compra); // ✅ CAMBIAR
+      await em.persistAndFlush(compra); 
       res.json({
         success: true,
         message: 'Operación update realizada correctamente.',
@@ -336,12 +336,11 @@ export class CompraController {
     }
   }
 
-  // DELETE /api/compras/:id - CORREGIDO
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR
+      const em = orm.em.fork(); 
       const compra = await em.findOne(Compra, { id: parseInt(id) }); // ✅ CAMBIAR
       if (!compra) {
         return res.status(404).json({
@@ -359,7 +358,7 @@ export class CompraController {
           code: 'INVALID_STATE'
         });
       }
-      await em.removeAndFlush(compra); // ✅ CAMBIAR
+      await em.removeAndFlush(compra); 
       res.json({
         success: true,
         message: 'Operación delete realizada correctamente.'
@@ -375,12 +374,12 @@ export class CompraController {
     }
   }
 
-  // POST /api/compras/:id/confirmar - CORREGIDO
+  // POST /api/compras/:id/confirmar 
   static async confirmar(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const orm = req.app.locals.orm;
-      const em = orm.em.fork(); // ✅ AGREGAR
+      const em = orm.em.fork(); 
       const compra = await em.findOne(Compra, { id: parseInt(id) }, { // ✅ CAMBIAR
         populate: ['camiseta']
       });
@@ -404,7 +403,7 @@ export class CompraController {
       if (compra.camiseta) {
         compra.camiseta.estado = EstadoCamiseta.VENDIDA;
       }
-      await em.persistAndFlush([compra, compra.camiseta]); // ✅ CAMBIAR
+      await em.persistAndFlush([compra, compra.camiseta]); 
       res.json({
         success: true,
         message: 'Operación confirmar realizada correctamente.',

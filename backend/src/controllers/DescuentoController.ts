@@ -25,7 +25,7 @@ export class DescuentoController {
       }
       
       const descuentos = await em.find(Descuento, filtros, {
-        populate: ['camisetasEspecificas'] // ✅ Popular camisetas específicas
+        populate: ['camisetasEspecificas'] 
       });
       
       res.json({
@@ -120,7 +120,7 @@ export class DescuentoController {
         });
       }
 
-      // ✅ VALIDAR SI APLICA A LA CAMISETA
+     
       let aplicaACamiseta = true;
       if (camisetaId) {
         const camiseta = await em.findOne(Camiseta, { id: parseInt(camisetaId as string) }, {
@@ -278,7 +278,7 @@ export class DescuentoController {
 
       const tipoAplicacionEnum = tipoAplicacion || TipoAplicacionDescuento.TODAS;
 
-      // ✅ VALIDAR categoriaId si tipoAplicacion es CATEGORIA
+     
       if (tipoAplicacionEnum === TipoAplicacionDescuento.CATEGORIA && !categoriaId) {
         return res.status(400).json({
           success: false,
@@ -299,7 +299,7 @@ export class DescuentoController {
         categoriaId
       );
 
-      // ✅ AGREGAR CAMISETAS ESPECÍFICAS
+    
       if (tipoAplicacionEnum === TipoAplicacionDescuento.ESPECIFICAS && camisetaIds && Array.isArray(camisetaIds)) {
         const camisetas = await em.find(Camiseta, { id: { $in: camisetaIds } });
         nuevoDescuento.camisetasEspecificas.set(camisetas);
@@ -390,7 +390,7 @@ export class DescuentoController {
         });
       }
 
-      // ✅ ACTUALIZAR CAMISETAS ESPECÍFICAS
+    
       if (tipoAplicacion === TipoAplicacionDescuento.ESPECIFICAS && camisetaIds && Array.isArray(camisetaIds)) {
         const camisetas = await em.find(Camiseta, { id: { $in: camisetaIds } });
         descuento.camisetasEspecificas.set(camisetas);

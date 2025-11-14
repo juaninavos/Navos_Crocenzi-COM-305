@@ -67,7 +67,7 @@ export class CategoriaController {
   // POST /api/categorias
   static async create(req: Request, res: Response) {
     try {
-      // ✅ VALIDACIÓN AGREGADA
+      
       if (!req.user) {
         return res.status(401).json({
           success: false,

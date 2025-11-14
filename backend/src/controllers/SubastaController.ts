@@ -27,7 +27,7 @@ export class SubastaController {
       console.log('🔎 Filtro where (forzado):', JSON.stringify(where));
       console.log('🔎 Filtro where:', JSON.stringify(where));
       
-      // ✅ AGREGAR: Filtro por vendedor de la camiseta
+     
       if (vendedorId) {
         where.camiseta = { vendedor: { id: parseInt(vendedorId as string) } };
       }
@@ -61,7 +61,7 @@ export class SubastaController {
   }
 
   // GET /api/subastas/:id
-  // ✅ CAMBIO: Renombrar de getOne a getById
+  
   static async getById(req: Request, res: Response) {
     try {
       const orm = req.app.locals.orm;
@@ -80,7 +80,7 @@ export class SubastaController {
           code: 'NOT_FOUND'
         });
       }
-      // ✅ Populate manual con try/catch
+     
       try {
         await em.populate(subasta, ['camiseta', 'camiseta.vendedor', 'camiseta.categoria']);
       } catch (populateError) {
@@ -257,9 +257,9 @@ export class SubastaController {
 
       console.log('🔍 Buscando subasta para camiseta:', camisetaId);
 
-      // ✅ CORREGIR: Buscar con query builder para evitar error de relación
+    
       const subasta = await em.findOne(Subasta, 
-        { camiseta: { id: parseInt(camisetaId) } }, // ✅ CAMBIO: agregar .id
+        { camiseta: { id: parseInt(camisetaId) } }, 
         { populate: ['camiseta'] }
       );
 
